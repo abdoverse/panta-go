@@ -19,6 +19,8 @@ dependencies:
   dotted_border: ^2.1.0
   collection: ^1.18.0
   http: ^1.2.0
+  amazon_cognito_identity_dart_2: ^3.0.0
+  shared_preferences: ^2.2.0
 
 dev_dependencies:
   flutter_test:

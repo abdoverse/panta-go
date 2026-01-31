@@ -6,8 +6,18 @@ import '../../core/theme/app_theme.dart';
 import '../dashboard/user_home_page.dart';
 import '../dashboard/helper_home_page.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +53,7 @@ class LoginPage extends StatelessWidget {
 
           SafeArea(
             child: Center(
-              child: Padding(
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.all(32.0),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -67,44 +77,101 @@ class LoginPage extends StatelessWidget {
                       ),
                     ).animate().fadeIn(delay: 200.ms).slideY(),
 
-                    const Text(
-                      'Recycling made effortless.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.white70,
+                    const SizedBox(height: 48),
+
+                    Form(
+                      key: _formKey,
+                      child: Column(
+                        children: [
+                          TextFormField(
+                            controller: _emailController,
+                            style: const TextStyle(color: Colors.white),
+                            cursorColor: Colors.white,
+                            decoration: const InputDecoration(
+                              labelText: 'Email',
+                              labelStyle: TextStyle(color: Colors.white70),
+                              filled: false, // Override global theme
+                              enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white70)),
+                              focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white)),
+                              errorBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.redAccent)),
+                              focusedErrorBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.redAccent)),
+                              prefixIcon: Icon(Icons.email, color: Colors.white70),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter your email';
+                              }
+                              if (!value.contains('@') || !value.contains('.')) {
+                                return 'Please enter a valid email';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _passwordController,
+                            obscureText: true,
+                            style: const TextStyle(color: Colors.white),
+                            cursorColor: Colors.white,
+                            decoration: const InputDecoration(
+                              labelText: 'Password',
+                              labelStyle: TextStyle(color: Colors.white70),
+                              filled: false, // Override global theme
+                              enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white70)),
+                              focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white)),
+                              errorBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.redAccent)),
+                              focusedErrorBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.redAccent)),
+                              prefixIcon: Icon(Icons.lock, color: Colors.white70),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter your password';
+                              }
+                              if (value.length < 8) {
+                                return 'Password must be at least 8 characters';
+                              }
+                              if (!RegExp(r'(?=.*[a-z])').hasMatch(value)) {
+                                return 'Must contain at least one lowercase letter';
+                              }
+                              if (!RegExp(r'(?=.*[A-Z])').hasMatch(value)) {
+                                return 'Must contain at least one uppercase letter';
+                              }
+                              if (!RegExp(r'(?=.*[0-9])').hasMatch(value)) {
+                                return 'Must contain at least one number';
+                              }
+                              return null;
+                            },
+                          ),
+                        ],
                       ),
-                    ).animate().fadeIn(delay: 400.ms),
+                    ),
 
-                    const SizedBox(height: 64),
+                    const SizedBox(height: 24),
 
-                    // Role Selection
-                    _LoginButton(
-                      label: 'I want to Recycle',
-                      icon: Icons.eco,
-                      onTap: () {
-                        context.read<PantaProvider>().login(false);
-                         Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (_) => const UserHomePage()),
-                        );
-                      },
-                    ).animate().fadeIn(delay: 600.ms).slideX(),
+                    if (_isLoading)
+                      const Center(child: CircularProgressIndicator(color: Colors.white))
+                    else ...[
+                      // Role Selection
+                      _LoginButton(
+                        label: 'Login as Recycler',
+                        icon: Icons.eco,
+                        onTap: () => _login(false),
+                      ).animate().fadeIn(delay: 600.ms).slideX(),
 
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 16),
 
-                    _LoginButton(
-                      label: 'I am a Helper',
-                      icon: Icons.local_shipping,
-                      isOutlined: true,
-                      onTap: () {
-                         context.read<PantaProvider>().login(true);
-                         Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (_) => const HelperHomePage()),
-                        );
-                      },
-                    ).animate().fadeIn(delay: 800.ms).slideX(),
+                      _LoginButton(
+                        label: 'Login as Helper',
+                        icon: Icons.local_shipping,
+                        isOutlined: true,
+                        onTap: () => _login(true),
+                      ).animate().fadeIn(delay: 800.ms).slideX(),
+
+                      TextButton(
+                        onPressed: _signUp,
+                        child: const Text('New? Sign Up Here', style: TextStyle(color: Colors.white)),
+                      ),
+                    ]
                   ],
                 ),
               ),
@@ -113,6 +180,50 @@ class LoginPage extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _login(bool asHelper) async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+    final error = await context.read<PantaProvider>().login(
+      _emailController.text.trim(),
+      _passwordController.text.trim(),
+      asHelper
+    );
+    setState(() => _isLoading = false);
+
+    if (error == null && mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => asHelper ? const HelperHomePage() : const UserHomePage()),
+      );
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Login Failed: $error'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  Future<void> _signUp() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+    final error = await context.read<PantaProvider>().signUp(
+      _emailController.text.trim(),
+      _passwordController.text.trim(),
+    );
+    setState(() => _isLoading = false);
+
+    if (error == null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sign Up Successful! Please check your email for confirmation code, then Login.')),
+      );
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Sign Up Failed: $error'), backgroundColor: Colors.red),
+      );
+    }
   }
 }
 

@@ -3,8 +3,10 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../models/request_model.dart';
 import '../services/api_config.dart';
+import '../services/auth_service.dart';
 
 class PantaProvider extends ChangeNotifier {
+  final AuthService _authService = AuthService();
   List<RecyclingRequest> _requests = [];
   bool _isLoading = false;
 
@@ -29,20 +31,40 @@ class PantaProvider extends ChangeNotifier {
   List<RecyclingRequest> get acceptedJobs =>
       _requests.where((r) => r.status == RequestStatus.accepted && r.helperId == 'currentHelper').toList();
 
-  void login(bool asHelper) {
+  Future<String?> login(String username, String password, bool asHelper) async {
     _isHelper = asHelper;
-    fetchRequests(); // Initial fetch
-    notifyListeners();
+    // For demo, we are using the email as username
+    final error = await _authService.login(username, password);
+    if (error == null) {
+      _currentUserId = username;
+      notifyListeners();
+      fetchRequests();
+      return null;
+    }
+    return error;
+  }
+
+  Future<String?> signUp(String username, String password) async {
+    return await _authService.signUp(username, password);
   }
 
   Future<void> fetchRequests({bool silent = false}) async {
+    final token = await _authService.getToken();
+    if (token == null) return;
+
     if (!silent) {
       _isLoading = true;
       notifyListeners();
     }
 
     try {
-      final response = await http.get(Uri.parse('${ApiConfig.baseUrl}/api/v1/requests'));
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/api/v1/requests'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         _requests = data.map((json) => _fromJson(json)).toList();
@@ -60,6 +82,9 @@ class PantaProvider extends ChangeNotifier {
   }
 
   Future<bool> createRequest(String title, DateTime from, DateTime to, String location) async {
+    final token = await _authService.getToken();
+    if (token == null) return false;
+
     _isLoading = true;
     notifyListeners();
 
@@ -75,7 +100,10 @@ class PantaProvider extends ChangeNotifier {
     try {
       final response = await http.post(
         Uri.parse('${ApiConfig.baseUrl}/api/v1/requests'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
         body: body,
       );
 
@@ -96,10 +124,16 @@ class PantaProvider extends ChangeNotifier {
   }
 
   Future<void> acceptRequest(String id) async {
+    final token = await _authService.getToken();
+    if (token == null) return;
+
     try {
       final response = await http.post(
         Uri.parse('${ApiConfig.baseUrl}/api/v1/requests/accept'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
         body: json.encode({'id': id}),
       );
       if (response.statusCode == 200) {
@@ -111,10 +145,16 @@ class PantaProvider extends ChangeNotifier {
   }
 
   Future<void> completeRequest(String id) async {
+    final token = await _authService.getToken();
+    if (token == null) return;
+
     try {
       final response = await http.post(
         Uri.parse('${ApiConfig.baseUrl}/api/v1/requests/complete'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
         body: json.encode({'id': id}),
       );
       if (response.statusCode == 200) {
@@ -126,10 +166,16 @@ class PantaProvider extends ChangeNotifier {
   }
 
   Future<void> rateHelper(String id, double rating) async {
+    final token = await _authService.getToken();
+    if (token == null) return;
+
     try {
       final response = await http.post(
         Uri.parse('${ApiConfig.baseUrl}/api/v1/requests/rate'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
         body: json.encode({'id': id, 'rating': rating}),
       );
       if (response.statusCode == 200) {

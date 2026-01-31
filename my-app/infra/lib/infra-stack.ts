@@ -6,6 +6,7 @@ import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as path from 'path';
+import * as cognito from 'aws-cdk-lib/aws-cognito';
 
 export class InfraStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -66,6 +67,54 @@ export class InfraStack extends cdk.Stack {
 
     // Grant DynamoDB permissions to the Fargate service
     table.grantReadWriteData(fargateService.taskDefinition.taskRole);
+
+    // ========================================================================
+    // COGNITO AUTHENTICATION
+    // ========================================================================
+
+    const userPool = new cognito.UserPool(this, 'PantaUserPool', {
+      userPoolName: 'PantaUserPool',
+      selfSignUpEnabled: true,
+      signInAliases: {
+        email: true,
+        username: true,
+      },
+      autoVerify: { email: true },
+      passwordPolicy: {
+        minLength: 8,
+        requireLowercase: true,
+        requireUppercase: true,
+        requireDigits: true,
+      },
+      removalPolicy: cdk.RemovalPolicy.DESTROY, // For dev
+    });
+
+    const userPoolClient = userPool.addClient('PantaMobileAppClient', {
+      userPoolClientName: 'PantaMobileAppClient',
+      authFlows: {
+        userSrp: true,
+      },
+    });
+
+    // Pass Cognito details to Backend (for token verification if needed locally)
+    const backendContainer = fargateService.taskDefinition.defaultContainer;
+    if (backendContainer) {
+        backendContainer.addEnvironment('COGNITO_USER_POOL_ID', userPool.userPoolId);
+        backendContainer.addEnvironment('COGNITO_CLIENT_ID', userPoolClient.userPoolClientId);
+        // Needed to fetch public keys (JWKS) to verify tokens
+        backendContainer.addEnvironment('AWS_REGION', this.region);
+    }
+
+    // Output Cognito Details for Mobile App
+    new cdk.CfnOutput(this, 'UserPoolId', {
+      value: userPool.userPoolId,
+      description: 'Cognito User Pool ID',
+    });
+
+    new cdk.CfnOutput(this, 'UserPoolClientId', {
+      value: userPoolClient.userPoolClientId,
+      description: 'Cognito User Pool Client ID',
+    });
 
     // Configure Health Check
     fargateService.targetGroup.configureHealthCheck({

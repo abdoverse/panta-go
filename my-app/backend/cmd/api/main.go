@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -15,6 +16,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 // Request Data Model
@@ -30,9 +32,26 @@ type RecyclingRequest struct {
 	IsRated       bool      `json:"isRated" dynamodbav:"isRated"`
 }
 
+// Auth Types
+type LoginRequest struct {
+	Role string `json:"role"` // "helper" or "user"
+	Name string `json:"username"`
+}
+
+type LoginResponse struct {
+	Token string `json:"token"`
+}
+
+type Claims struct {
+	Role string `json:"role"`
+	Name string `json:"name"`
+	jwt.RegisteredClaims
+}
+
 var (
 	svc       *dynamodb.Client
 	tableName string
+	jwtSecret = []byte(os.Getenv("JWT_SECRET"))
 )
 
 func init() {
@@ -46,6 +65,9 @@ func init() {
 	tableName = os.Getenv("TABLE_NAME")
 	if tableName == "" {
 		log.Println("Warning: TABLE_NAME environment variable is not set")
+	}
+	if len(jwtSecret) == 0 {
+		jwtSecret = []byte("default-secret-key-change-me")
 	}
 }
 
@@ -78,6 +100,41 @@ func enableCORS(next http.Handler) http.Handler {
 	})
 }
 
+// Auth Middleware
+func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			http.Error(w, "Authorization header required", http.StatusUnauthorized)
+			return
+		}
+
+		parts := strings.Split(authHeader, " ")
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			http.Error(w, "Invalid authorization header format", http.StatusUnauthorized)
+			return
+		}
+
+		tokenString := parts[1]
+		claims := &Claims{}
+
+		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			}
+			return jwtSecret, nil
+		})
+
+		if err != nil || !token.Valid {
+			http.Error(w, "Invalid token", http.StatusUnauthorized)
+			return
+		}
+
+		// Pass context if needed, for now just allow
+		next(w, r)
+	}
+}
+
 func main() {
 	mux := http.NewServeMux()
 
@@ -94,12 +151,52 @@ func main() {
 		})
 	})
 
+	// Login Endpoint
+	mux.HandleFunc("/api/v1/login", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		var req LoginRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			jsonResponse(w, 400, map[string]string{"error": "Invalid payload"})
+			return
+		}
+
+		// Simple mock authentication
+		// In a real app, verify user/password here
+		if req.Role != "user" && req.Role != "helper" {
+			jsonResponse(w, 400, map[string]string{"error": "Invalid role"})
+			return
+		}
+
+		expirationTime := time.Now().Add(24 * time.Hour)
+		claims := &Claims{
+			Role: req.Role,
+			Name: req.Name,
+			RegisteredClaims: jwt.RegisteredClaims{
+				ExpiresAt: jwt.NewNumericDate(expirationTime),
+				Issuer:    "panta-backend",
+			},
+		}
+
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+		tokenString, err := token.SignedString(jwtSecret)
+		if err != nil {
+			jsonResponse(w, 500, map[string]string{"error": "Could not generate token"})
+			return
+		}
+
+		jsonResponse(w, 200, LoginResponse{Token: tokenString})
+	})
+
 	// -------------------------------------------------------------------------
 	// Recycling Requests API
 	// -------------------------------------------------------------------------
 
-	// GET /api/v1/requests - Get all requests
-	mux.HandleFunc("/api/v1/requests", func(w http.ResponseWriter, r *http.Request) {
+	// GET /api/v1/requests - Get all requests (Public or Protected? Let's protect it)
+	mux.HandleFunc("/api/v1/requests", authMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		// Enable CORS
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		if r.Method == http.MethodGet {
@@ -158,10 +255,10 @@ func main() {
 		}
 
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-	})
+	}))
 
 	// POST /api/v1/requests/accept
-	mux.HandleFunc("/api/v1/requests/accept", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/api/v1/requests/accept", authMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
@@ -203,10 +300,10 @@ func main() {
 		}
 
 		jsonResponse(w, 200, map[string]string{"status": "accepted"})
-	})
+	}))
 
 	// POST /api/v1/requests/complete
-	mux.HandleFunc("/api/v1/requests/complete", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/api/v1/requests/complete", authMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
@@ -239,10 +336,10 @@ func main() {
 		}
 
 		jsonResponse(w, 200, map[string]string{"status": "pickedUp"})
-	})
+	}))
 
 	// POST /api/v1/requests/rate
-	mux.HandleFunc("/api/v1/requests/rate", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/api/v1/requests/rate", authMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
@@ -275,7 +372,7 @@ func main() {
 		}
 
 		jsonResponse(w, 200, map[string]string{"status": "rated"})
-	})
+	}))
 
 	// Hello World
 	mux.HandleFunc("/helloworld", func(w http.ResponseWriter, r *http.Request) {
@@ -306,8 +403,19 @@ func main() {
 	// Wrap mux with CORS middleware
 	handler := enableCORS(mux)
 
-	if err := http.ListenAndServe(":"+port, handler); err != nil {
-		log.Fatal(err)
+	certFile := os.Getenv("TLS_CERT_FILE")
+	keyFile := os.Getenv("TLS_KEY_FILE")
+
+	if certFile != "" && keyFile != "" {
+		log.Printf("Starting in HTTPS mode...")
+		if err := http.ListenAndServeTLS(":"+port, certFile, keyFile, handler); err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		log.Printf("Starting in HTTP mode (HTTPS not configured)...")
+		if err := http.ListenAndServe(":"+port, handler); err != nil {
+			log.Fatal(err)
+		}
 	}
 }
 
