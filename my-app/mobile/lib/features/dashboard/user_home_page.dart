@@ -188,7 +188,7 @@ class _DashboardView extends StatelessWidget {
                 if (ongoing.isEmpty)
                   _EmptyState(message: "No ongoing recycling requests.\nStart recycling today!"),
 
-                ...ongoing.map((r) => _RequestCard(request: r, isInteractable: false)),
+                ...ongoing.asMap().entries.map((e) => _RequestCard(request: e.value, isInteractable: false, index: e.key)),
               ],
             ),
           ),
@@ -212,7 +212,7 @@ class _HistoryView extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         itemCount: history.length,
         itemBuilder: (context, index) {
-          return _RequestCard(request: history[index], isInteractable: true);
+          return _RequestCard(request: history[index], isInteractable: true, index: index);
         },
       ),
     );
@@ -250,8 +250,9 @@ class _EmptyState extends StatelessWidget {
 class _RequestCard extends StatelessWidget {
   final RecyclingRequest request;
   final bool isInteractable;
+  final int? index;
 
-  const _RequestCard({required this.request, this.isInteractable = false});
+  const _RequestCard({required this.request, this.isInteractable = false, this.index});
 
   @override
   Widget build(BuildContext context) {
@@ -281,6 +282,18 @@ class _RequestCard extends StatelessWidget {
           children: [
             Row(
               children: [
+                if (index != null)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 12.0),
+                    child: Text(
+                      "#${index! + 1}",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[400],
+                      ),
+                    ),
+                  ),
                 Container(
                   width: 60,
                   height: 60,

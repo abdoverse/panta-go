@@ -164,7 +164,7 @@ class _MarketplaceView extends StatelessWidget {
                 if (jobs.isEmpty)
                    const Center(child: Padding(padding: EdgeInsets.all(40), child: Text("No jobs available right now."))),
 
-                ...jobs.map((job) => _JobCard(job: job, isAcceptable: true)),
+                ...jobs.asMap().entries.map((e) => _JobCard(job: e.value, isAcceptable: true, index: e.key)),
               ],
             ),
           ),
@@ -212,7 +212,7 @@ class _MyJobsView extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               itemCount: jobs.length,
               itemBuilder: (context, index) {
-                return _JobCard(job: jobs[index], isAcceptable: false);
+                return _JobCard(job: jobs[index], isAcceptable: false, index: index);
               },
             ),
     );
@@ -235,7 +235,7 @@ class _HistoryView extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               itemCount: jobs.length,
               itemBuilder: (context, index) {
-                return _JobCard(job: jobs[index], isAcceptable: false, isCompleted: true);
+                return _JobCard(job: jobs[index], isAcceptable: false, isCompleted: true, index: index);
               },
             ),
     );
@@ -246,11 +246,13 @@ class _JobCard extends StatelessWidget {
   final RecyclingRequest job;
   final bool isAcceptable;
   final bool isCompleted;
+  final int? index;
 
   const _JobCard({
     required this.job,
     required this.isAcceptable,
     this.isCompleted = false,
+    this.index,
   });
 
   @override
@@ -277,7 +279,10 @@ class _JobCard extends StatelessWidget {
                  Row(
                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                    children: [
-                     Expanded(child: Text(job.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18))),
+                     Expanded(child: Text(
+                        "${index != null ? '#${index! + 1} ' : ''}${job.title}",
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)
+                     )),
                      Container(
                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                        decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(8)),
