@@ -17,7 +17,9 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmationCodeController = TextEditingController();
   bool _isLoading = false;
+  String _selectedRole = 'Recycler'; // Default role
 
   @override
   Widget build(BuildContext context) {
@@ -212,16 +214,93 @@ class _LoginPageState extends State<LoginPage> {
     final error = await context.read<PantaProvider>().signUp(
       _emailController.text.trim(),
       _passwordController.text.trim(),
+      _selectedRole,
     );
     setState(() => _isLoading = false);
 
     if (error == null && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sign Up Successful! Please check your email for confirmation code, then Login.')),
-      );
+        _showConfirmationDialog();
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Sign Up Failed: $error'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  void _showConfirmationDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Email'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('A confirmation code has been sent to your email. Please enter it below.'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _confirmationCodeController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Confirmation Code',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context); // Close dialog
+              await _confirmAndLogin();
+            },
+            child: const Text('Confirm & Login'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _confirmAndLogin() async {
+    setState(() => _isLoading = true);
+    final email = _emailController.text.trim();
+    final code = _confirmationCodeController.text.trim();
+
+    // 1. Confirm User
+    final confirmError = await context.read<PantaProvider>().confirmUser(email, code);
+
+    if (confirmError != null) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+         ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Confirmation Failed: $confirmError'), backgroundColor: Colors.red),
+        );
+      }
+      return;
+    }
+
+    // 2. Auto Login
+    final isHelper = _selectedRole == 'Helper';
+    final loginError = await context.read<PantaProvider>().login(
+      email,
+      _passwordController.text.trim(),
+      isHelper
+    );
+
+    setState(() => _isLoading = false);
+
+    if (loginError == null && mounted) {
+       Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => isHelper ? const HelperHomePage() : const UserHomePage()),
+      );
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+         SnackBar(content: Text('Login Failed after confirmation: $loginError'), backgroundColor: Colors.red),
       );
     }
   }

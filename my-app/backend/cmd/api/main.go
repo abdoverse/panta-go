@@ -17,6 +17,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/MicahParks/keyfunc/v2"
 )
 
 // Request Data Model
@@ -53,6 +54,39 @@ var (
 	tableName string
 	jwtSecret = []byte(os.Getenv("JWT_SECRET"))
 )
+
+// Global JWKS
+var jwks *keyfunc.JWKS
+
+func initJWKS() {
+	region := os.Getenv("AWS_REGION")
+	userPoolID := os.Getenv("COGNITO_USER_POOL_ID")
+
+	if region == "" || userPoolID == "" {
+		log.Println("WARNING: COGNITO_USER_POOL_ID or AWS_REGION not set. Auth verification will fail.")
+		return
+	}
+
+	jwksURL := fmt.Sprintf("https://cognito-idp.%s.amazonaws.com/%s/.well-known/jwks.json", region, userPoolID)
+	log.Printf("Initializing JWKS from: %s", jwksURL)
+
+	var err error
+	options := keyfunc.Options{
+		RefreshErrorHandler: func(err error) {
+			log.Printf("There was an error with the JWKS refresh: %v", err)
+		},
+		RefreshInterval: time.Hour,
+		RefreshTimeout:  time.Second * 10,
+		RefreshUnknownKID: true,
+	}
+	jwks, err = keyfunc.Get(jwksURL, options)
+	if err != nil {
+		log.Printf("Failed to create JWKS from resource at the given URL.\nError: %v", err)
+		// We don't panic here to allow the service to start, but auth will fail
+	} else {
+		log.Println("JWKS initialized successfully.")
+	}
+}
 
 func init() {
 	// Initialize AWS Client
@@ -118,14 +152,25 @@ func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		tokenString := parts[1]
 		claims := &Claims{}
 
-		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-			}
-			return jwtSecret, nil
-		})
+		// Use JWKS if available (Cognito Mode), otherwise fallback to local secret (Dev/Mock Mode)
+		var token *jwt.Token
+		var err error
+
+		if jwks != nil {
+			// Validate using Cognito Public Keys (RSA)
+			token, err = jwt.ParseWithClaims(tokenString, claims, jwks.Keyfunc)
+		} else {
+			// Fallback validation (HMAC) - Only for local testing if env vars are missing
+			token, err = jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+					return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+				}
+				return jwtSecret, nil
+			})
+		}
 
 		if err != nil || !token.Valid {
+			log.Printf("Token validation failed: %v", err)
 			http.Error(w, "Invalid token", http.StatusUnauthorized)
 			return
 		}
@@ -136,6 +181,9 @@ func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
 }
 
 func main() {
+	// Initialize JWKS
+	initJWKS()
+
 	mux := http.NewServeMux()
 
 	// 1. Health Check

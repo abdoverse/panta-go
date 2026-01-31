@@ -3,6 +3,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart'; // Import uuid
 import 'api_config.dart';
 
+class SignUpResult {
+  final bool success;
+  final String? username;
+  final String? error;
+
+  SignUpResult({required this.success, this.username, this.error});
+}
+
 class AuthService {
   final CognitoUserPool _userPool = CognitoUserPool(
     ApiConfig.userPoolId,
@@ -33,7 +41,7 @@ class AuthService {
   }
 
   // Sign Up
-  Future<String?> signUp(String email, String password) async {
+  Future<SignUpResult> signUp(String email, String password, String role) async {
     try {
       // Generate a unique username because 'email' cannot be the username when email alias is enabled
       final username = const Uuid().v4();
@@ -43,9 +51,26 @@ class AuthService {
         password,
         userAttributes: [
           AttributeArg(name: 'email', value: email),
+          AttributeArg(name: 'nickname', value: role),
         ],
       );
-      return null;
+      return SignUpResult(success: true, username: username);
+    } on CognitoClientException catch (e) {
+      return SignUpResult(success: false, error: e.message);
+    } catch (e) {
+      return SignUpResult(success: false, error: 'Unknown error: $e');
+    }
+  }
+
+  // Confirm Registration
+  Future<String?> confirmUser(String username, String code) async {
+    final cognitoUser = CognitoUser(username, _userPool);
+    try {
+      final success = await cognitoUser.confirmRegistration(code);
+      if (success) {
+        return null;
+      }
+      return 'Confirmation failed';
     } on CognitoClientException catch (e) {
       return e.message;
     } catch (e) {

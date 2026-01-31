@@ -13,6 +13,8 @@ class PantaProvider extends ChangeNotifier {
   String? _currentUserId;
   bool _isHelper = false;
 
+  String? _tempSignupUsername; // Store generated username for confirmation
+
   bool get isHelper => _isHelper;
   bool get isLoading => _isLoading;
   List<RecyclingRequest> get requests => _requests;
@@ -44,8 +46,19 @@ class PantaProvider extends ChangeNotifier {
     return error;
   }
 
-  Future<String?> signUp(String username, String password) async {
-    return await _authService.signUp(username, password);
+  Future<String?> signUp(String username, String password, String role) async {
+    final result = await _authService.signUp(username, password, role);
+    if (result.success) {
+      _tempSignupUsername = result.username;
+      return null;
+    }
+    return result.error;
+  }
+
+  Future<String?> confirmUser(String email, String code) async {
+    // Ideally use stored username, fallback to email if somehow missing (though likely to fail if alias used)
+    final usernameToConfirm = _tempSignupUsername ?? email;
+    return await _authService.confirmUser(usernameToConfirm, code);
   }
 
   Future<void> fetchRequests({bool silent = false}) async {
