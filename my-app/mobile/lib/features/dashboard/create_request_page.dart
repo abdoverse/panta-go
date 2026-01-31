@@ -63,8 +63,32 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                       label: "From",
                       date: _fromDate,
                       onTap: () async {
-                         final d = await showDatePicker(context: context, firstDate: DateTime.now(), lastDate: DateTime(2030), initialDate: _fromDate);
-                         if(d != null) setState(() => _fromDate = d);
+                        final date = await showDatePicker(
+                          context: context,
+                          firstDate: DateTime.now().subtract(const Duration(days: 1)),
+                          lastDate: DateTime(2030),
+                          initialDate: _fromDate,
+                        );
+                        if (date != null && context.mounted) {
+                          final time = await showTimePicker(
+                            context: context,
+                            initialTime: TimeOfDay.fromDateTime(_fromDate),
+                            builder: (BuildContext context, Widget? child) {
+                              return MediaQuery(
+                                data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+                                child: child!,
+                              );
+                            },
+                          );
+                          final newTime = time ?? TimeOfDay.fromDateTime(_fromDate);
+                          setState(() => _fromDate = DateTime(
+                            date.year,
+                            date.month,
+                            date.day,
+                            newTime.hour,
+                            newTime.minute,
+                          ));
+                        }
                       },
                     ),
                   ),
@@ -74,8 +98,32 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                       label: "To",
                       date: _toDate,
                       onTap: () async {
-                         final d = await showDatePicker(context: context, firstDate: DateTime.now(), lastDate: DateTime(2025), initialDate: _toDate);
-                         if(d != null) setState(() => _toDate = d);
+                        final date = await showDatePicker(
+                          context: context,
+                          firstDate: DateTime.now().subtract(const Duration(days: 1)),
+                          lastDate: DateTime(2030),
+                          initialDate: _toDate,
+                        );
+                        if (date != null && context.mounted) {
+                          final time = await showTimePicker(
+                            context: context,
+                            initialTime: TimeOfDay.fromDateTime(_toDate),
+                            builder: (BuildContext context, Widget? child) {
+                              return MediaQuery(
+                                data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+                                child: child!,
+                              );
+                            },
+                          );
+                          final newTime = time ?? TimeOfDay.fromDateTime(_toDate);
+                          setState(() => _toDate = DateTime(
+                            date.year,
+                            date.month,
+                            date.day,
+                            newTime.hour,
+                            newTime.minute,
+                          ));
+                        }
                       },
                     ),
                   ),
@@ -150,7 +198,7 @@ class _DateSelector extends StatelessWidget {
             const SizedBox(height: 4),
             Row(
               children: [
-                const Icon(Icons.calendar_today, size: 16, color: AppTheme.primaryGreen),
+                const Icon(Icons.event, size: 16, color: AppTheme.primaryGreen),
                 const SizedBox(width: 8),
                 Text(DateFormat('MMM dd, HH:mm').format(date), style: const TextStyle(fontWeight: FontWeight.bold)),
               ],
