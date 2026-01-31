@@ -24,6 +24,7 @@ class _HelperHomePageState extends State<HelperHomePage> {
         children: [
           const _MarketplaceView(),
           const _MyJobsView(),
+          const _HistoryView(), // New History Tab
           const ProfileScreen(isHelper: true),
         ],
       ),
@@ -40,6 +41,11 @@ class _HelperHomePageState extends State<HelperHomePage> {
              icon: Icon(Icons.check_circle_outline),
              selectedIcon: Icon(Icons.check_circle),
              label: 'My Jobs'
+          ),
+          NavigationDestination(
+             icon: Icon(Icons.history_outlined),
+             selectedIcon: Icon(Icons.history),
+             label: 'History'
           ),
           NavigationDestination(
              icon: Icon(Icons.person_outline),
@@ -131,11 +137,39 @@ class _MyJobsView extends StatelessWidget {
   }
 }
 
+class _HistoryView extends StatelessWidget {
+  const _HistoryView();
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<PantaProvider>();
+    final jobs = provider.completedJobs;
+
+    return Scaffold(
+      appBar: AppBar(title: const Text("Pickup History")),
+      body: jobs.isEmpty
+          ? const Center(child: Text("No completed jobs yet."))
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: jobs.length,
+              itemBuilder: (context, index) {
+                return _JobCard(job: jobs[index], isAcceptable: false, isCompleted: true);
+              },
+            ),
+    );
+  }
+}
+
 class _JobCard extends StatelessWidget {
   final RecyclingRequest job;
   final bool isAcceptable;
+  final bool isCompleted;
 
-  const _JobCard({required this.job, required this.isAcceptable});
+  const _JobCard({
+    required this.job,
+    required this.isAcceptable,
+    this.isCompleted = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -178,7 +212,23 @@ class _JobCard extends StatelessWidget {
                    ],
                  ),
                   const SizedBox(height: 16),
-                 if (isAcceptable)
+                 if (isCompleted)
+                   Container(
+                     width: double.infinity,
+                     padding: const EdgeInsets.all(12),
+                     decoration: BoxDecoration(
+                       color: Colors.grey[100],
+                       borderRadius: BorderRadius.circular(8),
+                       border: Border.all(color: Colors.grey[300]!)
+                     ),
+                     child: const Center(
+                       child: Text(
+                         "Completed",
+                         style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
+                       ),
+                     ),
+                   )
+                 else if (isAcceptable)
                    SizedBox(
                      width: double.infinity,
                      child: ElevatedButton(

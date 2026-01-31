@@ -33,6 +33,9 @@ class PantaProvider extends ChangeNotifier {
   List<RecyclingRequest> get acceptedJobs =>
       _requests.where((r) => r.status == RequestStatus.accepted && r.helperId == 'currentHelper').toList();
 
+  List<RecyclingRequest> get completedJobs =>
+      _requests.where((r) => r.status == RequestStatus.pickedUp && r.helperId == 'currentHelper').toList();
+
   Future<String?> login(String username, String password, bool asHelper) async {
     _isHelper = asHelper;
     // For demo, we are using the email as username
