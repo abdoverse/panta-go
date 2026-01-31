@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
 import '../../providers/panta_provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../services/location_service.dart';
 import 'package:intl/intl.dart';
 
 class CreateRequestPage extends StatefulWidget {
@@ -15,8 +17,41 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _locationController = TextEditingController();
+  LocationSuggestion? _selectedLocation;
+
   DateTime _fromDate = DateTime.now();
   DateTime _toDate = DateTime.now().add(const Duration(hours: 2));
+
+  @override
+  void initState() {
+    super.initState();
+    _locationController.addListener(_onLocationChanged);
+  }
+
+  void _onLocationChanged() {
+    if (_selectedLocation != null) {
+      // If user types something different than the selected title, invalidate the selection
+      // This happens when user edits the text after selection.
+      // We check safe access just in case
+      if (_locationController.text != _selectedLocation!.title) {
+        // We only clear if strictly different.
+        // Note: setting text in onSelected will trigger this, so we need to be careful.
+        // But in onSelected we set text = title. So they ARE equal.
+        // If user subsequently types, they won't be equal.
+        setState(() {
+          _selectedLocation = null;
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _locationController.removeListener(_onLocationChanged);
+    _titleController.dispose();
+    _locationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,13 +78,43 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
               const SizedBox(height: 24),
               const Text("Location", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               const SizedBox(height: 12),
-              TextFormField(
+              TypeAheadField<LocationSuggestion>(
                 controller: _locationController,
-                decoration: const InputDecoration(
-                  hintText: 'Enter pickup address',
-                  prefixIcon: Icon(Icons.location_on_outlined),
-                ),
-                 validator: (v) => v!.isEmpty ? 'Please enter location' : null,
+                suggestionsCallback: (pattern) async {
+                  return await LocationService().getSuggestions(pattern);
+                },
+                builder: (context, controller, focusNode) {
+                  return TextFormField(
+                    controller: controller,
+                    focusNode: focusNode,
+                    decoration: const InputDecoration(
+                      hintText: 'Enter pickup address',
+                      prefixIcon: Icon(Icons.location_on_outlined),
+                    ),
+                    validator: (v) => v!.isEmpty ? 'Please enter location' : null,
+                  );
+                },
+                itemBuilder: (context, suggestion) {
+                  return ListTile(
+                    leading: const Icon(Icons.location_on_outlined),
+                    title: Text(suggestion.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text(suggestion.subtitle, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  );
+                },
+                onSelected: (suggestion) {
+                   setState(() {
+                     _selectedLocation = suggestion;
+                     // Show "Title, City" in the input field
+                     String displayText = suggestion.title;
+                     if (suggestion.city != null && suggestion.city!.isNotEmpty) {
+                       // Only add city if it's not already in the title to avoid duplication
+                       if (!displayText.contains(suggestion.city!)) {
+                          displayText = "$displayText, ${suggestion.city}";
+                       }
+                     }
+                     _locationController.text = displayText;
+                   });
+                },
               ),
 
               const SizedBox(height: 24),
@@ -148,11 +213,18 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
   Future<void> _submit() async {
     if (_formKey.currentState!.validate()) {
       // Show loading indicator or handle state properly
+
+      // Use the full displayName if we have a valid selection object matching the current text.
+      // Otherwise allow manual entry (which falls back to controller.text).
+      final locationToSend = _selectedLocation != null
+          ? _selectedLocation!.displayName
+          : _locationController.text;
+
       final success = await context.read<PantaProvider>().createRequest(
         _titleController.text,
         _fromDate,
         _toDate,
-        _locationController.text,
+        locationToSend,
       );
 
       if (!mounted) return;
