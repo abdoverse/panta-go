@@ -4,6 +4,7 @@ import * as assets from 'aws-cdk-lib/aws-ecr-assets';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns';
+import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as path from 'path';
 
 export class InfraStack extends cdk.Stack {
@@ -36,6 +37,13 @@ export class InfraStack extends cdk.Stack {
       vpc: vpc,
     });
 
+    // Create DynamoDB Table
+    const table = new dynamodb.Table(this, 'PantaRequestsTable', {
+      partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.DESTROY, // For dev/demo only
+    });
+
     // Create a Fargate Service with an Application Load Balancer
     // This serves as the equivalent to App Runner for regions where App Runner is unavailable
     const fargateService = new ecs_patterns.ApplicationLoadBalancedFargateService(this, 'PantaGoBackendService', {
@@ -48,11 +56,16 @@ export class InfraStack extends cdk.Stack {
         containerPort: 8080,
         environment: {
             PORT: '8080',
+            TABLE_NAME: table.tableName,
+            AWS_REGION: this.region,
         },
       },
       publicLoadBalancer: true,
       assignPublicIp: true, // Needed because we have no NAT Gateway
     });
+
+    // Grant DynamoDB permissions to the Fargate service
+    table.grantReadWriteData(fargateService.taskDefinition.taskRole);
 
     // Configure Health Check
     fargateService.targetGroup.configureHealthCheck({

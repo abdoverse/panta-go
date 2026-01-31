@@ -1,9 +1,11 @@
 # STAGE 1: Builder
-FROM golang:1.22-alpine AS builder
+FROM golang:1.23-alpine AS builder
 WORKDIR /app
 COPY go.mod ./
 # (If you had dependencies, we would run 'go mod download' here)
 COPY . .
+# Download dependencies
+RUN go mod tidy
 # Build static binary, strip debug info
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o /server ./cmd/api/main.go
 
