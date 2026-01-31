@@ -184,13 +184,37 @@ class _MyJobsView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text("My Active Jobs")),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: jobs.length,
-        itemBuilder: (context, index) {
-          return _JobCard(job: jobs[index], isAcceptable: false);
-        },
-      ),
+      body: jobs.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.assignment_outlined, size: 80, color: Colors.grey[300]),
+                  const SizedBox(height: 16),
+                  Text("No Active Jobs",
+                      style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[600])),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 40),
+                    child: Text(
+                      "Go to the 'Available' tab to find recycling requests nearby.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey[500]),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: jobs.length,
+              itemBuilder: (context, index) {
+                return _JobCard(job: jobs[index], isAcceptable: false);
+              },
+            ),
     );
   }
 }
