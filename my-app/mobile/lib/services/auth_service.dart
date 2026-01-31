@@ -12,6 +12,14 @@ class SignUpResult {
 }
 
 class AuthService {
+  static final AuthService _instance = AuthService._internal();
+
+  factory AuthService() {
+    return _instance;
+  }
+
+  AuthService._internal();
+
   final CognitoUserPool _userPool = CognitoUserPool(
     ApiConfig.userPoolId,
     ApiConfig.clientId,

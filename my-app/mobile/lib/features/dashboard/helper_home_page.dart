@@ -28,17 +28,21 @@ class _HelperHomePageState extends State<HelperHomePage> {
 
   void _connectWebSocket() async {
     final token = await AuthService().getToken();
-    if (token == null) return;
-
-    // Convert http(s) to ws(s)
-    String wsUrl = ApiConfig.baseUrl.replaceAll('http', 'ws');
-    // Ensure we handle https -> wss
-    if (ApiConfig.baseUrl.startsWith('https')) {
-       wsUrl = ApiConfig.baseUrl.replaceAll('https', 'wss');
+    if (token == null) {
+      debugPrint('WS Error: No Auth Token available');
+      return;
     }
 
-    // Connect to /api/v1/ws with token param as a fallback/simpler auth for WS
-    final uri = Uri.parse('$wsUrl/api/v1/ws').replace(queryParameters: {'token': token});
+    // Parse the base URL to correctly switch scheme from http -> ws / https -> wss
+    final baseUri = Uri.parse(ApiConfig.baseUrl);
+    final wsScheme = baseUri.scheme == 'https' ? 'wss' : 'ws';
+
+    // Connect to /api/v1/ws with token param
+    final uri = baseUri.replace(
+      scheme: wsScheme,
+      path: '/api/v1/ws',
+      queryParameters: {'token': token},
+    );
 
     try {
       _channel = WebSocketChannel.connect(uri);
