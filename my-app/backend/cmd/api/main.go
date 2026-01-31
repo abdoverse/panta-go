@@ -30,6 +30,13 @@ func main() {
 		})
 	})
 
+	// Explicit Hello World endpoint
+	mux.HandleFunc("/helloworld", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Hello World"))
+	})
+
 	// 3. Root Endpoint
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
