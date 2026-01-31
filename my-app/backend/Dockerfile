@@ -7,7 +7,7 @@ COPY . .
 # Download dependencies
 RUN go mod tidy
 # Build static binary, strip debug info
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o /server ./cmd/api/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o /server ./cmd/api
 
 # STAGE 2: Runtime (Distroless for security)
 FROM gcr.io/distroless/static-debian12

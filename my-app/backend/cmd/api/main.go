@@ -53,6 +53,7 @@ var (
 	svc       *dynamodb.Client
 	tableName string
 	jwtSecret = []byte(os.Getenv("JWT_SECRET"))
+	hub       *Hub
 )
 
 // Global JWKS
@@ -184,6 +185,10 @@ func main() {
 	// Initialize JWKS
 	initJWKS()
 
+	// Initialize WebSocket Hub
+	hub = newHub()
+	go hub.run()
+
 	mux := http.NewServeMux()
 
 	// 1. Health Check
@@ -298,6 +303,9 @@ func main() {
 				return
 			}
 
+			// Broadcast Update
+			hub.broadcast <- []byte(`{"type":"refresh"}`)
+
 			jsonResponse(w, 201, req)
 			return
 		}
@@ -347,6 +355,9 @@ func main() {
 			return
 		}
 
+		// Broadcast Update
+		hub.broadcast <- []byte(`{"type":"refresh"}`)
+
 		jsonResponse(w, 200, map[string]string{"status": "accepted"})
 	}))
 
@@ -382,6 +393,9 @@ func main() {
 			jsonResponse(w, 500, map[string]string{"error": "Failed to update request"})
 			return
 		}
+
+		// Broadcast Update
+		hub.broadcast <- []byte(`{"type":"refresh"}`)
 
 		jsonResponse(w, 200, map[string]string{"status": "pickedUp"})
 	}))
@@ -419,8 +433,57 @@ func main() {
 			return
 		}
 
+		// Optional: Broadcast if rating changes view, otherwise not strictly needed
+		// hub.broadcast <- []byte(`{"type":"refresh"}`)
+
 		jsonResponse(w, 200, map[string]string{"status": "rated"})
 	}))
+
+	// WebSocket Endpoint
+	mux.HandleFunc("/api/v1/ws", func(w http.ResponseWriter, r *http.Request) {
+		// Verify token (simplified authMiddleware for upgrading)
+		// For WS, auth often happens via query param "token" in `ws://url?token=...`
+		// or headers (requires specific client support).
+
+		// Extract token from query param since standard JS WebSocket API doesn't support custom headers easily,
+		// but standard libraries usually do. Let's try header first, if missing check query.
+		tokenString := r.URL.Query().Get("token")
+		if tokenString == "" {
+			// Fallback to Header logic if possible (e.g. from Flutter)
+			authHeader := r.Header.Get("Authorization")
+			if authHeader != "" && strings.HasPrefix(authHeader, "Bearer ") {
+				tokenString = strings.TrimPrefix(authHeader, "Bearer ")
+			}
+		}
+
+		if tokenString == "" {
+			http.Error(w, "Unauthorized: missing token", http.StatusUnauthorized)
+			return
+		}
+
+		// Token Validation (same as middleware)
+		claims := &Claims{}
+		var token *jwt.Token
+		var err error
+
+		if jwks != nil {
+			token, err = jwt.ParseWithClaims(tokenString, claims, jwks.Keyfunc)
+		} else {
+			token, err = jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+					return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+				}
+				return jwtSecret, nil
+			})
+		}
+
+		if err != nil || !token.Valid {
+			http.Error(w, "Unauthorized: invalid token", http.StatusUnauthorized)
+			return
+		}
+
+		serveWs(hub, w, r)
+	})
 
 	// Hello World
 	mux.HandleFunc("/helloworld", func(w http.ResponseWriter, r *http.Request) {

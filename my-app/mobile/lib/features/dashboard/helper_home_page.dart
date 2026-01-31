@@ -4,6 +4,9 @@ import '../../providers/panta_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/request_model.dart';
 import '../shared/profile_screen.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
+import '../../services/api_config.dart';
+import '../../services/auth_service.dart';
 
 class HelperHomePage extends StatefulWidget {
   const HelperHomePage({super.key});
@@ -14,6 +17,57 @@ class HelperHomePage extends StatefulWidget {
 
 class _HelperHomePageState extends State<HelperHomePage> {
   int _currentIndex = 0;
+  WebSocketChannel? _channel;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize WebSocket connection
+    _connectWebSocket();
+  }
+
+  void _connectWebSocket() async {
+    final token = await AuthService().getToken();
+    if (token == null) return;
+
+    // Convert http(s) to ws(s)
+    String wsUrl = ApiConfig.baseUrl.replaceAll('http', 'ws');
+    // Ensure we handle https -> wss
+    if (ApiConfig.baseUrl.startsWith('https')) {
+       wsUrl = ApiConfig.baseUrl.replaceAll('https', 'wss');
+    }
+
+    // Connect to /api/v1/ws with token param as a fallback/simpler auth for WS
+    final uri = Uri.parse('$wsUrl/api/v1/ws').replace(queryParameters: {'token': token});
+
+    try {
+      _channel = WebSocketChannel.connect(uri);
+
+      _channel!.stream.listen(
+        (message) {
+          if (message.toString().contains('"type":"refresh"')) {
+            if (mounted) {
+              context.read<PantaProvider>().fetchRequests(silent: true);
+            }
+          }
+        },
+        onError: (error) {
+          debugPrint('WS Error: $error');
+        },
+        onDone: () {
+          debugPrint('WS Closed');
+        },
+      );
+    } catch (e) {
+      debugPrint('WS Connection Error: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    _channel?.sink.close();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

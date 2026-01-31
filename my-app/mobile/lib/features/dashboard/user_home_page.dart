@@ -5,7 +5,9 @@ import '../../core/theme/app_theme.dart';
 import '../../models/request_model.dart';
 import 'create_request_page.dart';
 import '../shared/profile_screen.dart';
-import 'dart:async'; // Import for Timer
+import 'package:web_socket_channel/web_socket_channel.dart';
+import '../../services/api_config.dart';
+import '../../services/auth_service.dart';
 
 class UserHomePage extends StatefulWidget {
   const UserHomePage({super.key});
@@ -16,22 +18,59 @@ class UserHomePage extends StatefulWidget {
 
 class _UserHomePageState extends State<UserHomePage> {
   int _currentIndex = 0;
-  Timer? _pollingTimer;
+  WebSocketChannel? _channel;
 
   @override
   void initState() {
     super.initState();
-    // Poll for updates every 3 seconds to simulate realtime
-    _pollingTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
-      if (mounted) {
-        context.read<PantaProvider>().fetchRequests(silent: true);
-      }
-    });
+    // Initialize WebSocket connection
+    _connectWebSocket();
+  }
+
+  void _connectWebSocket() async {
+    final token = await AuthService().getToken();
+    if (token == null) return;
+
+    // Convert http(s) to ws(s)
+    String wsUrl = ApiConfig.baseUrl.replaceAll('http', 'ws');
+    // Ensure we handle https -> wss
+    if (ApiConfig.baseUrl.startsWith('https')) {
+       wsUrl = ApiConfig.baseUrl.replaceAll('https', 'wss');
+    }
+
+    // Connect to /api/v1/ws with token param as a fallback/simpler auth for WS
+    // Note: IOClient supports headers, but ensuring cross-platform compat with query params is safer
+    // unless standard library prevents headers cleanly.
+    // But our backend supports query param 'token' now.
+    final uri = Uri.parse('$wsUrl/api/v1/ws').replace(queryParameters: {'token': token});
+
+    try {
+      _channel = WebSocketChannel.connect(uri);
+
+      _channel!.stream.listen(
+        (message) {
+          if (message.toString().contains('"type":"refresh"')) {
+            if (mounted) {
+              context.read<PantaProvider>().fetchRequests(silent: true);
+            }
+          }
+        },
+        onError: (error) {
+          debugPrint('WS Error: $error');
+          // Simple reconnect logic could go here
+        },
+        onDone: () {
+          debugPrint('WS Closed');
+        },
+      );
+    } catch (e) {
+      debugPrint('WS Connection Error: $e');
+    }
   }
 
   @override
   void dispose() {
-    _pollingTimer?.cancel();
+    _channel?.sink.close();
     super.dispose();
   }
 
