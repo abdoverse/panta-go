@@ -59,14 +59,14 @@ class PantaProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> createRequest(String title, DateTime from, DateTime to, String location) async {
+  Future<bool> createRequest(String title, DateTime from, DateTime to, String location) async {
     _isLoading = true;
     notifyListeners();
 
     final body = json.encode({
       'title': title,
-      'scheduledFrom': from.toIso8601String(),
-      'scheduledTo': to.toIso8601String(),
+      'scheduledFrom': from.toUtc().toIso8601String(),
+      'scheduledTo': to.toUtc().toIso8601String(),
       'location': location,
       'imageUrl': 'assets/images/generic.png',
       'isRated': false,
@@ -82,9 +82,13 @@ class PantaProvider extends ChangeNotifier {
       if (response.statusCode == 201) {
         // Refresh list
         await fetchRequests();
+        return true;
       }
+      debugPrint("API Error: ${response.statusCode} - ${response.body}");
+      return false;
     } catch (e) {
       debugPrint('Error creating request: $e');
+      return false;
     } finally {
       _isLoading = false;
       notifyListeners();

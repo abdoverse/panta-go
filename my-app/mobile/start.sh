@@ -28,7 +28,15 @@ flutter create .
 echo "📦 Installing packages..."
 flutter pub get
 
+# Seed backend data
+echo "🌱 Seeding backend data..."
+if [ -f "../../seed.js" ]; then
+    node ../../seed.js
+else
+    echo "⚠️  Seed script not found at ../../seed.js, skipping."
+fi
+
 # Run the app
 echo "🚀 Launching App..."
 echo "   If multiple devices are connected, select one from the list."
-flutter run -d chrome
+flutter run -d chrome --web-port 3000

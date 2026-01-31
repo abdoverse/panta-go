@@ -63,7 +63,7 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                       label: "From",
                       date: _fromDate,
                       onTap: () async {
-                         final d = await showDatePicker(context: context, firstDate: DateTime.now(), lastDate: DateTime(2025), initialDate: _fromDate);
+                         final d = await showDatePicker(context: context, firstDate: DateTime.now(), lastDate: DateTime(2030), initialDate: _fromDate);
                          if(d != null) setState(() => _fromDate = d);
                       },
                     ),
@@ -97,16 +97,29 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
     );
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (_formKey.currentState!.validate()) {
-      context.read<PantaProvider>().createRequest(
+      // Show loading indicator or handle state properly
+      final success = await context.read<PantaProvider>().createRequest(
         _titleController.text,
         _fromDate,
         _toDate,
         _locationController.text,
       );
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Request Created!")));
+
+      if (!mounted) return;
+
+      if (success) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Request Created!")));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Failed to create request. Check console for details."),
+            backgroundColor: Colors.red,
+          )
+        );
+      }
     }
   }
 }

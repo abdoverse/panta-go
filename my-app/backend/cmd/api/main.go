@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -60,6 +61,23 @@ func errorIs(err error, target interface{}) bool {
 	return errors.As(err, target)
 }
 
+// CORS Middleware
+func enableCORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		// Handle preflight requests
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 func main() {
 	mux := http.NewServeMux()
 
@@ -109,7 +127,7 @@ func main() {
 		if r.Method == http.MethodPost {
 			var req RecyclingRequest
 			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-				jsonResponse(w, 400, map[string]string{"error": "Invalid payload"})
+				jsonResponse(w, 400, map[string]string{"error": fmt.Sprintf("Invalid payload: %v", err)})
 				return
 			}
 
@@ -284,7 +302,11 @@ func main() {
 		port = "8080"
 	}
 	log.Printf("Server starting on port %s", port)
-	if err := http.ListenAndServe(":"+port, mux); err != nil {
+
+	// Wrap mux with CORS middleware
+	handler := enableCORS(mux)
+
+	if err := http.ListenAndServe(":"+port, handler); err != nil {
 		log.Fatal(err)
 	}
 }
