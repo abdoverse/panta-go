@@ -22,25 +22,31 @@ class _PantaAppState extends State<PantaApp> {
   void _setupForegroundMessaging() {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       debugPrint('Got a message whilst in the foreground!');
+      debugPrint('Message data: ${message.data}');
+
       RemoteNotification? notification = message.notification;
 
       if (notification != null) {
+        debugPrint('Message also contained a notification: ${notification.title}');
         // Show SnackBar for any notification payload in foreground
-        snackbarKey.currentState?.showSnackBar(
-          SnackBar(
-            content: Text('${notification.title ?? "Notification"}: ${notification.body ?? ""}'),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 5),
-            action: SnackBarAction(
-              label: 'VIEW',
-              textColor: Colors.white,
-              onPressed: () {
-                // Handle tap logic if needed
-              },
-            ),
-          ),
-        );
+        // Use a slight delay to ensure key is mounted if called extremely early (unlikely here but safe)
+        if (snackbarKey.currentState != null) {
+             snackbarKey.currentState!.showSnackBar(
+              SnackBar(
+                content: Text('${notification.title ?? "Notification"}: ${notification.body ?? ""}'),
+                behavior: SnackBarBehavior.floating,
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 5),
+                action: SnackBarAction(
+                  label: 'VIEW',
+                  textColor: Colors.white,
+                  onPressed: () {},
+                ),
+              ),
+            );
+        } else {
+            debugPrint("Snackbar key current state is null!");
+        }
       }
     });
   }
