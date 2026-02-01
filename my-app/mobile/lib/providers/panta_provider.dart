@@ -181,7 +181,7 @@ class PantaProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> rateHelper(String id, double rating) async {
+  Future<void> rateHelper(String id, double rating, {String? comment}) async {
     final token = await _authService.getToken();
     if (token == null) return;
 
@@ -192,7 +192,11 @@ class PantaProvider extends ChangeNotifier {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-        body: json.encode({'id': id, 'rating': rating}),
+        body: json.encode({
+          'id': id,
+          'rating': rating,
+          'comment': comment ?? '', // Pass comment field
+        }),
       );
       if (response.statusCode == 200) {
         await fetchRequests();
@@ -215,6 +219,8 @@ class PantaProvider extends ChangeNotifier {
       status: _parseStatus(json['status']),
       helperId: json['helperId'],
       isRated: json['isRated'] ?? false,
+      rating: json['rating'] != null ? double.tryParse(json['rating'].toString()) : null,
+      ratingComment: json['ratingComment'],
     );
   }
 

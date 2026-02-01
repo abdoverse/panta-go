@@ -31,6 +31,8 @@ type RecyclingRequest struct {
 	Status        string    `json:"status" dynamodbav:"status"`
 	HelperID      string    `json:"helperId,omitempty" dynamodbav:"helperId,omitempty"`
 	IsRated       bool      `json:"isRated" dynamodbav:"isRated"`
+	Rating        float64   `json:"rating,omitempty" dynamodbav:"rating,omitempty"`
+	RatingComment string    `json:"ratingComment,omitempty" dynamodbav:"ratingComment,omitempty"`
 }
 
 // Auth Types
@@ -408,8 +410,9 @@ func main() {
 		}
 
 		var payload struct {
-			ID     string  `json:"id"`
-			Rating float64 `json:"rating"`
+			ID      string  `json:"id"`
+			Rating  float64 `json:"rating"`
+			Comment string  `json:"comment"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 			jsonResponse(w, 400, map[string]string{"error": "Invalid payload"})
@@ -421,9 +424,11 @@ func main() {
 			Key: map[string]types.AttributeValue{
 				"id": &types.AttributeValueMemberS{Value: payload.ID},
 			},
-			UpdateExpression:          aws.String("SET isRated = :true"),
+			UpdateExpression: aws.String("SET isRated = :true, rating = :r, ratingComment = :c"),
 			ExpressionAttributeValues: map[string]types.AttributeValue{
 				":true": &types.AttributeValueMemberBOOL{Value: true},
+				":r":    &types.AttributeValueMemberN{Value: fmt.Sprintf("%f", payload.Rating)},
+				":c":    &types.AttributeValueMemberS{Value: payload.Comment},
 			},
 		})
 

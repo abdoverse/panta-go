@@ -10,6 +10,8 @@ class RecyclingRequest {
   final RequestStatus status;
   final String? helperId;
   final bool isRated;
+  final double? rating;
+  final String? ratingComment;
 
   RecyclingRequest({
     required this.id,
@@ -21,12 +23,16 @@ class RecyclingRequest {
     this.status = RequestStatus.pending,
     this.helperId,
     this.isRated = false,
+    this.rating,
+    this.ratingComment,
   });
 
   RecyclingRequest copyWith({
     RequestStatus? status,
     String? helperId,
     bool? isRated,
+    double? rating,
+    String? ratingComment,
   }) {
     return RecyclingRequest(
       id: id,
@@ -38,6 +44,8 @@ class RecyclingRequest {
       status: status ?? this.status,
       helperId: helperId ?? this.helperId,
       isRated: isRated ?? this.isRated,
+      rating: rating ?? this.rating,
+      ratingComment: ratingComment ?? this.ratingComment,
     );
   }
 }

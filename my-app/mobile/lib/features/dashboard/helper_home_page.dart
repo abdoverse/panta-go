@@ -313,20 +313,61 @@ class _JobCard extends StatelessWidget {
                  ),
                   const SizedBox(height: 16),
                  if (isCompleted)
-                   Container(
-                     width: double.infinity,
-                     padding: const EdgeInsets.all(12),
-                     decoration: BoxDecoration(
-                       color: Colors.grey[100],
-                       borderRadius: BorderRadius.circular(8),
-                       border: Border.all(color: Colors.grey[300]!)
-                     ),
-                     child: const Center(
-                       child: Text(
-                         "Completed",
-                         style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
+                   Column(
+                     crossAxisAlignment: CrossAxisAlignment.start,
+                     children: [
+                       Container(
+                         width: double.infinity,
+                         padding: const EdgeInsets.all(12),
+                         decoration: BoxDecoration(
+                           color: Colors.grey[100],
+                           borderRadius: BorderRadius.circular(8),
+                           border: Border.all(color: Colors.grey[300]!)
+                         ),
+                         child: const Center(
+                           child: Text(
+                             "Completed",
+                             style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
+                           ),
+                         ),
                        ),
-                     ),
+                       if (job.isRated)
+                         Padding(
+                           padding: const EdgeInsets.only(top: 12.0),
+                           child: Container(
+                             width: double.infinity,
+                             padding: const EdgeInsets.all(12),
+                             decoration: BoxDecoration(
+                               color: Colors.amber.withOpacity(0.1),
+                               borderRadius: BorderRadius.circular(8),
+                               border: Border.all(color: Colors.amber.withOpacity(0.3)),
+                             ),
+                             child: Column(
+                               crossAxisAlignment: CrossAxisAlignment.start,
+                               children: [
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.star, size: 16, color: Colors.amber),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        "Rated ${job.rating?.toStringAsFixed(1) ?? 'N/A'}",
+                                        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.amber),
+                                      ),
+                                    ],
+                                  ),
+                                  if (job.ratingComment != null && job.ratingComment!.isNotEmpty)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 4.0),
+                                      child: Text(
+                                        "\"${job.ratingComment}\"",
+                                        style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey[700]),
+                                      ),
+                                    ),
+                               ],
+                             ),
+                           ),
+                         ),
+                     ],
                    )
                  else if (isAcceptable)
                    SizedBox(

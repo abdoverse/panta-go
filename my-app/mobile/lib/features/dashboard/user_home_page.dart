@@ -345,28 +345,75 @@ class _RequestCard extends StatelessWidget {
   }
 
   void _showRatingDialog(BuildContext context, RecyclingRequest request) {
+    // We need a stateful widget inside the dialog to manage the text controller or selection state
+    // But since we just click a star to submit, we can just add a text field and a submit button.
+    // Or keep the star-click-to-submit flow but make it weirder with comment.
+    // Better: Select stars, type comment, then click "Submit".
+
+    final commentController = TextEditingController();
+    double currentRating = 0;
+
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text("Rate your Helper"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text("How was the pickup service?"),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(5, (index) => IconButton(
-                onPressed: () {
-                   context.read<PantaProvider>().rateHelper(request.id, index + 1.0);
-                   Navigator.pop(ctx);
-                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Thank you for your rating!")));
-                },
-                icon: const Icon(Icons.star_border, size: 32, color: Colors.amber),
-              )),
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text("Rate your Helper"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text("How was the pickup service?"),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(5, (index) {
+                    final int starValue = index + 1;
+                    return IconButton(
+                      onPressed: () {
+                        setState(() {
+                          currentRating = starValue.toDouble();
+                        });
+                      },
+                      icon: Icon(
+                        starValue <= currentRating ? Icons.star : Icons.star_border,
+                        size: 32,
+                        color: Colors.amber,
+                      ),
+                    );
+                  }),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: commentController,
+                  decoration: const InputDecoration(
+                    hintText: "Optional comment (e.g. Great job!)",
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  maxLines: 2,
+                ),
+              ],
             ),
-          ],
-        ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text("Cancel"),
+              ),
+              ElevatedButton(
+                onPressed: currentRating > 0 ? () {
+                  context.read<PantaProvider>().rateHelper(
+                    request.id,
+                    currentRating,
+                    comment: commentController.text.isNotEmpty ? commentController.text : null,
+                  );
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Thank you for your rating!")));
+                } : null,
+                child: const Text("Submit"),
+              ),
+            ],
+          );
+        }
       ),
     );
   }
