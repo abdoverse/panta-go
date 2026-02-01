@@ -31,10 +31,10 @@ class PantaProvider extends ChangeNotifier {
       _requests.where((r) => r.status == RequestStatus.pending).toList();
 
   List<RecyclingRequest> get acceptedJobs =>
-      _requests.where((r) => r.status == RequestStatus.accepted && r.helperId == 'currentHelper').toList();
+      _requests.where((r) => r.status == RequestStatus.accepted && r.helperId == _currentUserId).toList();
 
   List<RecyclingRequest> get completedJobs =>
-      _requests.where((r) => r.status == RequestStatus.pickedUp && r.helperId == 'currentHelper').toList();
+      _requests.where((r) => r.status == RequestStatus.pickedUp && r.helperId == _currentUserId).toList();
 
   Future<String?> login(String username, String password, bool asHelper) async {
     _isHelper = asHelper;

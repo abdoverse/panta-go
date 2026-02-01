@@ -178,8 +178,9 @@ func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		// Pass context if needed, for now just allow
-		next(w, r)
+		// Pass context with user claims
+		ctx := context.WithValue(r.Context(), "user", claims)
+		next(w, r.WithContext(ctx))
 	}
 }
 
@@ -322,6 +323,12 @@ func main() {
 			return
 		}
 
+		claims, ok := r.Context().Value("user").(*Claims)
+		if !ok {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
 		var payload struct {
 			ID string `json:"id"`
 		}
@@ -340,7 +347,7 @@ func main() {
 			ExpressionAttributeNames:  map[string]string{"#status": "status"},
 			ExpressionAttributeValues: map[string]types.AttributeValue{
 				":accepted": &types.AttributeValueMemberS{Value: "accepted"},
-				":helperId": &types.AttributeValueMemberS{Value: "currentHelper"},
+				":helperId": &types.AttributeValueMemberS{Value: claims.Name},
 				":pending":  &types.AttributeValueMemberS{Value: "pending"},
 			},
 			ReturnValues: types.ReturnValueAllNew,
