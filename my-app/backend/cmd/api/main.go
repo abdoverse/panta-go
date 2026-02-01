@@ -64,17 +64,45 @@ var (
 	fcmClient *messaging.Client
 )
 
+// Helper to send push notification
+func sendPushNotification(token string, title string, body string) {
+	if fcmClient == nil {
+		log.Println("Skipping notification: FCM client not initialized")
+		return
+	}
+	if token == "" {
+		return
+	}
+
+	start := time.Now()
+	_, err := fcmClient.Send(context.Background(), &messaging.Message{
+		Token: token,
+		Notification: &messaging.Notification{
+			Title: title,
+			Body:  body,
+		},
+		Data: map[string]string{
+			"click_action": "FLUTTER_NOTIFICATION_CLICK",
+		},
+	})
+	if err != nil {
+		log.Printf("Error sending FCM message: %v", err)
+	} else {
+		log.Printf("Notification sent to %s (took %v)", token, time.Since(start))
+	}
+}
+
 // Init Firebase
 func initFirebase() {
 	ctx := context.Background()
 	// Use environment variable GOOGLE_APPLICATION_CREDENTIALS or default to local file for dev
-	// In production (Lambda), you might load this from Secrets Manager or parameter store
-	// For simplicity here, we try to create the app.
-	// If credentials aren't found, it might warn or fail later.
+	var opts []option.ClientOption
+	// If you wanted to force a file:
+	// opts = append(opts, option.WithCredentialsFile("google-services.json"))
+	// But in AWS, we rely on env vars or metadata service.
 
-	// Check if we have a specific env var for the content (common in serverless)
-	// or just rely on standard path.
-	app, err := firebase.NewApp(ctx, nil)
+	// Create app
+	app, err := firebase.NewApp(ctx, nil, opts...)
 	if err != nil {
 		log.Printf("Warning: error initializing Firebase App: %v. Notifications will not work.", err)
 		return
