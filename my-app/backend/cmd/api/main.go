@@ -11,8 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/awslabs/aws-lambda-go-api-proxy/httpadapter"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
@@ -518,23 +516,15 @@ func main() {
 		})
 	})
 
-	// Wrap mux with CORS middleware
-	handler := enableCORS(mux)
-
-	// Check if running in Lambda
-	if os.Getenv("AWS_LAMBDA_FUNCTION_NAME") != "" {
-		log.Println("Starting in Lambda mode...")
-		adapter := httpadapter.New(handler)
-		lambda.Start(adapter.ProxyWithContext)
-		return
-	}
-
 	// 4. Start Server
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 	log.Printf("Server starting on port %s", port)
+
+	// Wrap mux with CORS middleware
+	handler := enableCORS(mux)
 
 	certFile := os.Getenv("TLS_CERT_FILE")
 	keyFile := os.Getenv("TLS_KEY_FILE")
