@@ -104,14 +104,24 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                 onSelected: (suggestion) {
                    setState(() {
                      _selectedLocation = suggestion;
-                     // Show "Title, City" in the input field
+                     // Set user-friendly text: "Title, Subtitle" but simplified
+                     // User requested "keep the city name" but "shorter"
+
+                     // Construct a short display text
                      String displayText = suggestion.title;
                      if (suggestion.city != null && suggestion.city!.isNotEmpty) {
-                       // Only add city if it's not already in the title to avoid duplication
-                       if (!displayText.contains(suggestion.city!)) {
-                          displayText = "$displayText, ${suggestion.city}";
-                       }
+                        if (!displayText.contains(suggestion.city!)) {
+                            displayText = "$displayText, ${suggestion.city}";
+                        }
+                     } else if (suggestion.subtitle.isNotEmpty) {
+                        // Fallback to subtitle if no specific city field found but avoid very long strings
+                        // Take the first part of subtitle (often city or area)
+                        String firstPart = suggestion.subtitle.split(',')[0];
+                        if (!displayText.contains(firstPart)) {
+                             displayText = "$displayText, $firstPart";
+                        }
                      }
+
                      _locationController.text = displayText;
                    });
                 },
@@ -272,6 +282,7 @@ class _DateSelector extends StatelessWidget {
               children: [
                 const Icon(Icons.event, size: 16, color: AppTheme.primaryGreen),
                 const SizedBox(width: 8),
+                // Force strict patterns like 24:00 usage in display
                 Text(DateFormat('MMM dd, HH:mm').format(date), style: const TextStyle(fontWeight: FontWeight.bold)),
               ],
             ),

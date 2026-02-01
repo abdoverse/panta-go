@@ -278,9 +278,22 @@ class _JobCard extends StatelessWidget {
               children: [
                  Row(
                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                   crossAxisAlignment: CrossAxisAlignment.start,
                    children: [
+                     if (index != null)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8.0, top: 2.0),
+                          child: Text(
+                            "#${index! + 1}",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ),
                      Expanded(child: Text(
-                        "${index != null ? '#${index! + 1} ' : ''}${job.title}",
+                        job.title,
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)
                      )),
                      Container(

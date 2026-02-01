@@ -25,34 +25,47 @@ class LocationSuggestion {
     // 1. Determine Title
     // Use 'name' if available, otherwise try 'road', else first part of display_name
     String title = json['name'] as String? ?? '';
+
+    // Logic to prefer road name/house number if pure name is empty
     if (title.isEmpty) {
-      if (address.containsKey('road')) {
-        title = address['road'];
-        if (address.containsKey('house_number')) {
-          title = "${address['house_number']} $title";
-        }
-      } else {
-        title = rawDisplayName.split(',')[0].trim();
-      }
+       if (address.containsKey('road')) {
+         title = address['road'];
+         // Address number often makes it more specific (Uber style)
+         if (address.containsKey('house_number')) {
+           title = "${address['house_number']} $title";
+         }
+       }
     }
 
-    // 2. Determine Subtitle
-    // Construct from significant address parts
+    // If still empty, use the first distinct part of the display name
+    if (title.isEmpty) {
+       title = rawDisplayName.split(',')[0].trim();
+    }
+
+    // 2. Determine Subtitle (City, State, Country context)
     List<String> parts = [];
 
-    // Add neighborhood/suburb if meaningful
+    // Neighborhood/Suburb
     if (address['suburb'] != null && address['suburb'] != title) {
         parts.add(address['suburb']);
     }
 
-    // City hierarchy
+    // City part
     String? city = address['city'] ?? address['town'] ?? address['village'] ?? address['hamlet'];
-    if (city != null && city != title) parts.add(city);
+    // Avoid repeating city if it's already in the title (rare but possible) or subtitle
+    if (city != null && city != title && !parts.contains(city)) {
+        parts.add(city);
+    }
 
-    if (address['state'] != null) parts.add(address['state']);
+    // State/Region - keep it short if possible?? usually just state name
+    if (address['state'] != null && address['state'] != city) {
+        parts.add(address['state']);
+    }
 
-    // Join parts. If empty, fallback to remainder of display name
+    // Join parts.
     String subtitle = parts.join(', ');
+
+    // Fallback if construction failed
     if (subtitle.isEmpty) {
       int firstComma = rawDisplayName.indexOf(',');
       if (firstComma != -1) {
@@ -64,7 +77,7 @@ class LocationSuggestion {
       displayName: rawDisplayName,
       title: title,
       subtitle: subtitle,
-      city: city,
+      city: city, // expose city specifically for the text field logic
       lat: double.tryParse(json['lat'] ?? '0') ?? 0,
       lon: double.tryParse(json['lon'] ?? '0') ?? 0,
     );
