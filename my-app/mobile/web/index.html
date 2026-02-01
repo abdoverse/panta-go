@@ -31,8 +31,23 @@
 
   <title>panta</title>
   <link rel="manifest" href="manifest.json">
+  <!-- Firebase Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js"></script>
 </head>
 <body>
+  <script>
+    var firebaseConfig = {
+  apiKey: "AIzaSyAn1WrZmsT3uDV4N8zDQZ3DIFziCcBzRZg",
+  authDomain: "panta-3dc75.firebaseapp.com",
+  projectId: "panta-3dc75",
+  storageBucket: "panta-3dc75.firebasestorage.app",
+  messagingSenderId: "504471880267",
+  appId: "1:504471880267:web:6a66aff5779318b60083ce",
+  measurementId: "G-L7781ZV3N7"
+};
+    firebase.initializeApp(firebaseConfig);
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter/foundation.dart'; // Add this for kIsWeb
+import 'package:firebase_messaging/firebase_messaging.dart';
 import '../models/request_model.dart';
 import '../services/api_config.dart';
 import '../services/auth_service.dart';
@@ -104,6 +106,29 @@ class PantaProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
+    // Try to get FCM Token
+    String? fcmToken;
+    try {
+        // Request permission primarily for iOS/Web
+        NotificationSettings settings = await FirebaseMessaging.instance.requestPermission(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+
+        if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+           // On Web, you need a VAPID key. Get this from Firebase Console -> Cloud Messaging -> Web Configuration
+           fcmToken = await FirebaseMessaging.instance.getToken(
+             vapidKey: kIsWeb ? "BL4573IrUlN0kK8MKBbLMFCSM-TPVjleJcgAKciiCO32VEEpVuugg4iXA6G341Kp2ZQE1SqqFZokA0ADSnGXUiI" : null,
+           );
+           debugPrint("FCM Token: $fcmToken");
+        } else {
+           debugPrint('User declined or has not accepted permission');
+        }
+    } catch (e) {
+        debugPrint("Failed to get FCM token: $e");
+    }
+
     final body = json.encode({
       'title': title,
       'scheduledFrom': from.toUtc().toIso8601String(),
@@ -111,6 +136,7 @@ class PantaProvider extends ChangeNotifier {
       'location': location,
       'imageUrl': 'assets/images/generic.png',
       'isRated': false,
+      'creatorDeviceToken': fcmToken, // Send token
     });
 
     try {

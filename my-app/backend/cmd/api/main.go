@@ -11,6 +11,10 @@ import (
 	"strings"
 	"time"
 
+	"firebase.google.com/go/v4"
+	"firebase.google.com/go/v4/messaging"
+	"google.golang.org/api/option"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
@@ -33,6 +37,7 @@ type RecyclingRequest struct {
 	IsRated       bool      `json:"isRated" dynamodbav:"isRated"`
 	Rating        float64   `json:"rating,omitempty" dynamodbav:"rating,omitempty"`
 	RatingComment string    `json:"ratingComment,omitempty" dynamodbav:"ratingComment,omitempty"`
+	CreatorDeviceToken string `json:"creatorDeviceToken,omitempty" dynamodbav:"creatorDeviceToken,omitempty"`
 }
 
 // Auth Types
@@ -56,7 +61,32 @@ var (
 	tableName string
 	jwtSecret = []byte(os.Getenv("JWT_SECRET"))
 	hub       *Hub
+	fcmClient *messaging.Client
 )
+
+// Init Firebase
+func initFirebase() {
+	ctx := context.Background()
+	// Use environment variable GOOGLE_APPLICATION_CREDENTIALS or default to local file for dev
+	// In production (Lambda), you might load this from Secrets Manager or parameter store
+	// For simplicity here, we try to create the app.
+	// If credentials aren't found, it might warn or fail later.
+
+	// Check if we have a specific env var for the content (common in serverless)
+	// or just rely on standard path.
+	app, err := firebase.NewApp(ctx, nil)
+	if err != nil {
+		log.Printf("Warning: error initializing Firebase App: %v. Notifications will not work.", err)
+		return
+	}
+
+	fcmClient, err = app.Messaging(ctx)
+	if err != nil {
+		log.Printf("Warning: error getting Messaging client: %v", err)
+	} else {
+		log.Println("Firebase Messaging initialized successfully")
+	}
+}
 
 // Global JWKS
 var jwks *keyfunc.JWKS
@@ -106,6 +136,8 @@ func init() {
 	if len(jwtSecret) == 0 {
 		jwtSecret = []byte("default-secret-key-change-me")
 	}
+	// Initialize Firebase
+	initFirebase()
 }
 
 // Simple JSON helper
@@ -337,7 +369,14 @@ func main() {
 			return
 		}
 
-		_, err := svc.UpdateItem(context.TODO(), &dynamodb.UpdateItemInput{
+		// First, fetch the request to get the creator's device token
+		// We could do this via ReturnValues: ALL_OLD in UpdateItem, but DynamoDB UpdateItem
+		// ReturnValues only supports ALL_NEW, ALL_OLD, etc.
+		// Let's rely on ReturnValues: ALL_NEW from the update to get the token *if* it was there?
+		// No, usually Update doesn't return existing attributes unless they are modified or requested specifically?
+		// Actually ALL_NEW returns the *entire* item after update.
+
+		out, err := svc.UpdateItem(context.TODO(), &dynamodb.UpdateItemInput{
 			TableName: aws.String(tableName),
 			Key: map[string]types.AttributeValue{
 				"id": &types.AttributeValueMemberS{Value: payload.ID},
@@ -362,6 +401,18 @@ func main() {
 				jsonResponse(w, 500, map[string]string{"error": "Failed to update request"})
 			}
 			return
+		}
+
+		// Check for CreatorDeviceToken and send notification
+		var updatedReq RecyclingRequest
+		if err := attributevalue.UnmarshalMap(out.Attributes, &updatedReq); err == nil {
+			if updatedReq.CreatorDeviceToken != "" {
+				go sendPushNotification(
+					updatedReq.CreatorDeviceToken,
+					"Request Accepted! 🚛",
+					fmt.Sprintf("%s has accepted your request and is on the way.", claims.Name),
+				)
+			}
 		}
 
 		// Broadcast Update

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "504471880267",
+    "project_id": "panta-3dc75",
+    "storage_bucket": "panta-3dc75.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:504471880267:android:700f0e060b4c190b0083ce",
+        "android_client_info": {
+          "package_name": "com.abdoverse.panta"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCePfhCtFtI7yX24vuVHCENmYLEPlWTCk4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
