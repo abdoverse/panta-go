@@ -166,6 +166,23 @@ func init() {
 	}
 	// Initialize Firebase
 	initFirebase()
+
+	// Check for credentials file
+	checkCredentials()
+}
+
+// Check for credentials file
+func checkCredentials() {
+	path := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
+	if path == "" {
+		log.Println("⚠️  GOOGLE_APPLICATION_CREDENTIALS env var not set.")
+		return
+	}
+	if _, err := os.Stat(path); err != nil {
+		log.Printf("⚠️  Credentials file not found at %s: %v", path, err)
+	} else {
+		log.Printf("✅ Credentials file found at %s", path)
+	}
 }
 
 // Simple JSON helper
