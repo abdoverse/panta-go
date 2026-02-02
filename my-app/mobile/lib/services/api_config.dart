@@ -3,15 +3,8 @@ import 'package:flutter/foundation.dart';
 
 class ApiConfig {
   static String get baseUrl {
-    if (kIsWeb) {
-      return 'http://localhost:8080';
-    }
-    // Android emulator localhost
-    if (Platform.isAndroid) {
-      return 'http://10.0.2.2:8080';
-    }
-    // iOS simulator localhost
-    return 'http://localhost:8080';
+    // Using the remote backend for real integration tests
+    return 'http://InfraS-Panta-ANti8qT1Cybj-1735811194.eu-north-1.elb.amazonaws.com';
   }
 
   // TODO: Replace with real IDs from AWS Deployment

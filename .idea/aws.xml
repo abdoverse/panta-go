@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="accountSettings">
+    <option name="activeProfile" value="profile:AdministratorAccess-269172689438" />
     <option name="activeRegion" value="eu-north-1" />
     <option name="recentlyUsedProfiles">
       <list>
@@ -12,5 +13,11 @@
         <option value="eu-north-1" />
       </list>
     </option>
+  </component>
+  <component name="connectionManager">
+    <option name="activeConnectionId" value="AwsConnectionManagerConnection" />
+  </component>
+  <component name="explorerToolWindow">
+    <option name="selectedTab" value="Explorer" />
   </component>
 </project>

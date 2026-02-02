@@ -51,8 +51,8 @@ type LoginResponse struct {
 }
 
 type Claims struct {
-	Role string `json:"role"`
-	Name string `json:"name"`
+	Role string `json:"nickname"`
+	Name string `json:"cognito:username"`
 	jwt.RegisteredClaims
 }
 
