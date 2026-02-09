@@ -8,6 +8,7 @@ import '../shared/profile_screen.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../../services/api_config.dart';
 import '../../services/auth_service.dart';
+import 'package:intl/intl.dart';
 
 class UserHomePage extends StatefulWidget {
   const UserHomePage({super.key});
@@ -310,24 +311,22 @@ class _RequestCard extends StatelessWidget {
                     children: [
                       Text(request.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                       const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(Icons.location_on, size: 14, color: Colors.grey[500]),
-                          const SizedBox(width: 4),
-                          Text(request.location, style: TextStyle(color: Colors.grey[500], fontSize: 12)),
-                        ],
+                      Text(
+                        "${DateFormat('MMM d, HH:mm').format(request.scheduledFrom)} - ${DateFormat('HH:mm').format(request.scheduledTo)}",
+                        style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                      ),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: statusColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(statusText, style: TextStyle(color: statusColor, fontSize: 12, fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(statusText, style: TextStyle(color: statusColor, fontSize: 12, fontWeight: FontWeight.bold)),
-                )
               ],
             ),
             const SizedBox(height: 12),
