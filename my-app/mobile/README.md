@@ -14,6 +14,12 @@ Real Swish integration requires strict security measures including mutual TLS (m
 - [ ] Research Stripe or Adyen integration for direct card payments.
 - [ ] Implement PCI-compliant card input form.
 
+### 🚧 BankID Integration
+Secure user identification and signing.
+- [ ] Obtain BankID Test Certificates.
+- [ ] Implement Backend support for Swish BankID RP API (Auth/Sign).
+- [ ] Handle animated QR codes or deep linking for mobile auto-start.
+
 ## 📱 Notifications Support
 
 ### ✅ Supported Platforms
