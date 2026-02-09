@@ -312,6 +312,11 @@ class _JobCard extends StatelessWidget {
                    ],
                  ),
                   const SizedBox(height: 16),
+                 if (!isAcceptable && !isCompleted)
+                   Padding(
+                     padding: const EdgeInsets.only(bottom: 12.0),
+                     child: _TimeRemainingDisplay(deadline: job.scheduledTo),
+                   ),
                  if (isCompleted)
                    Column(
                      crossAxisAlignment: CrossAxisAlignment.start,
@@ -394,6 +399,58 @@ class _JobCard extends StatelessWidget {
               ],
             ),
           )
+        ],
+      ),
+    );
+  }
+}
+
+class _TimeRemainingDisplay extends StatelessWidget {
+  final DateTime deadline;
+
+  const _TimeRemainingDisplay({required this.deadline});
+
+  String _formatDuration(Duration d) {
+    if (d.inDays > 0) return "${d.inDays} day${d.inDays > 1 ? 's' : ''}";
+    if (d.inHours > 0) return "${d.inHours} hr${d.inHours > 1 ? 's' : ''}";
+    if (d.inMinutes > 0) return "${d.inMinutes} min${d.inMinutes > 1 ? 's' : ''}";
+    return "moments";
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final difference = deadline.difference(now);
+    final isOverdue = difference.isNegative;
+    final duration = difference.abs();
+
+    final color = isOverdue ? Colors.red : Colors.blue;
+    final label = isOverdue
+        ? "Overdue by ${_formatDuration(duration)}"
+        : "${_formatDuration(duration)} remaining";
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.access_time, size: 20, color: color),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+          ),
         ],
       ),
     );
