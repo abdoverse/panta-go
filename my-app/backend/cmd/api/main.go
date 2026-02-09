@@ -32,6 +32,8 @@ type RecyclingRequest struct {
 	ScheduledFrom time.Time `json:"scheduledFrom" dynamodbav:"scheduledFrom"`
 	ScheduledTo   time.Time `json:"scheduledTo" dynamodbav:"scheduledTo"`
 	Location      string    `json:"location" dynamodbav:"location"`
+	Description   string    `json:"description" dynamodbav:"description"`
+	Reward        float64   `json:"reward" dynamodbav:"reward"`
 	Status        string    `json:"status" dynamodbav:"status"`
 	HelperID      string    `json:"helperId,omitempty" dynamodbav:"helperId,omitempty"`
 	IsRated       bool      `json:"isRated" dynamodbav:"isRated"`

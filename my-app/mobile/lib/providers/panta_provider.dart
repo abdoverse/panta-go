@@ -100,7 +100,13 @@ class PantaProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> createRequest(String title, DateTime from, DateTime to, String location) async {
+  Future<bool> createRequest(
+      String title,
+      DateTime from,
+      DateTime to,
+      String location,
+      {String description = '', double reward = 0.0} // Add optional args
+  ) async {
     final token = await _authService.getToken();
     if (token == null) return false;
 
@@ -135,6 +141,8 @@ class PantaProvider extends ChangeNotifier {
       'scheduledFrom': from.toUtc().toIso8601String(),
       'scheduledTo': to.toUtc().toIso8601String(),
       'location': location,
+      'description': description, // Add description
+      'reward': reward,           // Add reward
       'imageUrl': 'assets/images/generic.png',
       'isRated': false,
       'creatorDeviceToken': fcmToken, // Send token
@@ -243,6 +251,8 @@ class PantaProvider extends ChangeNotifier {
       scheduledFrom: DateTime.parse(json['scheduledFrom']),
       scheduledTo: DateTime.parse(json['scheduledTo']),
       location: json['location'],
+      description: json['description'] ?? '',
+      reward: json['reward'] != null ? double.tryParse(json['reward'].toString()) ?? 0.0 : 0.0,
       status: _parseStatus(json['status']),
       helperId: json['helperId'],
       isRated: json['isRated'] ?? false,

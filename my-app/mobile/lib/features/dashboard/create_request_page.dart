@@ -16,6 +16,8 @@ class CreateRequestPage extends StatefulWidget {
 class _CreateRequestPageState extends State<CreateRequestPage> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _rewardController = TextEditingController();
   final _locationController = TextEditingController();
   LocationSuggestion? _selectedLocation;
 
@@ -49,6 +51,8 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
   void dispose() {
     _locationController.removeListener(_onLocationChanged);
     _titleController.dispose();
+    _descriptionController.dispose();
+    _rewardController.dispose();
     _locationController.dispose();
     super.dispose();
   }
@@ -56,28 +60,73 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("New Pickup Request")),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text("New Pickup Request"),
+        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+      ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text("What are we picking up?", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              const SizedBox(height: 12),
+              // Photo Placeholder Area
+              Center(
+                child: Container(
+                  height: 180,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey[300]!, style: BorderStyle.dash),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.camera_alt, size: 48, color: Colors.grey[400]),
+                      const SizedBox(height: 8),
+                      Text("Add a photo", style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              const Text("What are you getting rid of?", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              const SizedBox(height: 8),
               TextFormField(
                 controller: _titleController,
-                decoration: const InputDecoration(
-                  hintText: 'e.g. 2 bags of plastic bottles, Old TV',
-                  prefixIcon: Icon(Icons.description_outlined),
+                decoration: InputDecoration(
+                  hintText: 'e.g. Old Sofa, Garden Waste',
+                  filled: true,
+                  fillColor: Colors.grey[50],
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                  prefixIcon: const Icon(Icons.title),
                 ),
-                validator: (v) => v!.isEmpty ? 'Please describe the items' : null,
+                validator: (v) => v!.isEmpty ? 'Please enter a title' : null,
+              ),
+
+              const SizedBox(height: 16),
+              const Text("Description", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _descriptionController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: 'Any details? (e.g. heavy, 3rd floor, dismantled)',
+                  filled: true,
+                  fillColor: Colors.grey[50],
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                ),
               ),
 
               const SizedBox(height: 24),
-              const Text("Location", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              const SizedBox(height: 12),
+              const Text("Location", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              const SizedBox(height: 8),
               TypeAheadField<LocationSuggestion>(
                 controller: _locationController,
                 suggestionsCallback: (pattern) async {
@@ -87,9 +136,12 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                   return TextFormField(
                     controller: controller,
                     focusNode: focusNode,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: 'Enter pickup address',
-                      prefixIcon: Icon(Icons.location_on_outlined),
+                      prefixIcon: const Icon(Icons.location_on_outlined),
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                     ),
                     validator: (v) => v!.isEmpty ? 'Please enter location' : null,
                   );
@@ -128,8 +180,8 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
               ),
 
               const SizedBox(height: 24),
-              const Text("Preferred Time Frame", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              const SizedBox(height: 12),
+              const Text("When?", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              const SizedBox(height: 8),
 
               Row(
                 children: [
@@ -205,52 +257,69 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                 ],
               ),
 
+              const SizedBox(height: 24),
+              const Text("Your Price (Reward)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _rewardController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                  hintText: '0.00',
+                  prefixIcon: const Padding(padding: EdgeInsets.all(12), child: Text("€", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20))),
+                  suffixText: "EUR",
+                  filled: true,
+                  fillColor: Colors.green.withOpacity(0.05),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                ),
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Please set a price';
+                  if (double.tryParse(v) == null) return 'Invalid number';
+                  return null;
+                },
+              ),
+
               const SizedBox(height: 40),
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _submit,
-                  child: const Text("Request Pickup"),
+                height: 56,
+                child: Consumer<PantaProvider>(
+                  builder: (context, provider, child) {
+                    return ElevatedButton(
+                      onPressed: provider.isLoading ? null : () async {
+                        if (_formKey.currentState!.validate()) {
+                          final success = await provider.createRequest(
+                            _titleController.text,
+                            _fromDate,
+                            _toDate,
+                            _locationController.text,
+                            description: _descriptionController.text,
+                            reward: double.tryParse(_rewardController.text) ?? 0.0,
+                          );
+                          if (success && context.mounted) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Request Created!")));
+                          }
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryGreen,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        elevation: 0,
+                      ),
+                      child: provider.isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text("Post Request", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    );
+                  },
                 ),
               ),
+              const SizedBox(height: 20),
             ],
           ),
         ),
       ),
     );
-  }
-
-  Future<void> _submit() async {
-    if (_formKey.currentState!.validate()) {
-      // Show loading indicator or handle state properly
-
-      // Use the full displayName if we have a valid selection object matching the current text.
-      // Otherwise allow manual entry (which falls back to controller.text).
-      final locationToSend = _selectedLocation != null
-          ? _selectedLocation!.displayName
-          : _locationController.text;
-
-      final success = await context.read<PantaProvider>().createRequest(
-        _titleController.text,
-        _fromDate,
-        _toDate,
-        locationToSend,
-      );
-
-      if (!mounted) return;
-
-      if (success) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Request Created!")));
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Failed to create request. Check console for details."),
-            backgroundColor: Colors.red,
-          )
-        );
-      }
-    }
   }
 }
 

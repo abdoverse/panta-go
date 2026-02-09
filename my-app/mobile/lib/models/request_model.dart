@@ -7,6 +7,8 @@ class RecyclingRequest {
   final DateTime scheduledFrom;
   final DateTime scheduledTo;
   final String location;
+  final String description;
+  final double reward;
   final RequestStatus status;
   final String? helperId;
   final bool isRated;
@@ -20,6 +22,8 @@ class RecyclingRequest {
     required this.scheduledFrom,
     required this.scheduledTo,
     required this.location,
+    this.description = '',
+    this.reward = 0.0,
     this.status = RequestStatus.pending,
     this.helperId,
     this.isRated = false,
@@ -33,6 +37,8 @@ class RecyclingRequest {
     bool? isRated,
     double? rating,
     String? ratingComment,
+    String? description,
+    double? reward,
   }) {
     return RecyclingRequest(
       id: id,
@@ -41,6 +47,8 @@ class RecyclingRequest {
       scheduledFrom: scheduledFrom,
       scheduledTo: scheduledTo,
       location: location,
+      description: description ?? this.description,
+      reward: reward ?? this.reward,
       status: status ?? this.status,
       helperId: helperId ?? this.helperId,
       isRated: isRated ?? this.isRated,

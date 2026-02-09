@@ -298,12 +298,24 @@ class _JobCard extends StatelessWidget {
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)
                      )),
                      Container(
-                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                       decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(8)),
-                       child: Text("${30} CO2e", style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 10)),
+                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                       decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                       child: Text(
+                         "€${job.reward.toStringAsFixed(0)}",
+                         style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 16)
+                       ),
                      )
                    ],
                  ),
+                 if (job.description.isNotEmpty) ...[
+                   const SizedBox(height: 8),
+                   Text(
+                     job.description,
+                     maxLines: 2,
+                     overflow: TextOverflow.ellipsis,
+                     style: TextStyle(color: Colors.grey[700]),
+                   ),
+                 ],
                  const SizedBox(height: 8),
                  Row(
                    children: [

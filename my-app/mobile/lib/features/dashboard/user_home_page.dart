@@ -311,6 +311,12 @@ class _RequestCard extends StatelessWidget {
                     children: [
                       Text(request.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                       const SizedBox(height: 4),
+                       // Show Reward
+                       Text(
+                         "Reward: €${request.reward.toStringAsFixed(0)}",
+                         style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 13),
+                       ),
+                      const SizedBox(height: 4),
                       Text(
                         "${DateFormat('MMM d, HH:mm').format(request.scheduledFrom)} - ${DateFormat('HH:mm').format(request.scheduledTo)}",
                         style: TextStyle(color: Colors.grey[600], fontSize: 13),
