@@ -76,6 +76,13 @@ class _UserHomePageState extends State<UserHomePage> {
   }
 
   @override
+  void reassemble() {
+    super.reassemble();
+    // Force refresh data on hot reload to handle model changes
+    context.read<PantaProvider>().fetchRequests(silent: true);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
@@ -313,7 +320,7 @@ class _RequestCard extends StatelessWidget {
                       const SizedBox(height: 4),
                        // Show Reward
                        Text(
-                         "Reward: €${request.reward.toStringAsFixed(0)}",
+                         "Reward: €${(request.reward as num?)?.toStringAsFixed(0) ?? '0'}",
                          style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 13),
                        ),
                       const SizedBox(height: 4),

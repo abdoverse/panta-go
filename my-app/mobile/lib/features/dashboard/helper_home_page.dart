@@ -75,6 +75,13 @@ class _HelperHomePageState extends State<HelperHomePage> {
   }
 
   @override
+  void reassemble() {
+    super.reassemble();
+    // Force refresh data on hot reload to handle model changes
+    context.read<PantaProvider>().fetchRequests(silent: true);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
@@ -301,7 +308,7 @@ class _JobCard extends StatelessWidget {
                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                        decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
                        child: Text(
-                         "€${job.reward.toStringAsFixed(0)}",
+                         "€${(job.reward as num?)?.toStringAsFixed(0) ?? '0'}",
                          style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 16)
                        ),
                      )

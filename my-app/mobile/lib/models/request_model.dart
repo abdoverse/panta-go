@@ -8,7 +8,7 @@ class RecyclingRequest {
   final DateTime scheduledTo;
   final String location;
   final String description;
-  final double reward;
+  final double? reward; // Changed to nullable to safe-guard against hot-reload nulls
   final RequestStatus status;
   final String? helperId;
   final bool isRated;

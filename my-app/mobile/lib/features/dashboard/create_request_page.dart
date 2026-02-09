@@ -5,6 +5,7 @@ import '../../providers/panta_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../services/location_service.dart';
 import 'package:intl/intl.dart';
+import 'package:dotted_border/dotted_border.dart';
 
 class CreateRequestPage extends StatefulWidget {
   const CreateRequestPage({super.key});
@@ -76,21 +77,27 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
             children: [
               // Photo Placeholder Area
               Center(
-                child: Container(
-                  height: 180,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey[300]!, style: BorderStyle.dash),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.camera_alt, size: 48, color: Colors.grey[400]),
-                      const SizedBox(height: 8),
-                      Text("Add a photo", style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.bold)),
-                    ],
+                child: DottedBorder(
+                  borderType: BorderType.RRect,
+                  radius: const Radius.circular(16),
+                  color: Colors.grey[300]!,
+                  dashPattern: const [8, 4],
+                  strokeWidth: 2,
+                  child: Container(
+                    height: 180,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.camera_alt, size: 48, color: Colors.grey[400]),
+                        const SizedBox(height: 8),
+                        Text("Add a photo", style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.bold)),
+                      ],
+                    ),
                   ),
                 ),
               ),
