@@ -7,6 +7,7 @@ import '../shared/profile_screen.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../../services/api_config.dart';
 import '../../services/auth_service.dart';
+import 'package:intl/intl.dart';
 
 class HelperHomePage extends StatefulWidget {
   const HelperHomePage({super.key});
@@ -309,6 +310,17 @@ class _JobCard extends StatelessWidget {
                       const Icon(Icons.location_on, size: 16, color: Colors.grey),
                       const SizedBox(width: 4),
                       Expanded(child: Text(job.location, style: const TextStyle(color: Colors.grey))),
+                   ],
+                 ),
+                 const SizedBox(height: 8),
+                 Row(
+                   children: [
+                      const Icon(Icons.access_time_outlined, size: 16, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Text(
+                        "${DateFormat('MMM d, HH:mm').format(job.scheduledFrom)} - ${DateFormat('HH:mm').format(job.scheduledTo)}",
+                        style: const TextStyle(color: Colors.grey),
+                      ),
                    ],
                  ),
                   const SizedBox(height: 16),
