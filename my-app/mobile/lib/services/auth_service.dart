@@ -108,6 +108,13 @@ class AuthService {
     return null;
   }
 
+  // Get Current Sub/Username
+  String? getCurrentUsername() {
+    // Backend uses ID Token claims (cognito:username)
+    final payload = _session?.getIdToken().payload;
+    return payload?['cognito:username'] ?? payload?['sub'];
+  }
+
   // Logout
   Future<void> logout() async {
     if (_currentUser != null) {

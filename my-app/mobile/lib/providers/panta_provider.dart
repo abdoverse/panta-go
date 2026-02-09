@@ -43,7 +43,8 @@ class PantaProvider extends ChangeNotifier {
     // For demo, we are using the email as username
     final error = await _authService.login(username, password);
     if (error == null) {
-      _currentUserId = username;
+      _currentUserId = _authService.getCurrentUsername();
+      debugPrint("Logged in as Helper/User ID: $_currentUserId");
       notifyListeners();
       fetchRequests();
       return null;
