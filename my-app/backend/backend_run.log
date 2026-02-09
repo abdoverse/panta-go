@@ -1,0 +1,5 @@
+Command 'go' not found, but can be installed with:
+sudo snap install go         # version 1.25.6, or
+sudo apt  install golang-go  # version 2:1.21~2
+sudo apt  install gccgo-go   # version 2:1.21~2
+See 'snap info go' for additional versions.
