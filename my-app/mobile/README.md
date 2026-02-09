@@ -2,6 +2,18 @@
 
 A high-grade recycling application with Flutter and Go.
 
+## 💰 Payment Integration (TODO)
+
+### 🚧 Swish Integration
+Real Swish integration requires strict security measures including mutual TLS (mTLS) certificates.
+- [ ] Obtain Merchant Test Certificates from Swish.
+- [ ] Configure Backend to use mTLS with Swish API (`mss.cpc.getswish.net`).
+- [ ] Implement Deep Linking in Flutter (`panta://`) to handle callbacks from the Swish app.
+
+### 🚧 Card Payment
+- [ ] Research Stripe or Adyen integration for direct card payments.
+- [ ] Implement PCI-compliant card input form.
+
 ## 📱 Notifications Support
 
 ### ✅ Supported Platforms
