@@ -62,12 +62,8 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text("New Pickup Request"),
-        elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -80,61 +76,57 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
               Center(
                 child: DottedBorder(
                   borderType: BorderType.RRect,
-                  radius: const Radius.circular(16),
-                  color: Colors.grey[300]!,
+                  radius: const Radius.circular(24), // Increased radius
+                  color: Colors.grey[400]!,
                   dashPattern: const [8, 4],
                   strokeWidth: 2,
                   child: Container(
-                    height: 180,
+                    height: 200, // Taller
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: Colors.grey[50],
-                      borderRadius: BorderRadius.circular(16),
+                      color: AppTheme.surfaceGrey,
+                      borderRadius: BorderRadius.circular(24),
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.camera_alt, size: 48, color: Colors.grey[400]),
-                        const SizedBox(height: 8),
-                        Text("Add a photo", style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.bold)),
+                        Icon(Icons.add_a_photo_outlined, size: 48, color: AppTheme.primaryGreen.withOpacity(0.5)),
+                        const SizedBox(height: 12),
+                        Text("Add a photo", style: TextStyle(color: AppTheme.textSecondary, fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
 
-              const Text("What are you getting rid of?", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-              const SizedBox(height: 8),
+              Text("What are you getting rid of?", style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 12),
               TextFormField(
                 controller: _titleController,
-                decoration: InputDecoration(
+                style: const TextStyle(fontWeight: FontWeight.w600),
+                decoration: const InputDecoration(
                   hintText: 'e.g. Old Sofa, Garden Waste',
-                  filled: true,
-                  fillColor: Colors.grey[50],
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                  prefixIcon: const Icon(Icons.title),
+                  prefixIcon: Icon(Icons.inventory_2_outlined),
                 ),
                 validator: (v) => v!.isEmpty ? 'Please enter a title' : null,
               ),
 
-              const SizedBox(height: 16),
-              const Text("Description", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              const SizedBox(height: 8),
+              const SizedBox(height: 24),
+              Text("Description", style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 12),
               TextFormField(
                 controller: _descriptionController,
                 maxLines: 3,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   hintText: 'Any details? (e.g. heavy, 3rd floor, dismantled)',
-                  filled: true,
-                  fillColor: Colors.grey[50],
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                  alignLabelWithHint: true,
                 ),
               ),
 
               const SizedBox(height: 24),
-              const Text("Location", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-              const SizedBox(height: 8),
+              Text("Location", style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 12),
               TypeAheadField<LocationSuggestion>(
                 controller: _locationController,
                 suggestionsCallback: (pattern) async {
@@ -144,12 +136,9 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                   return TextFormField(
                     controller: controller,
                     focusNode: focusNode,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       hintText: 'Enter pickup address',
-                      prefixIcon: const Icon(Icons.location_on_outlined),
-                      filled: true,
-                      fillColor: Colors.grey[50],
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                      prefixIcon: Icon(Icons.location_on_outlined),
                     ),
                     validator: (v) => v!.isEmpty ? 'Please enter location' : null,
                   );
@@ -188,8 +177,8 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
               ),
 
               const SizedBox(height: 24),
-              const Text("When?", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-              const SizedBox(height: 8),
+              Text("When?", style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 12),
 
               Row(
                 children: [
@@ -266,17 +255,17 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
               ),
 
               const SizedBox(height: 24),
-              const Text("Your Price (Reward)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-              const SizedBox(height: 8),
+              Text("Your Price (Reward)", style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 12),
               TextFormField(
                 controller: _rewardController,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.primaryGreen),
                 decoration: InputDecoration(
                   hintText: '0.00',
-                  prefixIcon: Padding(padding: const EdgeInsets.all(12), child: Text(AppConstants.currencySymbol, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20))),
+                  prefixIcon: Padding(padding: const EdgeInsets.all(12), child: Text(AppConstants.currencySymbol, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: AppTheme.primaryGreen))),
                   suffixText: AppConstants.currencyCode,
-                  filled: true,
-                  fillColor: Colors.green.withOpacity(0.05),
+                  fillColor: AppTheme.primaryGreen.withOpacity(0.05), // Subtle tint
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                 ),
                 validator: (v) {

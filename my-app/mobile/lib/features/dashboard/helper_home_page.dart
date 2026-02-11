@@ -9,6 +9,8 @@ import '../../core/constants/app_constants.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../../services/auth_service.dart';
 import '../../services/api_config.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import '../shared/widgets/loading_skeletons.dart';
 
 class HelperHomePage extends StatefulWidget {
   const HelperHomePage({super.key});
@@ -159,7 +161,10 @@ class _MarketplaceView extends StatelessWidget {
           ),
            if (provider.isLoading && jobs.isEmpty)
              const SliverFillRemaining(
-               child: Center(child: CircularProgressIndicator()),
+               child: Padding(
+                 padding: EdgeInsets.all(20.0),
+                 child: MarketplaceSkeleton(),
+               ),
              )
           else
            SliverToBoxAdapter(
@@ -169,9 +174,15 @@ class _MarketplaceView extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (jobs.isEmpty)
-                     const Center(child: Padding(padding: EdgeInsets.all(40), child: Text("No jobs available right now."))),
+                     const Center(child: Padding(padding: EdgeInsets.all(40), child: Text("No jobs available right now.")))
+                         .animate().fadeIn(),
 
-                  ...jobs.asMap().entries.map((e) => _JobCard(job: e.value, isAcceptable: true, index: e.key)),
+                  ...jobs.asMap().entries.map((e) =>
+                      _JobCard(job: e.value, isAcceptable: true, index: e.key)
+                        .animate()
+                        .fadeIn(delay: (100 * e.key).ms)
+                        .slideY(begin: 0.1, end: 0)
+                  ),
                 ],
               ),
             ),
@@ -519,31 +530,31 @@ class _TimeRemainingDisplay extends StatelessWidget {
     final isOverdue = difference.isNegative;
     final duration = difference.abs();
 
-    final color = isOverdue ? Colors.red : Colors.blue;
+    final color = isOverdue ? AppTheme.lightTheme.colorScheme.error : AppTheme.primaryGreen;
     final label = isOverdue
-        ? "Overdue by ${_formatDuration(duration)}"
-        : "${_formatDuration(duration)} remaining";
+        ? "OVERDUE: ${_formatDuration(duration)}"
+        : "${_formatDuration(duration)} LEFT";
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.2)),
       ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.access_time, size: 20, color: color),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                color: color,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
+          Icon(Icons.timer_outlined, size: 18, color: color),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w700,
+              fontSize: 13,
+              letterSpacing: 0.5
             ),
           ),
         ],

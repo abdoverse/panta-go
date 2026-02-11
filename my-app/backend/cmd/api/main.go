@@ -543,8 +543,10 @@ func main() {
 			return
 		}
 
-		// Optional: Broadcast if rating changes view, otherwise not strictly needed
-		// hub.broadcast <- []byte(`{"type":"refresh"}`)
+		// Broadcast update so helper sees the rating immediately
+		if hub != nil {
+			hub.broadcast <- []byte(`{"type":"refresh"}`)
+		}
 
 		jsonResponse(w, 200, map[string]string{"status": "rated"})
 	}))

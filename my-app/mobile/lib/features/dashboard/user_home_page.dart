@@ -10,6 +10,8 @@ import '../../services/api_config.dart';
 import '../../services/auth_service.dart';
 import 'package:intl/intl.dart';
 import '../../core/constants/app_constants.dart';
+import 'package:flutter_animate/flutter_animate.dart'; // Ensure animate is imported
+import '../shared/widgets/loading_skeletons.dart'; // Import skeletons
 
 class UserHomePage extends StatefulWidget {
   const UserHomePage({super.key});
@@ -174,7 +176,10 @@ class _DashboardView extends StatelessWidget {
 
           if (provider.isLoading && ongoing.isEmpty)
              const SliverFillRemaining(
-               child: Center(child: CircularProgressIndicator()),
+               child: Padding(
+                 padding: EdgeInsets.all(20.0),
+                 child: LoadingSkeletons(),
+               ),
              )
           else
           SliverToBoxAdapter(
@@ -188,9 +193,15 @@ class _DashboardView extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   if (ongoing.isEmpty)
-                    const _EmptyState(message: "No ongoing recycling requests.\nStart recycling today!"),
+                    const _EmptyState(message: "No ongoing recycling requests.\nStart recycling today!")
+                        .animate().fadeIn().scale(),
 
-                  ...ongoing.asMap().entries.map((e) => _RequestCard(request: e.value, isInteractable: false, index: e.key)),
+                  ...ongoing.asMap().entries.map((e) =>
+                      _RequestCard(request: e.value, isInteractable: false, index: e.key)
+                          .animate()
+                          .fadeIn(duration: 400.ms, delay: (100 * e.key).ms)
+                          .slideX(begin: 0.1, end: 0)
+                  ),
                 ],
               ),
             ),
