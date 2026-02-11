@@ -66,9 +66,9 @@ class _PantaAppState extends State<PantaApp> {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [
+      supportedLocales: [
         AppConstants.defaultLocale,
-        Locale('en', 'US'),
+        const Locale('en', 'US'),
       ],
       locale: AppConstants.defaultLocale,
     );

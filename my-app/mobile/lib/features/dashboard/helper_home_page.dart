@@ -133,52 +133,51 @@ class _MarketplaceView extends StatelessWidget {
     final provider = context.watch<PantaProvider>();
     final jobs = provider.availableJobs;
 
-    return CustomScrollView(
-       slivers: [
-        SliverAppBar(
-          expandedHeight: 120,
-          backgroundColor: AppTheme.primaryGreen,
-          pinned: true,
-          flexibleSpace: FlexibleSpaceBar(
-            titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
-             title: const Text("Available Pickups",
-              style: TextStyle(fontWeight: FontWeight.bold)
-            ),
-             background: Align(
-              alignment: Alignment.topRight,
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: IconButton(
-                  icon: const Icon(Icons.refresh, color: Colors.white70),
-                  onPressed: () {
-                     context.read<PantaProvider>().fetchRequests();
-                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Checking for new jobs...")));
-                  },
+    return RefreshIndicator(
+      onRefresh: () async {
+        await context.read<PantaProvider>().fetchRequests();
+      },
+      child: CustomScrollView(
+         slivers: [
+          SliverAppBar(
+            expandedHeight: 120,
+            backgroundColor: AppTheme.primaryGreen,
+            pinned: true,
+            flexibleSpace: FlexibleSpaceBar(
+              titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
+               title: const Text("Available Pickups",
+                style: TextStyle(fontWeight: FontWeight.bold)
+              ),
+               background: Align(
+                alignment: Alignment.topRight,
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Icon(Icons.eco, size: 100, color: Colors.white.withOpacity(0.1)),
                 ),
               ),
             ),
           ),
-        ),
-         if (provider.isLoading)
-           const SliverFillRemaining(
-             child: Center(child: CircularProgressIndicator()),
-           )
-        else
-         SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (jobs.isEmpty)
-                   const Center(child: Padding(padding: EdgeInsets.all(40), child: Text("No jobs available right now."))),
+           if (provider.isLoading && jobs.isEmpty)
+             const SliverFillRemaining(
+               child: Center(child: CircularProgressIndicator()),
+             )
+          else
+           SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (jobs.isEmpty)
+                     const Center(child: Padding(padding: EdgeInsets.all(40), child: Text("No jobs available right now."))),
 
-                ...jobs.asMap().entries.map((e) => _JobCard(job: e.value, isAcceptable: true, index: e.key)),
-              ],
+                  ...jobs.asMap().entries.map((e) => _JobCard(job: e.value, isAcceptable: true, index: e.key)),
+                ],
+              ),
             ),
           ),
-        ),
-       ],
+         ],
+      ),
     );
   }
 }
@@ -193,37 +192,51 @@ class _MyJobsView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text("My Active Jobs")),
-      body: jobs.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.assignment_outlined, size: 80, color: Colors.grey[300]),
-                  const SizedBox(height: 16),
-                  Text("No Active Jobs",
-                      style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey[600])),
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 40),
-                    child: Text(
-                      "Go to the 'Available' tab to find recycling requests nearby.",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.grey[500]),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await context.read<PantaProvider>().fetchRequests();
+        },
+        child: jobs.isEmpty
+            ? LayoutBuilder(
+                builder: (context, constraints) => SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.assignment_outlined, size: 80, color: Colors.grey[300]),
+                          const SizedBox(height: 16),
+                          Text("No Active Jobs",
+                              style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.grey[600])),
+                          const SizedBox(height: 8),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 40),
+                            child: Text(
+                              "Go to the 'Available' tab to find recycling requests nearby.",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.grey[500]),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ],
+                ),
+              )
+            : ListView.builder(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                itemCount: jobs.length,
+                itemBuilder: (context, index) {
+                  return _JobCard(job: jobs[index], isAcceptable: false, index: index);
+                },
               ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: jobs.length,
-              itemBuilder: (context, index) {
-                return _JobCard(job: jobs[index], isAcceptable: false, index: index);
-              },
-            ),
+      ),
     );
   }
 }
@@ -238,15 +251,29 @@ class _HistoryView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text("Pickup History")),
-      body: jobs.isEmpty
-          ? const Center(child: Text("No completed jobs yet."))
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: jobs.length,
-              itemBuilder: (context, index) {
-                return _JobCard(job: jobs[index], isAcceptable: false, isCompleted: true, index: index);
-              },
-            ),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await context.read<PantaProvider>().fetchRequests();
+        },
+        child: jobs.isEmpty
+            ? LayoutBuilder(
+                builder: (context, constraints) => SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: ConstrainedBox(
+                     constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                     child: const Center(child: Text("No completed jobs yet.")),
+                  ),
+                ),
+              )
+            : ListView.builder(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                itemCount: jobs.length,
+                itemBuilder: (context, index) {
+                  return _JobCard(job: jobs[index], isAcceptable: false, isCompleted: true, index: index);
+                },
+              ),
+      ),
     );
   }
 }

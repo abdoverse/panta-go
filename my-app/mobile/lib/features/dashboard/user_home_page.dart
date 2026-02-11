@@ -136,73 +136,67 @@ class _DashboardView extends StatelessWidget {
     final provider = context.watch<PantaProvider>();
     final ongoing = provider.ongoingRequests;
 
-    return CustomScrollView(
-      slivers: [
-        SliverAppBar(
-          expandedHeight: 180,
-          backgroundColor: AppTheme.primaryGreen,
-          pinned: true,
-          flexibleSpace: FlexibleSpaceBar(
-            titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
-            title: const Text("Welcome Back!",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22)
-            ),
-            background: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [AppTheme.primaryGreen, AppTheme.primaryGreen.withOpacity(0.8)],
+    return RefreshIndicator(
+      onRefresh: () async {
+        await context.read<PantaProvider>().fetchRequests();
+      },
+      child: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 180,
+            backgroundColor: AppTheme.primaryGreen,
+            pinned: true,
+            flexibleSpace: FlexibleSpaceBar(
+              titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
+              title: const Text("Welcome Back!",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22)
+              ),
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [AppTheme.primaryGreen, AppTheme.primaryGreen.withOpacity(0.8)],
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      right: -20,
+                      top: -20,
+                      child: Icon(Icons.eco, size: 150, color: Colors.white.withOpacity(0.1)),
+                    ),
+                  ],
                 ),
               ),
-              child: Stack(
+            ),
+          ),
+
+          if (provider.isLoading && ongoing.isEmpty)
+             const SliverFillRemaining(
+               child: Center(child: CircularProgressIndicator()),
+             )
+          else
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                   Positioned(
-                    right: 8,
-                    top: 8,
-                    child: IconButton(
-                      icon: const Icon(Icons.refresh, color: Colors.white70),
-                      onPressed: () {
-                         context.read<PantaProvider>().fetchRequests();
-                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Refreshing requests...")));
-                      },
-                    ),
+                  const Text("Ongoing Requests",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)
                   ),
-                  Positioned(
-                    right: -20,
-                    top: -20,
-                    child: Icon(Icons.eco, size: 150, color: Colors.white.withOpacity(0.1)),
-                  ),
+                  const SizedBox(height: 16),
+                  if (ongoing.isEmpty)
+                    const _EmptyState(message: "No ongoing recycling requests.\nStart recycling today!"),
+
+                  ...ongoing.asMap().entries.map((e) => _RequestCard(request: e.value, isInteractable: false, index: e.key)),
                 ],
               ),
             ),
           ),
-        ),
-
-        if (provider.isLoading)
-           const SliverFillRemaining(
-             child: Center(child: CircularProgressIndicator()),
-           )
-        else
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text("Ongoing Requests",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)
-                ),
-                const SizedBox(height: 16),
-                if (ongoing.isEmpty)
-                  _EmptyState(message: "No ongoing recycling requests.\nStart recycling today!"),
-
-                ...ongoing.asMap().entries.map((e) => _RequestCard(request: e.value, isInteractable: false, index: e.key)),
-              ],
-            ),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -217,12 +211,18 @@ class _HistoryView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text("History")),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: history.length,
-        itemBuilder: (context, index) {
-          return _RequestCard(request: history[index], isInteractable: true, index: index);
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await context.read<PantaProvider>().fetchRequests();
         },
+        child: ListView.builder(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          itemCount: history.length,
+          itemBuilder: (context, index) {
+            return _RequestCard(request: history[index], isInteractable: true, index: index);
+          },
+        ),
       ),
     );
   }
