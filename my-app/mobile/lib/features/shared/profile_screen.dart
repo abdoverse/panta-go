@@ -17,7 +17,7 @@ class ProfileScreen extends StatelessWidget {
             const SizedBox(height: 40),
             CircleAvatar(
               radius: 60,
-              backgroundColor: AppTheme.secondaryGreen.withOpacity(0.2),
+              backgroundColor: AppTheme.primaryLight.withOpacity(0.2),
               child: Icon(isHelper ? Icons.local_shipping : Icons.person, size: 60, color: AppTheme.primaryGreen),
             ),
             const SizedBox(height: 20),
@@ -82,3 +82,4 @@ class _ProfileItem extends StatelessWidget {
     );
   }
 }
+

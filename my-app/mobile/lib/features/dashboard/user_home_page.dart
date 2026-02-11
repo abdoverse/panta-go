@@ -285,11 +285,14 @@ class _RequestCard extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
+      elevation: 2, // Slight elevation
+      shadowColor: Colors.black.withOpacity(0.05),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20), // Increased padding
         child: Column(
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (index != null)
                   Padding(
@@ -307,36 +310,57 @@ class _RequestCard extends StatelessWidget {
                   width: 60,
                   height: 60,
                   decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    color: AppTheme.primaryGreen.withOpacity(0.08), // Softer background
+                    borderRadius: BorderRadius.circular(16), // Softer corners
                   ),
-                  child: const Icon(Icons.inventory_2_outlined, color: AppTheme.primaryGreen),
+                  child: const Icon(Icons.inventory_2_outlined, color: AppTheme.primaryGreen, size: 28),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(request.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      const SizedBox(height: 4),
+                      Text(request.title, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 6),
                        // Show Reward
-                       Text(
-                         "Reward: ${AppConstants.currencySymbol}${(request.reward as num?)?.toStringAsFixed(0) ?? '0'}",
-                         style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 13),
+                       Row(
+                         children: [
+                           Text(
+                             "${AppConstants.currencySymbol}${(request.reward as num?)?.toStringAsFixed(0) ?? '0'}",
+                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                               color: AppTheme.primaryGreen,
+                               fontWeight: FontWeight.bold
+                             ),
+                           ),
+                           const SizedBox(width: 8),
+                           Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: statusColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20), // Pill shape
+                              ),
+                              child: Text(
+                                statusText.toUpperCase(),
+                                style: TextStyle(
+                                  color: statusColor,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.5
+                                )
+                              ),
+                           ),
+                         ],
                        ),
-                      const SizedBox(height: 4),
-                      Text(
-                        "${DateFormat('d MMM, HH:mm', AppConstants.defaultLocaleId).format(request.scheduledFrom)} - ${DateFormat('HH:mm', AppConstants.defaultLocaleId).format(request.scheduledTo)}",
-                        style: TextStyle(color: Colors.grey[600], fontSize: 13),
-                      ),
-                      const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: statusColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(statusText, style: TextStyle(color: statusColor, fontSize: 12, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 6),
+                      Row( // Added icon for schedule
+                        children: [
+                          Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
+                          const SizedBox(width: 4),
+                          Text(
+                            "${DateFormat('d MMM, HH:mm', AppConstants.defaultLocaleId).format(request.scheduledFrom)} - ${DateFormat('HH:mm', AppConstants.defaultLocaleId).format(request.scheduledTo)}",
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+                          ),
+                        ],
                       ),
                     ],
                   ),

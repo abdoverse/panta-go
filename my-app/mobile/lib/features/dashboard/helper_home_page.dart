@@ -296,19 +296,44 @@ class _JobCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       clipBehavior: Clip.antiAlias,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: Colors.grey.withOpacity(0.1)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            height: 120,
-            width: double.infinity,
-            color: Colors.grey[200],
-            child: Image.asset(job.imageUrl, fit: BoxFit.cover, errorBuilder: (_,__,___) =>
-               const Center(child: Icon(Icons.image_not_supported, size: 40, color: Colors.grey))
-            ),
+          Stack(
+            children: [
+              Container(
+                height: 140, // Increased height
+                width: double.infinity,
+                color: Colors.grey[200],
+                child: Image.asset(job.imageUrl, fit: BoxFit.cover, errorBuilder: (_,__,___) =>
+                   const Center(child: Icon(Icons.image_not_supported, size: 40, color: Colors.grey))
+                ),
+              ),
+              // Overlay Gradient for text readability if we put text on top (optional, but nice)
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: 60,
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.black.withOpacity(0.4), Colors.transparent],
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter
+                    )
+                  ),
+                ),
+              ),
+            ],
           ),
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -330,47 +355,58 @@ class _JobCard extends StatelessWidget {
                         ),
                      Expanded(child: Text(
                         job.title,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)
+                        style: Theme.of(context).textTheme.titleLarge // Use theme
                      )),
                      Container(
-                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                       decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                       decoration: BoxDecoration(
+                           color: AppTheme.primaryGreen, // Solid accent
+                           borderRadius: BorderRadius.circular(20)
+                       ),
                        child: Text(
                          "${AppConstants.currencySymbol}${(job.reward as num?)?.toStringAsFixed(0) ?? '0'}",
-                         style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 16)
+                         style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)
                        ),
                      )
                    ],
                  ),
                  if (job.description.isNotEmpty) ...[
-                   const SizedBox(height: 8),
+                   const SizedBox(height: 12),
                    Text(
                      job.description,
                      maxLines: 2,
                      overflow: TextOverflow.ellipsis,
-                     style: TextStyle(color: Colors.grey[700]),
+                     style: Theme.of(context).textTheme.bodyMedium,
                    ),
                  ],
-                 const SizedBox(height: 8),
+                 const SizedBox(height: 16),
                  Row(
                    children: [
-                      const Icon(Icons.location_on, size: 16, color: Colors.grey),
-                      const SizedBox(width: 4),
-                      Expanded(child: Text(job.location, style: const TextStyle(color: Colors.grey))),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(8)),
+                        child: const Icon(Icons.location_on, size: 18, color: AppTheme.primaryGreen)
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(child: Text(job.location, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500))),
                    ],
                  ),
                  const SizedBox(height: 8),
                  Row(
                    children: [
-                      const Icon(Icons.access_time_outlined, size: 16, color: Colors.grey),
-                      const SizedBox(width: 4),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(8)),
+                        child: const Icon(Icons.access_time_outlined, size: 18, color: AppTheme.primaryGreen)
+                      ),
+                      const SizedBox(width: 12),
                       Text(
                         "${DateFormat('d MMM, HH:mm', AppConstants.defaultLocaleId).format(job.scheduledFrom)} - ${DateFormat('HH:mm', AppConstants.defaultLocaleId).format(job.scheduledTo)}",
-                        style: const TextStyle(color: Colors.grey),
+                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                    ],
                  ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
                  if (!isAcceptable && !isCompleted)
                    Padding(
                      padding: const EdgeInsets.only(bottom: 12.0),

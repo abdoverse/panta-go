@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:glassmorphism/glassmorphism.dart';
 import '../../providers/panta_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../dashboard/user_home_page.dart';
@@ -24,162 +25,220 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.primaryGreen,
+      backgroundColor: Colors.black, // Dark base for high contrast
       body: Stack(
         children: [
-          // Background Decor
+          // Background - High End Gradient
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppTheme.primaryGreen,
+                  const Color(0xFF000000),
+                ],
+              ),
+            ),
+          ),
+
+          // Abstract Shapes for depth
           Positioned(
             top: -100,
             right: -100,
             child: Container(
-              width: 400,
-              height: 400,
+              width: 300,
+              height: 300,
               decoration: BoxDecoration(
-                color: AppTheme.secondaryGreen.withOpacity(0.5),
                 shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [AppTheme.primaryLight.withOpacity(0.4), Colors.transparent],
+                ),
               ),
             ),
-          ),
+          ).animate(onPlay: (controller) => controller.repeat(reverse: true))
+           .scale(begin: const Offset(1, 1), end: const Offset(1.2, 1.2), duration: 4.seconds),
+
            Positioned(
             bottom: -50,
             left: -50,
             child: Container(
-              width: 300,
-              height: 300,
+              width: 400,
+              height: 400,
               decoration: BoxDecoration(
-                color: AppTheme.accentLeaf.withOpacity(0.3),
                 shape: BoxShape.circle,
+                gradient: RadialGradient(
+                   colors: [AppTheme.accentLeaf.withOpacity(0.2), Colors.transparent],
+                ),
               ),
             ),
-          ),
+          ).animate(onPlay: (controller) => controller.repeat(reverse: true))
+           .moveY(begin: 0, end: 30, duration: 5.seconds),
+
 
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(32.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const Icon(Icons.recycling, size: 80, color: Colors.white)
-                        .animate()
-                        .fadeIn(duration: 600.ms)
-                        .scale(),
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: GlassmorphicContainer(
+                  width: double.infinity,
+                  height: 680,
+                  borderRadius: 24,
+                  blur: 20,
+                  alignment: Alignment.center,
+                  border: 2,
+                  linearGradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Colors.white.withOpacity(0.1),
+                        Colors.white.withOpacity(0.05),
+                      ],
+                      stops: const [0.1, 1],
+                  ),
+                  borderGradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.white.withOpacity(0.3),
+                      Colors.white.withOpacity(0.1),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(32.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Icon(Icons.recycling, size: 60, color: Colors.white)
+                            .animate()
+                            .fadeIn(duration: 600.ms)
+                            .scale(),
 
-                    const SizedBox(height: 24),
+                        const SizedBox(height: 16),
 
-                    const Text(
-                      'Panta',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 48,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        letterSpacing: 2,
-                      ),
-                    ).animate().fadeIn(delay: 200.ms).slideY(),
+                        Text(
+                          'Panta',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                            color: Colors.white,
+                            letterSpacing: 2,
+                          ),
+                        ).animate().fadeIn(delay: 200.ms).slideY(),
 
-                    const SizedBox(height: 48),
+                        const Text(
+                          'Sustainable recycling made easy',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.white70, fontSize: 14),
+                        ).animate().fadeIn(delay: 300.ms),
 
-                    Form(
-                      key: _formKey,
-                      child: AutofillGroup( // Added AutofillGroup
-                        child: Column(
-                          children: [
-                            TextFormField(
-                              controller: _emailController,
-                              keyboardType: TextInputType.emailAddress, // Added keyboardType
-                              autofillHints: const [AutofillHints.email], // Added autofillHints
-                              style: const TextStyle(color: Colors.white),
-                              cursorColor: Colors.white,
-                              decoration: const InputDecoration(
-                                labelText: 'Email',
-                                labelStyle: TextStyle(color: Colors.white70),
-                                filled: false, // Override global theme
-                                enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white70)),
-                                focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white)),
-                                errorBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.redAccent)),
-                                focusedErrorBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.redAccent)),
-                                prefixIcon: Icon(Icons.email, color: Colors.white70),
-                              ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter your email';
-                                }
-                                if (!value.contains('@') || !value.contains('.')) {
-                                  return 'Please enter a valid email';
-                                }
-                                return null;
-                              },
+                        const SizedBox(height: 48),
+
+                        Form(
+                          key: _formKey,
+                          child: AutofillGroup( // Added AutofillGroup
+                            child: Column(
+                              children: [
+                                TextFormField(
+                                  controller: _emailController,
+                                  keyboardType: TextInputType.emailAddress, // Added keyboardType
+                                  autofillHints: const [AutofillHints.email], // Added autofillHints
+                                  style: const TextStyle(color: Colors.white),
+                                  cursorColor: Colors.white,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Email',
+                                    labelStyle: TextStyle(color: Colors.white70),
+                                    filled: true,
+                                    fillColor: Colors.black12,
+                                    enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white30)),
+                                    focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)),
+                                    errorBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.redAccent)),
+                                    focusedErrorBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.redAccent)),
+                                    prefixIcon: Icon(Icons.email_outlined, color: Colors.white70),
+                                    border: InputBorder.none, // Remove default box
+                                  ),
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Please enter your email';
+                                    }
+                                    if (!value.contains('@') || !value.contains('.')) {
+                                      return 'Please enter a valid email';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 16),
+                                TextFormField(
+                                  controller: _passwordController,
+                                  obscureText: true,
+                                  autofillHints: const [AutofillHints.password], // Added autofillHints
+                                  style: const TextStyle(color: Colors.white),
+                                  cursorColor: Colors.white,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Password',
+                                    labelStyle: TextStyle(color: Colors.white70),
+                                    filled: true,
+                                    fillColor: Colors.black12,
+                                    enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white30)),
+                                    focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)),
+                                    errorBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.redAccent)),
+                                    focusedErrorBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.redAccent)),
+                                    prefixIcon: Icon(Icons.lock_outline, color: Colors.white70),
+                                    border: InputBorder.none,
+                                  ),
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Please enter your password';
+                                    }
+                                    if (value.length < 8) {
+                                      return 'Password must be at least 8 characters';
+                                    }
+                                    if (!RegExp(r'(?=.*[a-z])').hasMatch(value)) {
+                                      return 'Must contain at least one lowercase letter';
+                                    }
+                                    if (!RegExp(r'(?=.*[A-Z])').hasMatch(value)) {
+                                      return 'Must contain at least one uppercase letter';
+                                    }
+                                    if (!RegExp(r'(?=.*[0-9])').hasMatch(value)) {
+                                      return 'Must contain at least one number';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 16),
-                            TextFormField(
-                              controller: _passwordController,
-                              obscureText: true,
-                              autofillHints: const [AutofillHints.password], // Added autofillHints
-                              style: const TextStyle(color: Colors.white),
-                              cursorColor: Colors.white,
-                              decoration: const InputDecoration(
-                                labelText: 'Password',
-                                labelStyle: TextStyle(color: Colors.white70),
-                                filled: false, // Override global theme
-                                enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white70)),
-                                focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white)),
-                                errorBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.redAccent)),
-                                focusedErrorBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.redAccent)),
-                                prefixIcon: Icon(Icons.lock, color: Colors.white70),
-                              ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter your password';
-                                }
-                                if (value.length < 8) {
-                                  return 'Password must be at least 8 characters';
-                                }
-                                if (!RegExp(r'(?=.*[a-z])').hasMatch(value)) {
-                                  return 'Must contain at least one lowercase letter';
-                                }
-                                if (!RegExp(r'(?=.*[A-Z])').hasMatch(value)) {
-                                  return 'Must contain at least one uppercase letter';
-                                }
-                                if (!RegExp(r'(?=.*[0-9])').hasMatch(value)) {
-                                  return 'Must contain at least one number';
-                                }
-                                return null;
-                              },
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
+
+                        const SizedBox(height: 24),
+
+                        if (_isLoading)
+                          const Center(child: CircularProgressIndicator(color: Colors.white))
+                        else ...[
+                          // Role Selection
+                          _LoginButton(
+                            label: 'Login as Recycler',
+                            icon: Icons.eco,
+                            onTap: () => _login(false),
+                          ).animate().fadeIn(delay: 600.ms).slideX(),
+
+                          const SizedBox(height: 16),
+
+                          _LoginButton(
+                            label: 'Login as Helper',
+                            icon: Icons.local_shipping,
+                            isOutlined: true,
+                            onTap: () => _login(true),
+                          ).animate().fadeIn(delay: 800.ms).slideX(),
+
+                          TextButton(
+                            onPressed: _signUp,
+                            child: const Text('New? Sign Up Here', style: TextStyle(color: Colors.white)),
+                          ),
+                        ]
+                      ],
                     ),
-
-                    const SizedBox(height: 24),
-
-                    if (_isLoading)
-                      const Center(child: CircularProgressIndicator(color: Colors.white))
-                    else ...[
-                      // Role Selection
-                      _LoginButton(
-                        label: 'Login as Recycler',
-                        icon: Icons.eco,
-                        onTap: () => _login(false),
-                      ).animate().fadeIn(delay: 600.ms).slideX(),
-
-                      const SizedBox(height: 16),
-
-                      _LoginButton(
-                        label: 'Login as Helper',
-                        icon: Icons.local_shipping,
-                        isOutlined: true,
-                        onTap: () => _login(true),
-                      ).animate().fadeIn(delay: 800.ms).slideX(),
-
-                      TextButton(
-                        onPressed: _signUp,
-                        child: const Text('New? Sign Up Here', style: TextStyle(color: Colors.white)),
-                      ),
-                    ]
-                  ],
+                  ),
                 ),
               ),
             ),
