@@ -83,68 +83,73 @@ class _LoginPageState extends State<LoginPage> {
 
                     Form(
                       key: _formKey,
-                      child: Column(
-                        children: [
-                          TextFormField(
-                            controller: _emailController,
-                            style: const TextStyle(color: Colors.white),
-                            cursorColor: Colors.white,
-                            decoration: const InputDecoration(
-                              labelText: 'Email',
-                              labelStyle: TextStyle(color: Colors.white70),
-                              filled: false, // Override global theme
-                              enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white70)),
-                              focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white)),
-                              errorBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.redAccent)),
-                              focusedErrorBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.redAccent)),
-                              prefixIcon: Icon(Icons.email, color: Colors.white70),
+                      child: AutofillGroup( // Added AutofillGroup
+                        child: Column(
+                          children: [
+                            TextFormField(
+                              controller: _emailController,
+                              keyboardType: TextInputType.emailAddress, // Added keyboardType
+                              autofillHints: const [AutofillHints.email], // Added autofillHints
+                              style: const TextStyle(color: Colors.white),
+                              cursorColor: Colors.white,
+                              decoration: const InputDecoration(
+                                labelText: 'Email',
+                                labelStyle: TextStyle(color: Colors.white70),
+                                filled: false, // Override global theme
+                                enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white70)),
+                                focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white)),
+                                errorBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.redAccent)),
+                                focusedErrorBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.redAccent)),
+                                prefixIcon: Icon(Icons.email, color: Colors.white70),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter your email';
+                                }
+                                if (!value.contains('@') || !value.contains('.')) {
+                                  return 'Please enter a valid email';
+                                }
+                                return null;
+                              },
                             ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter your email';
-                              }
-                              if (!value.contains('@') || !value.contains('.')) {
-                                return 'Please enter a valid email';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _passwordController,
-                            obscureText: true,
-                            style: const TextStyle(color: Colors.white),
-                            cursorColor: Colors.white,
-                            decoration: const InputDecoration(
-                              labelText: 'Password',
-                              labelStyle: TextStyle(color: Colors.white70),
-                              filled: false, // Override global theme
-                              enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white70)),
-                              focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white)),
-                              errorBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.redAccent)),
-                              focusedErrorBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.redAccent)),
-                              prefixIcon: Icon(Icons.lock, color: Colors.white70),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _passwordController,
+                              obscureText: true,
+                              autofillHints: const [AutofillHints.password], // Added autofillHints
+                              style: const TextStyle(color: Colors.white),
+                              cursorColor: Colors.white,
+                              decoration: const InputDecoration(
+                                labelText: 'Password',
+                                labelStyle: TextStyle(color: Colors.white70),
+                                filled: false, // Override global theme
+                                enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white70)),
+                                focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white)),
+                                errorBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.redAccent)),
+                                focusedErrorBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.redAccent)),
+                                prefixIcon: Icon(Icons.lock, color: Colors.white70),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter your password';
+                                }
+                                if (value.length < 8) {
+                                  return 'Password must be at least 8 characters';
+                                }
+                                if (!RegExp(r'(?=.*[a-z])').hasMatch(value)) {
+                                  return 'Must contain at least one lowercase letter';
+                                }
+                                if (!RegExp(r'(?=.*[A-Z])').hasMatch(value)) {
+                                  return 'Must contain at least one uppercase letter';
+                                }
+                                if (!RegExp(r'(?=.*[0-9])').hasMatch(value)) {
+                                  return 'Must contain at least one number';
+                                }
+                                return null;
+                              },
                             ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter your password';
-                              }
-                              if (value.length < 8) {
-                                return 'Password must be at least 8 characters';
-                              }
-                              if (!RegExp(r'(?=.*[a-z])').hasMatch(value)) {
-                                return 'Must contain at least one lowercase letter';
-                              }
-                              if (!RegExp(r'(?=.*[A-Z])').hasMatch(value)) {
-                                return 'Must contain at least one uppercase letter';
-                              }
-                              if (!RegExp(r'(?=.*[0-9])').hasMatch(value)) {
-                                return 'Must contain at least one number';
-                              }
-                              return null;
-                            },
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
 

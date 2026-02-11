@@ -6,6 +6,7 @@ import '../../core/theme/app_theme.dart';
 import '../../services/location_service.dart';
 import 'package:intl/intl.dart';
 import 'package:dotted_border/dotted_border.dart';
+import '../../core/constants/app_constants.dart';
 
 class CreateRequestPage extends StatefulWidget {
   const CreateRequestPage({super.key});
@@ -272,8 +273,8 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 decoration: InputDecoration(
                   hintText: '0.00',
-                  prefixIcon: const Padding(padding: EdgeInsets.all(12), child: Text("€", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20))),
-                  suffixText: "EUR",
+                  prefixIcon: Padding(padding: const EdgeInsets.all(12), child: Text(AppConstants.currencySymbol, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20))),
+                  suffixText: AppConstants.currencyCode,
                   filled: true,
                   fillColor: Colors.green.withOpacity(0.05),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
@@ -359,7 +360,7 @@ class _DateSelector extends StatelessWidget {
                 const Icon(Icons.event, size: 16, color: AppTheme.primaryGreen),
                 const SizedBox(width: 8),
                 // Force strict patterns like 24:00 usage in display
-                Text(DateFormat('MMM dd, HH:mm').format(date), style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(DateFormat('d MMM, HH:mm', AppConstants.defaultLocaleId).format(date), style: const TextStyle(fontWeight: FontWeight.bold)),
               ],
             ),
           ],

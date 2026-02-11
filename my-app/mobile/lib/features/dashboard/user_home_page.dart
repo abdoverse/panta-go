@@ -9,6 +9,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import '../../services/api_config.dart';
 import '../../services/auth_service.dart';
 import 'package:intl/intl.dart';
+import '../../core/constants/app_constants.dart';
 
 class UserHomePage extends StatefulWidget {
   const UserHomePage({super.key});
@@ -320,12 +321,12 @@ class _RequestCard extends StatelessWidget {
                       const SizedBox(height: 4),
                        // Show Reward
                        Text(
-                         "Reward: €${(request.reward as num?)?.toStringAsFixed(0) ?? '0'}",
+                         "Reward: ${AppConstants.currencySymbol}${(request.reward as num?)?.toStringAsFixed(0) ?? '0'}",
                          style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 13),
                        ),
                       const SizedBox(height: 4),
                       Text(
-                        "${DateFormat('MMM d, HH:mm').format(request.scheduledFrom)} - ${DateFormat('HH:mm').format(request.scheduledTo)}",
+                        "${DateFormat('d MMM, HH:mm', AppConstants.defaultLocaleId).format(request.scheduledFrom)} - ${DateFormat('HH:mm', AppConstants.defaultLocaleId).format(request.scheduledTo)}",
                         style: TextStyle(color: Colors.grey[600], fontSize: 13),
                       ),
                       const SizedBox(height: 4),

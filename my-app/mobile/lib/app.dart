@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/login_page.dart';
+import 'core/constants/app_constants.dart';
 
 class PantaApp extends StatefulWidget {
   const PantaApp({super.key});
@@ -59,6 +61,16 @@ class _PantaAppState extends State<PantaApp> {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       home: const LoginPage(),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        AppConstants.defaultLocale,
+        Locale('en', 'US'),
+      ],
+      locale: AppConstants.defaultLocale,
     );
   }
 }

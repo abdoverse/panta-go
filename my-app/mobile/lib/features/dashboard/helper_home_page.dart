@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../providers/panta_provider.dart';
 import '../../core/theme/app_theme.dart';
+import 'package:provider/provider.dart';
 import '../../models/request_model.dart';
-import '../shared/profile_screen.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
-import '../../services/api_config.dart';
-import '../../services/auth_service.dart';
 import 'package:intl/intl.dart';
+import '../shared/profile_screen.dart';
+import '../../core/constants/app_constants.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
+import '../../services/auth_service.dart';
+import '../../services/api_config.dart';
 
 class HelperHomePage extends StatefulWidget {
   const HelperHomePage({super.key});
@@ -308,7 +309,7 @@ class _JobCard extends StatelessWidget {
                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                        decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
                        child: Text(
-                         "€${(job.reward as num?)?.toStringAsFixed(0) ?? '0'}",
+                         "${AppConstants.currencySymbol}${(job.reward as num?)?.toStringAsFixed(0) ?? '0'}",
                          style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 16)
                        ),
                      )
@@ -337,7 +338,7 @@ class _JobCard extends StatelessWidget {
                       const Icon(Icons.access_time_outlined, size: 16, color: Colors.grey),
                       const SizedBox(width: 4),
                       Text(
-                        "${DateFormat('MMM d, HH:mm').format(job.scheduledFrom)} - ${DateFormat('HH:mm').format(job.scheduledTo)}",
+                        "${DateFormat('d MMM, HH:mm', AppConstants.defaultLocaleId).format(job.scheduledFrom)} - ${DateFormat('HH:mm', AppConstants.defaultLocaleId).format(job.scheduledTo)}",
                         style: const TextStyle(color: Colors.grey),
                       ),
                    ],
