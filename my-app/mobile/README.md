@@ -18,7 +18,23 @@ Real Swish integration requires strict security measures including mutual TLS (m
 Secure user identification and signing.
 - [ ] Obtain BankID Test Certificates.
 - [ ] Implement Backend support for Swish BankID RP API (Auth/Sign).
-- [ ] Handle animated QR codes or deep linking for mobile auto-start.
+
+## 📱 iOS Deployment Strategy (Ubuntu / Linux)
+
+Since we are developing on Ubuntu, we cannot build the iOS app directly using Xcode. We will use the **Sideload Strategy**.
+
+### 1. Build the IPA (Cloud)
+We use a CI/CD service like **Codemagic** or **GitHub Actions** to build the app in the cloud (on MacOS machines).
+- Even with a free Apple ID, Codemagic can generate an `.ipa` file (signed with a Development Certificate).
+
+### 2. Sideload to iPhone (Local)
+Once the `.ipa` file is built and downloaded to Ubuntu:
+- Use **Sideloader** (Linux-friendly) or **Sideloadly** (via Wine) to install the `.ipa` onto your iPhone.
+- You will need to "trust" the developer app in your iPhone settings after installation.
+
+### TODO
+- [ ] Set up `codemagic.yaml` or GitHub Action workflow for iOS build.
+- [ ] Install Sideloader on Ubuntu.
 
 ## 📱 Notifications Support
 
