@@ -8,6 +8,7 @@ import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as logs from 'aws-cdk-lib/aws-logs';
+import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as path from 'path';
 
 export class InfraStack extends cdk.Stack {
@@ -49,6 +50,12 @@ export class InfraStack extends cdk.Stack {
       },
     });
 
+    const firebaseServiceAccountSecret = secretsmanager.Secret.fromSecretNameV2(
+      this,
+      'FirebaseServiceAccountSecret',
+      'panta-go/firebase-service-account',
+    );
+
     const taskExecutionRole = new iam.Role(this, 'PantaExpressExecutionRole', {
       assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
       managedPolicies: [
@@ -71,6 +78,7 @@ export class InfraStack extends cdk.Stack {
       assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
     });
     table.grantReadWriteData(taskRole);
+    firebaseServiceAccountSecret.grantRead(taskExecutionRole);
 
     const logGroup = new logs.LogGroup(this, 'PantaExpressLogGroup', {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
@@ -93,6 +101,12 @@ export class InfraStack extends cdk.Stack {
           { name: 'AWS_REGION', value: this.region },
           { name: 'COGNITO_USER_POOL_ID', value: userPool.userPoolId },
           { name: 'COGNITO_CLIENT_ID', value: userPoolClient.userPoolClientId },
+        ],
+        secrets: [
+          {
+            name: 'FIREBASE_SERVICE_ACCOUNT_JSON',
+            valueFrom: firebaseServiceAccountSecret.secretArn,
+          },
         ],
         awsLogsConfiguration: {
           logGroup: logGroup.logGroupName,

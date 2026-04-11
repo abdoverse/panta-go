@@ -97,11 +97,17 @@ func sendPushNotification(token string, title string, body string) {
 // Init Firebase
 func initFirebase() {
 	ctx := context.Background()
-	// Use environment variable GOOGLE_APPLICATION_CREDENTIALS or default to local file for dev
 	var opts []option.ClientOption
-	// If you wanted to force a file:
-	// opts = append(opts, option.WithCredentialsFile("google-services.json"))
-	// But in AWS, we rely on env vars or metadata service.
+
+	if serviceAccountJSON := os.Getenv("FIREBASE_SERVICE_ACCOUNT_JSON"); serviceAccountJSON != "" {
+		opts = append(opts, option.WithCredentialsJSON([]byte(serviceAccountJSON)))
+		log.Println("Firebase service account loaded from injected secret")
+	} else if credentialsPath := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"); credentialsPath != "" {
+		opts = append(opts, option.WithCredentialsFile(credentialsPath))
+		log.Printf("Firebase service account loaded from %s", credentialsPath)
+	} else {
+		log.Println("⚠️  Firebase service account not configured. Notifications will not work.")
+	}
 
 	// Create app
 	app, err := firebase.NewApp(ctx, nil, opts...)
@@ -175,9 +181,14 @@ func init() {
 
 // Check for credentials file
 func checkCredentials() {
+	if os.Getenv("FIREBASE_SERVICE_ACCOUNT_JSON") != "" {
+		log.Println("✅ Firebase service account injected via secret")
+		return
+	}
+
 	path := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
 	if path == "" {
-		log.Println("⚠️  GOOGLE_APPLICATION_CREDENTIALS env var not set.")
+		log.Println("⚠️  FIREBASE_SERVICE_ACCOUNT_JSON and GOOGLE_APPLICATION_CREDENTIALS are both unset.")
 		return
 	}
 	if _, err := os.Stat(path); err != nil {
@@ -641,4 +652,3 @@ func main() {
 		}
 	}
 }
-

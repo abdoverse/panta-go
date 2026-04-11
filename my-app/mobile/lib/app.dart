@@ -13,7 +13,8 @@ class PantaApp extends StatefulWidget {
 }
 
 class _PantaAppState extends State<PantaApp> {
-  final GlobalKey<ScaffoldMessengerState> snackbarKey = GlobalKey<ScaffoldMessengerState>();
+  final GlobalKey<ScaffoldMessengerState> snackbarKey =
+      GlobalKey<ScaffoldMessengerState>();
 
   @override
   void initState() {
@@ -29,25 +30,27 @@ class _PantaAppState extends State<PantaApp> {
       RemoteNotification? notification = message.notification;
 
       if (notification != null) {
-        debugPrint('Message also contained a notification: ${notification.title}');
+        debugPrint(
+            'Message also contained a notification: ${notification.title}');
         // Show SnackBar for any notification payload in foreground
         // Use a slight delay to ensure key is mounted if called extremely early (unlikely here but safe)
         if (snackbarKey.currentState != null) {
-             snackbarKey.currentState!.showSnackBar(
-              SnackBar(
-                content: Text('${notification.title ?? "Notification"}: ${notification.body ?? ""}'),
-                behavior: SnackBarBehavior.floating,
-                backgroundColor: Colors.green,
-                duration: const Duration(seconds: 5),
-                action: SnackBarAction(
-                  label: 'VIEW',
-                  textColor: Colors.white,
-                  onPressed: () {},
-                ),
+          snackbarKey.currentState!.showSnackBar(
+            SnackBar(
+              content: Text(
+                  '${notification.title ?? "Notification"}: ${notification.body ?? ""}'),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 5),
+              action: SnackBarAction(
+                label: 'VIEW',
+                textColor: Colors.white,
+                onPressed: () {},
               ),
-            );
+            ),
+          );
         } else {
-            debugPrint("Snackbar key current state is null!");
+          debugPrint("Snackbar key current state is null!");
         }
       }
     });
