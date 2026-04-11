@@ -20,4 +20,7 @@ npx cdk bootstrap
 echo "Deploying Stack..."
 npx cdk deploy --require-approval never
 
+echo "Syncing mobile config from stack outputs..."
+node scripts/sync-mobile-config.js
+
 echo "Deployment complete!"

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:glassmorphism/glassmorphism.dart';
-import '../../providers/panta_provider.dart';
+import 'package:provider/provider.dart';
+
 import '../../core/theme/app_theme.dart';
-import '../dashboard/user_home_page.dart';
+import '../../providers/panta_provider.dart';
 import '../dashboard/helper_home_page.dart';
+import '../dashboard/user_home_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -15,20 +16,24 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  static final RegExp _emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+
   final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmationCodeController = TextEditingController();
+
   bool _isLoading = false;
-  String _selectedRole = 'Recycler'; // Default role
+  bool _isPasswordVisible = false;
+  String _selectedRole = 'Recycler';
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black, // Dark base for high contrast
+      backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Background - High End Gradient
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -41,8 +46,6 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
           ),
-
-          // Abstract Shapes for depth
           Positioned(
             top: -100,
             right: -100,
@@ -52,14 +55,21 @@ class _LoginPageState extends State<LoginPage> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  colors: [AppTheme.primaryLight.withOpacity(0.4), Colors.transparent],
+                  colors: [
+                    AppTheme.primaryLight.withOpacity(0.4),
+                    Colors.transparent,
+                  ],
                 ),
               ),
             ),
-          ).animate(onPlay: (controller) => controller.repeat(reverse: true))
-           .scale(begin: const Offset(1, 1), end: const Offset(1.2, 1.2), duration: 4.seconds),
-
-           Positioned(
+          )
+              .animate(onPlay: (controller) => controller.repeat(reverse: true))
+              .scale(
+                begin: const Offset(1, 1),
+                end: const Offset(1.2, 1.2),
+                duration: 4.seconds,
+              ),
+          Positioned(
             bottom: -50,
             left: -50,
             child: Container(
@@ -68,14 +78,16 @@ class _LoginPageState extends State<LoginPage> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                   colors: [AppTheme.accentLeaf.withOpacity(0.2), Colors.transparent],
+                  colors: [
+                    AppTheme.accentLeaf.withOpacity(0.2),
+                    Colors.transparent,
+                  ],
                 ),
               ),
             ),
-          ).animate(onPlay: (controller) => controller.repeat(reverse: true))
-           .moveY(begin: 0, end: 30, duration: 5.seconds),
-
-
+          )
+              .animate(onPlay: (controller) => controller.repeat(reverse: true))
+              .moveY(begin: 0, end: 30, duration: 5.seconds),
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -88,13 +100,13 @@ class _LoginPageState extends State<LoginPage> {
                   alignment: Alignment.center,
                   border: 2,
                   linearGradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Colors.white.withOpacity(0.1),
-                        Colors.white.withOpacity(0.05),
-                      ],
-                      stops: const [0.1, 1],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.white.withOpacity(0.1),
+                      Colors.white.withOpacity(0.05),
+                    ],
+                    stops: const [0.1, 1],
                   ),
                   borderGradient: LinearGradient(
                     begin: Alignment.topLeft,
@@ -107,135 +119,256 @@ class _LoginPageState extends State<LoginPage> {
                   child: Padding(
                     padding: const EdgeInsets.all(32.0),
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const Icon(Icons.recycling, size: 60, color: Colors.white)
+                        const Icon(Icons.recycling,
+                                size: 60, color: Colors.white)
                             .animate()
                             .fadeIn(duration: 600.ms)
                             .scale(),
-
                         const SizedBox(height: 16),
-
                         Text(
                           'Panta',
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                            color: Colors.white,
-                            letterSpacing: 2,
-                          ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .displayMedium
+                              ?.copyWith(
+                                color: Colors.white,
+                                letterSpacing: 2,
+                              ),
                         ).animate().fadeIn(delay: 200.ms).slideY(),
-
                         const Text(
                           'Sustainable recycling made easy',
                           textAlign: TextAlign.center,
                           style: TextStyle(color: Colors.white70, fontSize: 14),
                         ).animate().fadeIn(delay: 300.ms),
-
-                        const SizedBox(height: 48),
-
-                        Form(
-                          key: _formKey,
-                          child: AutofillGroup( // Added AutofillGroup
-                            child: Column(
-                              children: [
-                                TextFormField(
-                                  controller: _emailController,
-                                  keyboardType: TextInputType.emailAddress, // Added keyboardType
-                                  autofillHints: const [AutofillHints.email], // Added autofillHints
-                                  style: const TextStyle(color: Colors.white),
-                                  cursorColor: Colors.white,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Email',
-                                    labelStyle: TextStyle(color: Colors.white70),
-                                    filled: true,
-                                    fillColor: Colors.black12,
-                                    enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white30)),
-                                    focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)),
-                                    errorBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.redAccent)),
-                                    focusedErrorBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.redAccent)),
-                                    prefixIcon: Icon(Icons.email_outlined, color: Colors.white70),
-                                    border: InputBorder.none, // Remove default box
-                                  ),
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return 'Please enter your email';
-                                    }
-                                    if (!value.contains('@') || !value.contains('.')) {
-                                      return 'Please enter a valid email';
-                                    }
-                                    return null;
-                                  },
+                        const SizedBox(height: 32),
+                        Expanded(
+                          child: SingleChildScrollView(
+                            child: Form(
+                              key: _formKey,
+                              child: AutofillGroup(
+                                child: Column(
+                                  children: [
+                                    TextFormField(
+                                      controller: _nameController,
+                                      keyboardType: TextInputType.name,
+                                      textCapitalization:
+                                          TextCapitalization.words,
+                                      autofillHints: const [AutofillHints.name],
+                                      style:
+                                          const TextStyle(color: Colors.white),
+                                      cursorColor: Colors.white,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Name',
+                                        labelStyle:
+                                            TextStyle(color: Colors.white70),
+                                        filled: true,
+                                        fillColor: Colors.black12,
+                                        enabledBorder: UnderlineInputBorder(
+                                          borderSide:
+                                              BorderSide(color: Colors.white30),
+                                        ),
+                                        focusedBorder: UnderlineInputBorder(
+                                          borderSide:
+                                              BorderSide(color: Colors.white),
+                                        ),
+                                        errorBorder: UnderlineInputBorder(
+                                          borderSide: BorderSide(
+                                              color: Colors.redAccent),
+                                        ),
+                                        focusedErrorBorder:
+                                            UnderlineInputBorder(
+                                          borderSide: BorderSide(
+                                              color: Colors.redAccent),
+                                        ),
+                                        prefixIcon: Icon(
+                                          Icons.person_outline,
+                                          color: Colors.white70,
+                                        ),
+                                        border: InputBorder.none,
+                                      ),
+                                      validator: (value) {
+                                        if (value == null ||
+                                            value.trim().isEmpty) {
+                                          return 'Please enter your name';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    const SizedBox(height: 16),
+                                    TextFormField(
+                                      controller: _emailController,
+                                      keyboardType: TextInputType.emailAddress,
+                                      textCapitalization:
+                                          TextCapitalization.none,
+                                      autocorrect: false,
+                                      enableSuggestions: false,
+                                      autofillHints: const [
+                                        AutofillHints.email
+                                      ],
+                                      style:
+                                          const TextStyle(color: Colors.white),
+                                      cursorColor: Colors.white,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Email',
+                                        labelStyle:
+                                            TextStyle(color: Colors.white70),
+                                        filled: true,
+                                        fillColor: Colors.black12,
+                                        enabledBorder: UnderlineInputBorder(
+                                          borderSide:
+                                              BorderSide(color: Colors.white30),
+                                        ),
+                                        focusedBorder: UnderlineInputBorder(
+                                          borderSide:
+                                              BorderSide(color: Colors.white),
+                                        ),
+                                        errorBorder: UnderlineInputBorder(
+                                          borderSide: BorderSide(
+                                              color: Colors.redAccent),
+                                        ),
+                                        focusedErrorBorder:
+                                            UnderlineInputBorder(
+                                          borderSide: BorderSide(
+                                              color: Colors.redAccent),
+                                        ),
+                                        prefixIcon: Icon(
+                                          Icons.email_outlined,
+                                          color: Colors.white70,
+                                        ),
+                                        border: InputBorder.none,
+                                      ),
+                                      validator: (value) {
+                                        final email = value?.trim() ?? '';
+                                        if (email.isEmpty) {
+                                          return 'Please enter your email';
+                                        }
+                                        if (!_looksLikeEmail(email) &&
+                                            !_looksLikeEmail(
+                                                _nameController.text.trim())) {
+                                          return 'Please enter a valid email';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    const SizedBox(height: 16),
+                                    TextFormField(
+                                      controller: _passwordController,
+                                      obscureText: !_isPasswordVisible,
+                                      autocorrect: false,
+                                      enableSuggestions: false,
+                                      autofillHints: const [
+                                        AutofillHints.newPassword,
+                                        AutofillHints.password,
+                                      ],
+                                      style:
+                                          const TextStyle(color: Colors.white),
+                                      cursorColor: Colors.white,
+                                      decoration: InputDecoration(
+                                        labelText: 'Password',
+                                        labelStyle: const TextStyle(
+                                            color: Colors.white70),
+                                        filled: true,
+                                        fillColor: Colors.black12,
+                                        enabledBorder:
+                                            const UnderlineInputBorder(
+                                          borderSide:
+                                              BorderSide(color: Colors.white30),
+                                        ),
+                                        focusedBorder:
+                                            const UnderlineInputBorder(
+                                          borderSide:
+                                              BorderSide(color: Colors.white),
+                                        ),
+                                        errorBorder: const UnderlineInputBorder(
+                                          borderSide: BorderSide(
+                                              color: Colors.redAccent),
+                                        ),
+                                        focusedErrorBorder:
+                                            const UnderlineInputBorder(
+                                          borderSide: BorderSide(
+                                              color: Colors.redAccent),
+                                        ),
+                                        prefixIcon: const Icon(
+                                          Icons.lock_outline,
+                                          color: Colors.white70,
+                                        ),
+                                        suffixIcon: IconButton(
+                                          onPressed: () {
+                                            setState(() {
+                                              _isPasswordVisible =
+                                                  !_isPasswordVisible;
+                                            });
+                                          },
+                                          icon: Icon(
+                                            _isPasswordVisible
+                                                ? Icons.visibility_off_outlined
+                                                : Icons.visibility_outlined,
+                                            color: Colors.white70,
+                                          ),
+                                          tooltip: _isPasswordVisible
+                                              ? 'Hide password'
+                                              : 'Show password',
+                                        ),
+                                        border: InputBorder.none,
+                                      ),
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Please enter your password';
+                                        }
+                                        if (value.length < 8) {
+                                          return 'Password must be at least 8 characters';
+                                        }
+                                        if (!RegExp(r'(?=.*[a-z])')
+                                            .hasMatch(value)) {
+                                          return 'Must contain at least one lowercase letter';
+                                        }
+                                        if (!RegExp(r'(?=.*[A-Z])')
+                                            .hasMatch(value)) {
+                                          return 'Must contain at least one uppercase letter';
+                                        }
+                                        if (!RegExp(r'(?=.*[0-9])')
+                                            .hasMatch(value)) {
+                                          return 'Must contain at least one number';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(height: 16),
-                                TextFormField(
-                                  controller: _passwordController,
-                                  obscureText: true,
-                                  autofillHints: const [AutofillHints.password], // Added autofillHints
-                                  style: const TextStyle(color: Colors.white),
-                                  cursorColor: Colors.white,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Password',
-                                    labelStyle: TextStyle(color: Colors.white70),
-                                    filled: true,
-                                    fillColor: Colors.black12,
-                                    enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white30)),
-                                    focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)),
-                                    errorBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.redAccent)),
-                                    focusedErrorBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.redAccent)),
-                                    prefixIcon: Icon(Icons.lock_outline, color: Colors.white70),
-                                    border: InputBorder.none,
-                                  ),
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return 'Please enter your password';
-                                    }
-                                    if (value.length < 8) {
-                                      return 'Password must be at least 8 characters';
-                                    }
-                                    if (!RegExp(r'(?=.*[a-z])').hasMatch(value)) {
-                                      return 'Must contain at least one lowercase letter';
-                                    }
-                                    if (!RegExp(r'(?=.*[A-Z])').hasMatch(value)) {
-                                      return 'Must contain at least one uppercase letter';
-                                    }
-                                    if (!RegExp(r'(?=.*[0-9])').hasMatch(value)) {
-                                      return 'Must contain at least one number';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                              ],
+                              ),
                             ),
                           ),
                         ),
-
                         const SizedBox(height: 24),
-
                         if (_isLoading)
-                          const Center(child: CircularProgressIndicator(color: Colors.white))
+                          const Center(
+                            child:
+                                CircularProgressIndicator(color: Colors.white),
+                          )
                         else ...[
-                          // Role Selection
                           _LoginButton(
                             label: 'Login as Recycler',
                             icon: Icons.eco,
                             onTap: () => _login(false),
                           ).animate().fadeIn(delay: 600.ms).slideX(),
-
                           const SizedBox(height: 16),
-
                           _LoginButton(
                             label: 'Login as Helper',
                             icon: Icons.local_shipping,
                             isOutlined: true,
                             onTap: () => _login(true),
                           ).animate().fadeIn(delay: 800.ms).slideX(),
-
                           TextButton(
                             onPressed: _signUp,
-                            child: const Text('New? Sign Up Here', style: TextStyle(color: Colors.white)),
+                            child: const Text(
+                              'New? Sign Up Here',
+                              style: TextStyle(color: Colors.white),
+                            ),
                           ),
-                        ]
+                        ],
                       ],
                     ),
                   ),
@@ -253,20 +386,26 @@ class _LoginPageState extends State<LoginPage> {
 
     setState(() => _isLoading = true);
     final error = await context.read<PantaProvider>().login(
-      _emailController.text.trim(),
-      _passwordController.text.trim(),
-      asHelper
-    );
+          _emailController.text.trim(),
+          _passwordController.text.trim(),
+          asHelper,
+        );
     setState(() => _isLoading = false);
 
     if (error == null && mounted) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => asHelper ? const HelperHomePage() : const UserHomePage()),
+        MaterialPageRoute(
+          builder: (_) =>
+              asHelper ? const HelperHomePage() : const UserHomePage(),
+        ),
       );
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Login Failed: $error'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text('Login Failed: $error'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -274,19 +413,25 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _signUp() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final signupIdentity = _normalizeSignupIdentity();
+
     setState(() => _isLoading = true);
     final error = await context.read<PantaProvider>().signUp(
-      _emailController.text.trim(),
-      _passwordController.text.trim(),
-      _selectedRole,
-    );
+          email: signupIdentity.email,
+          password: _passwordController.text.trim(),
+          role: _selectedRole,
+          name: signupIdentity.name,
+        );
     setState(() => _isLoading = false);
 
     if (error == null && mounted) {
-        _showConfirmationDialog();
+      _showConfirmationDialog();
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Sign Up Failed: $error'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text('Sign Up Failed: $error'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -300,7 +445,9 @@ class _LoginPageState extends State<LoginPage> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('A confirmation code has been sent to your email. Please enter it below.'),
+            const Text(
+              'A confirmation code has been sent to your email. Please enter it below.',
+            ),
             const SizedBox(height: 16),
             TextField(
               controller: _confirmationCodeController,
@@ -319,7 +466,7 @@ class _LoginPageState extends State<LoginPage> {
           ),
           ElevatedButton(
             onPressed: () async {
-              Navigator.pop(context); // Close dialog
+              Navigator.pop(context);
               await _confirmAndLogin();
             },
             child: const Text('Confirm & Login'),
@@ -331,42 +478,72 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _confirmAndLogin() async {
     setState(() => _isLoading = true);
-    final email = _emailController.text.trim();
+    final email = _emailController.text.trim().toLowerCase();
     final code = _confirmationCodeController.text.trim();
 
-    // 1. Confirm User
-    final confirmError = await context.read<PantaProvider>().confirmUser(email, code);
+    final confirmError =
+        await context.read<PantaProvider>().confirmUser(email, code);
 
     if (confirmError != null) {
       setState(() => _isLoading = false);
       if (mounted) {
-         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Confirmation Failed: $confirmError'), backgroundColor: Colors.red),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Confirmation Failed: $confirmError'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
       return;
     }
 
-    // 2. Auto Login
     final isHelper = _selectedRole == 'Helper';
     final loginError = await context.read<PantaProvider>().login(
-      email,
-      _passwordController.text.trim(),
-      isHelper
-    );
+          email,
+          _passwordController.text.trim(),
+          isHelper,
+        );
 
     setState(() => _isLoading = false);
 
     if (loginError == null && mounted) {
-       Navigator.pushReplacement(
+      Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => isHelper ? const HelperHomePage() : const UserHomePage()),
+        MaterialPageRoute(
+          builder: (_) =>
+              isHelper ? const HelperHomePage() : const UserHomePage(),
+        ),
       );
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-         SnackBar(content: Text('Login Failed after confirmation: $loginError'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text('Login Failed after confirmation: $loginError'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
+  }
+
+  ({String name, String email}) _normalizeSignupIdentity() {
+    var name = _nameController.text.trim();
+    var email = _emailController.text.trim().toLowerCase();
+
+    if (_looksLikeEmail(name) && !_looksLikeEmail(email)) {
+      final swappedName = email;
+      final swappedEmail = name.toLowerCase();
+
+      _nameController.text = swappedName;
+      _emailController.text = swappedEmail;
+
+      name = swappedName;
+      email = swappedEmail;
+    }
+
+    return (name: name, email: email);
+  }
+
+  bool _looksLikeEmail(String value) {
+    return _emailPattern.hasMatch(value.trim());
   }
 }
 
@@ -386,7 +563,7 @@ class _LoginButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isOutlined) {
-       return OutlinedButton.icon(
+      return OutlinedButton.icon(
         onPressed: onTap,
         icon: Icon(icon, color: Colors.white),
         label: Text(label),
@@ -394,11 +571,14 @@ class _LoginButton extends StatelessWidget {
           foregroundColor: Colors.white,
           side: const BorderSide(color: Colors.white, width: 2),
           padding: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
       );
     }
+
     return ElevatedButton.icon(
       onPressed: onTap,
       icon: Icon(icon, color: AppTheme.primaryGreen),
@@ -407,7 +587,9 @@ class _LoginButton extends StatelessWidget {
         backgroundColor: Colors.white,
         foregroundColor: AppTheme.primaryGreen,
         padding: const EdgeInsets.all(16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
         textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
       ),
     );

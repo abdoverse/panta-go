@@ -39,14 +39,15 @@ class _UserHomePageState extends State<UserHomePage> {
     String wsUrl = ApiConfig.baseUrl.replaceAll('http', 'ws');
     // Ensure we handle https -> wss
     if (ApiConfig.baseUrl.startsWith('https')) {
-       wsUrl = ApiConfig.baseUrl.replaceAll('https', 'wss');
+      wsUrl = ApiConfig.baseUrl.replaceAll('https', 'wss');
     }
 
     // Connect to /api/v1/ws with token param as a fallback/simpler auth for WS
     // Note: IOClient supports headers, but ensuring cross-platform compat with query params is safer
     // unless standard library prevents headers cleanly.
     // But our backend supports query param 'token' now.
-    final uri = Uri.parse('$wsUrl/api/v1/ws').replace(queryParameters: {'token': token});
+    final uri = Uri.parse('$wsUrl/api/v1/ws')
+        .replace(queryParameters: {'token': token});
 
     try {
       _channel = WebSocketChannel.connect(uri);
@@ -102,30 +103,33 @@ class _UserHomePageState extends State<UserHomePage> {
         onDestinationSelected: (i) => setState(() => _currentIndex = i),
         destinations: const [
           NavigationDestination(
-             icon: Icon(Icons.dashboard_outlined),
-             selectedIcon: Icon(Icons.dashboard),
-             label: 'Home'
-          ),
+              icon: Icon(Icons.dashboard_outlined),
+              selectedIcon: Icon(Icons.dashboard),
+              label: 'Home'),
           NavigationDestination(
-             icon: Icon(Icons.history_outlined),
-             selectedIcon: Icon(Icons.history),
-             label: 'History'
-          ),
+              icon: Icon(Icons.history_outlined),
+              selectedIcon: Icon(Icons.history),
+              label: 'History'),
           NavigationDestination(
-             icon: Icon(Icons.person_outline),
-             selectedIcon: Icon(Icons.person),
-             label: 'Profile'
-          ),
+              icon: Icon(Icons.person_outline),
+              selectedIcon: Icon(Icons.person),
+              label: 'Profile'),
         ],
       ),
-      floatingActionButton: _currentIndex == 0 ? FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateRequestPage()));
-        },
-        backgroundColor: AppTheme.primaryGreen,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text("Recycle Now", style: TextStyle(color: Colors.white)),
-      ) : null,
+      floatingActionButton: _currentIndex == 0
+          ? FloatingActionButton.extended(
+              onPressed: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const CreateRequestPage()));
+              },
+              backgroundColor: AppTheme.primaryGreen,
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text("Recycle Now",
+                  style: TextStyle(color: Colors.white)),
+            )
+          : null,
     );
   }
 }
@@ -137,6 +141,7 @@ class _DashboardView extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.watch<PantaProvider>();
     final ongoing = provider.ongoingRequests;
+    final displayName = provider.currentUserDisplayName;
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -150,15 +155,22 @@ class _DashboardView extends StatelessWidget {
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
-              title: const Text("Welcome Back!",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22)
+              title: Text(
+                displayName == null || displayName.isEmpty
+                    ? 'Welcome Back!'
+                    : 'Welcome Back, $displayName!',
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
               ),
               background: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [AppTheme.primaryGreen, AppTheme.primaryGreen.withOpacity(0.8)],
+                    colors: [
+                      AppTheme.primaryGreen,
+                      AppTheme.primaryGreen.withOpacity(0.8)
+                    ],
                   ),
                 ),
                 child: Stack(
@@ -166,46 +178,50 @@ class _DashboardView extends StatelessWidget {
                     Positioned(
                       right: -20,
                       top: -20,
-                      child: Icon(Icons.eco, size: 150, color: Colors.white.withOpacity(0.1)),
+                      child: Icon(Icons.eco,
+                          size: 150, color: Colors.white.withOpacity(0.1)),
                     ),
                   ],
                 ),
               ),
             ),
           ),
-
           if (provider.isLoading && ongoing.isEmpty)
-             const SliverFillRemaining(
-               child: Padding(
-                 padding: EdgeInsets.all(20.0),
-                 child: LoadingSkeletons(),
-               ),
-             )
+            const SliverFillRemaining(
+              child: Padding(
+                padding: EdgeInsets.all(20.0),
+                child: LoadingSkeletons(),
+              ),
+            )
           else
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text("Ongoing Requests",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)
-                  ),
-                  const SizedBox(height: 16),
-                  if (ongoing.isEmpty)
-                    const _EmptyState(message: "No ongoing recycling requests.\nStart recycling today!")
-                        .animate().fadeIn().scale(),
-
-                  ...ongoing.asMap().entries.map((e) =>
-                      _RequestCard(request: e.value, isInteractable: false, index: e.key)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("Ongoing Requests",
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 16),
+                    if (ongoing.isEmpty)
+                      const _EmptyState(
+                              message:
+                                  "No ongoing recycling requests.\nStart recycling today!")
                           .animate()
-                          .fadeIn(duration: 400.ms, delay: (100 * e.key).ms)
-                          .slideX(begin: 0.1, end: 0)
-                  ),
-                ],
+                          .fadeIn()
+                          .scale(),
+                    ...ongoing.asMap().entries.map((e) => _RequestCard(
+                            request: e.value,
+                            isInteractable: false,
+                            index: e.key)
+                        .animate()
+                        .fadeIn(duration: 400.ms, delay: (100 * e.key).ms)
+                        .slideX(begin: 0.1, end: 0)),
+                  ],
+                ),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -231,7 +247,8 @@ class _HistoryView extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           itemCount: history.length,
           itemBuilder: (context, index) {
-            return _RequestCard(request: history[index], isInteractable: true, index: index);
+            return _RequestCard(
+                request: history[index], isInteractable: true, index: index);
           },
         ),
       ),
@@ -257,7 +274,8 @@ class _EmptyState extends StatelessWidget {
         children: [
           Icon(Icons.recycling, size: 48, color: Colors.grey[400]),
           const SizedBox(height: 16),
-          Text(message,
+          Text(
+            message,
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.grey[600]),
           ),
@@ -272,7 +290,8 @@ class _RequestCard extends StatelessWidget {
   final bool isInteractable;
   final int? index;
 
-  const _RequestCard({required this.request, this.isInteractable = false, this.index});
+  const _RequestCard(
+      {required this.request, this.isInteractable = false, this.index});
 
   @override
   Widget build(BuildContext context) {
@@ -321,55 +340,67 @@ class _RequestCard extends StatelessWidget {
                   width: 60,
                   height: 60,
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryGreen.withOpacity(0.08), // Softer background
+                    color: AppTheme.primaryGreen
+                        .withOpacity(0.08), // Softer background
                     borderRadius: BorderRadius.circular(16), // Softer corners
                   ),
-                  child: const Icon(Icons.inventory_2_outlined, color: AppTheme.primaryGreen, size: 28),
+                  child: const Icon(Icons.inventory_2_outlined,
+                      color: AppTheme.primaryGreen, size: 28),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(request.title, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                      Text(request.title,
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold)),
                       const SizedBox(height: 6),
-                       // Show Reward
-                       Row(
-                         children: [
-                           Text(
-                             "${AppConstants.currencySymbol}${(request.reward as num?)?.toStringAsFixed(0) ?? '0'}",
-                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                               color: AppTheme.primaryGreen,
-                               fontWeight: FontWeight.bold
-                             ),
-                           ),
-                           const SizedBox(width: 8),
-                           Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: statusColor.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(20), // Pill shape
-                              ),
-                              child: Text(
-                                statusText.toUpperCase(),
-                                style: TextStyle(
-                                  color: statusColor,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.5
-                                )
-                              ),
-                           ),
-                         ],
-                       ),
-                      const SizedBox(height: 6),
-                      Row( // Added icon for schedule
+                      // Show Reward
+                      Row(
                         children: [
-                          Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
+                          Text(
+                            "${AppConstants.currencySymbol}${(request.reward as num?)?.toStringAsFixed(0) ?? '0'}",
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                    color: AppTheme.primaryGreen,
+                                    fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: statusColor.withOpacity(0.1),
+                              borderRadius:
+                                  BorderRadius.circular(20), // Pill shape
+                            ),
+                            child: Text(statusText.toUpperCase(),
+                                style: TextStyle(
+                                    color: statusColor,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.5)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        // Added icon for schedule
+                        children: [
+                          Icon(Icons.access_time,
+                              size: 14, color: Colors.grey[500]),
                           const SizedBox(width: 4),
                           Text(
                             "${DateFormat('d MMM, HH:mm', AppConstants.defaultLocaleId).format(request.scheduledFrom)} - ${DateFormat('HH:mm', AppConstants.defaultLocaleId).format(request.scheduledTo)}",
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(color: Colors.grey[600]),
                           ),
                         ],
                       ),
@@ -379,7 +410,9 @@ class _RequestCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            if (isInteractable && request.status == RequestStatus.pickedUp && !request.isRated)
+            if (isInteractable &&
+                request.status == RequestStatus.pickedUp &&
+                !request.isRated)
               OutlinedButton(
                 onPressed: () {
                   _showRatingDialog(context, request);
@@ -403,66 +436,72 @@ class _RequestCard extends StatelessWidget {
 
     showDialog(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setState) {
-          return AlertDialog(
-            title: const Text("Rate your Helper"),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text("How was the pickup service?"),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(5, (index) {
-                    final int starValue = index + 1;
-                    return IconButton(
-                      onPressed: () {
-                        setState(() {
-                          currentRating = starValue.toDouble();
-                        });
-                      },
-                      icon: Icon(
-                        starValue <= currentRating ? Icons.star : Icons.star_border,
-                        size: 32,
-                        color: Colors.amber,
-                      ),
-                    );
-                  }),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: commentController,
-                  decoration: const InputDecoration(
-                    hintText: "Optional comment (e.g. Great job!)",
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  ),
-                  maxLines: 2,
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text("Cancel"),
-              ),
-              ElevatedButton(
-                onPressed: currentRating > 0 ? () {
-                  context.read<PantaProvider>().rateHelper(
-                    request.id,
-                    currentRating,
-                    comment: commentController.text.isNotEmpty ? commentController.text : null,
+      builder: (ctx) => StatefulBuilder(builder: (context, setState) {
+        return AlertDialog(
+          title: const Text("Rate your Helper"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text("How was the pickup service?"),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(5, (index) {
+                  final int starValue = index + 1;
+                  return IconButton(
+                    onPressed: () {
+                      setState(() {
+                        currentRating = starValue.toDouble();
+                      });
+                    },
+                    icon: Icon(
+                      starValue <= currentRating
+                          ? Icons.star
+                          : Icons.star_border,
+                      size: 32,
+                      color: Colors.amber,
+                    ),
                   );
-                  Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Thank you for your rating!")));
-                } : null,
-                child: const Text("Submit"),
+                }),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: commentController,
+                decoration: const InputDecoration(
+                  hintText: "Optional comment (e.g. Great job!)",
+                  border: OutlineInputBorder(),
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+                maxLines: 2,
               ),
             ],
-          );
-        }
-      ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: currentRating > 0
+                  ? () {
+                      context.read<PantaProvider>().rateHelper(
+                            request.id,
+                            currentRating,
+                            comment: commentController.text.isNotEmpty
+                                ? commentController.text
+                                : null,
+                          );
+                      Navigator.pop(ctx);
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                          content: Text("Thank you for your rating!")));
+                    }
+                  : null,
+              child: const Text("Submit"),
+            ),
+          ],
+        );
+      }),
     );
   }
 }

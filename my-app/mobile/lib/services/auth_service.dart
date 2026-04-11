@@ -1,14 +1,21 @@
+import 'dart:math' as math;
+
 import 'package:amazon_cognito_identity_dart_2/cognito.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:uuid/uuid.dart'; // Import uuid
 import 'api_config.dart';
 
 class SignUpResult {
   final bool success;
-  final String? username;
+  final String? email;
+  final String? cognitoUsername;
   final String? error;
 
-  SignUpResult({required this.success, this.username, this.error});
+  SignUpResult({
+    required this.success,
+    this.email,
+    this.cognitoUsername,
+    this.error,
+  });
 }
 
 class AuthService {
@@ -42,37 +49,48 @@ class AuthService {
       await _cacheSession(_session!);
       return null;
     } on CognitoClientException catch (e) {
-      return e.message;
+      return _friendlyAuthError(e.message);
     } catch (e) {
       return 'Unknown error: $e';
     }
   }
 
   // Sign Up
-  Future<SignUpResult> signUp(String email, String password, String role) async {
+  Future<SignUpResult> signUp({
+    required String email,
+    required String password,
+    required String role,
+    required String name,
+  }) async {
     try {
-      // Generate a unique username because 'email' cannot be the username when email alias is enabled
-      final username = const Uuid().v4();
+      final normalizedEmail = email.trim().toLowerCase();
+      final normalizedName = name.trim();
+      final cognitoUsername = _buildCognitoUsername(normalizedEmail);
 
       await _userPool.signUp(
-        username,
+        cognitoUsername,
         password,
         userAttributes: [
-          AttributeArg(name: 'email', value: email),
+          AttributeArg(name: 'name', value: normalizedName),
+          AttributeArg(name: 'email', value: normalizedEmail),
           AttributeArg(name: 'nickname', value: role),
         ],
       );
-      return SignUpResult(success: true, username: username);
+      return SignUpResult(
+        success: true,
+        email: normalizedEmail,
+        cognitoUsername: cognitoUsername,
+      );
     } on CognitoClientException catch (e) {
-      return SignUpResult(success: false, error: e.message);
+      return SignUpResult(success: false, error: _friendlyAuthError(e.message));
     } catch (e) {
       return SignUpResult(success: false, error: 'Unknown error: $e');
     }
   }
 
   // Confirm Registration
-  Future<String?> confirmUser(String username, String code) async {
-    final cognitoUser = CognitoUser(username, _userPool);
+  Future<String?> confirmUser(String email, String code) async {
+    final cognitoUser = CognitoUser(email, _userPool);
     try {
       final success = await cognitoUser.confirmRegistration(code);
       if (success) {
@@ -80,10 +98,50 @@ class AuthService {
       }
       return 'Confirmation failed';
     } on CognitoClientException catch (e) {
-      return e.message;
+      return _friendlyAuthError(e.message);
     } catch (e) {
       return 'Unknown error: $e';
     }
+  }
+
+  String _friendlyAuthError(String? message) {
+    final normalized = (message ?? '').toLowerCase();
+
+    if (normalized.contains('does not exist') ||
+        normalized.contains('usernotfoundexception') ||
+        normalized.contains('user not found')) {
+      return 'User does not exist.';
+    }
+
+    if (normalized.contains('usernameexistsexception') ||
+        normalized.contains('aliasexistsexception') ||
+        normalized.contains('already exists')) {
+      return 'Account already exists. Please log in.';
+    }
+
+    if (normalized.contains('username cannot be of email format')) {
+      return 'Could not create the account. Please try again.';
+    }
+
+    return message ?? 'Something went wrong.';
+  }
+
+  String _buildCognitoUsername(String email) {
+    final localPart = email.split('@').first;
+    final safeLocalPart = localPart
+        .replaceAll(RegExp(r'[^a-z0-9]'), '_')
+        .replaceAll(RegExp(r'_+'), '_')
+        .replaceAll(RegExp(r'^_|_$'), '');
+    final trimmedLocalPart = safeLocalPart.isEmpty
+        ? 'user'
+        : safeLocalPart.substring(0, math.min(safeLocalPart.length, 20));
+
+    var checksum = 5381;
+    for (final codeUnit in email.codeUnits) {
+      checksum = ((checksum * 33) + codeUnit) & 0x7fffffff;
+    }
+
+    return 'user_${trimmedLocalPart}_${checksum.toRadixString(36)}';
   }
 
   // Get Token
@@ -97,7 +155,8 @@ class AuthService {
         // Refresh token if needed
         _currentUser = CognitoUser(_currentUser?.username, _userPool);
         try {
-          _session = await _currentUser?.refreshSession(_session!.getRefreshToken()!);
+          _session =
+              await _currentUser?.refreshSession(_session!.getRefreshToken()!);
           await _cacheSession(_session!);
         } catch (e) {
           return null;
@@ -113,6 +172,26 @@ class AuthService {
     // Backend uses ID Token claims (cognito:username)
     final payload = _session?.getIdToken().payload;
     return payload?['cognito:username'] ?? payload?['sub'];
+  }
+
+  String? getCurrentDisplayName({String? fallbackEmail}) {
+    final payload = _session?.getIdToken().payload;
+    final name = payload?['name']?.toString().trim();
+    if (name != null && name.isNotEmpty) {
+      return name;
+    }
+
+    final email = payload?['email']?.toString().trim() ?? fallbackEmail?.trim();
+    if (email != null && email.isNotEmpty) {
+      return email.split('@').first;
+    }
+
+    final username = payload?['cognito:username']?.toString().trim();
+    if (username != null && username.isNotEmpty) {
+      return username;
+    }
+
+    return null;
   }
 
   // Logout

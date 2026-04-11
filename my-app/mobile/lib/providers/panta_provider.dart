@@ -13,16 +13,20 @@ class PantaProvider extends ChangeNotifier {
   bool _isLoading = false;
 
   String? _currentUserId;
+  String? _currentUserDisplayName;
   bool _isHelper = false;
 
-  String? _tempSignupUsername; // Store generated username for confirmation
+  String? _pendingSignupEmail;
+  String? _pendingSignupUsername;
 
   bool get isHelper => _isHelper;
   bool get isLoading => _isLoading;
   List<RecyclingRequest> get requests => _requests;
+  String? get currentUserDisplayName => _currentUserDisplayName;
 
   // For User Dashboard
-  List<RecyclingRequest> get myRequests => _requests; // In real app, filter by userId
+  List<RecyclingRequest> get myRequests =>
+      _requests; // In real app, filter by userId
   List<RecyclingRequest> get ongoingRequests =>
       _requests.where((r) => r.status != RequestStatus.pickedUp).toList();
   List<RecyclingRequest> get previousRequests =>
@@ -32,18 +36,23 @@ class PantaProvider extends ChangeNotifier {
   List<RecyclingRequest> get availableJobs =>
       _requests.where((r) => r.status == RequestStatus.pending).toList();
 
-  List<RecyclingRequest> get acceptedJobs =>
-      _requests.where((r) => r.status == RequestStatus.accepted && r.helperId == _currentUserId).toList();
+  List<RecyclingRequest> get acceptedJobs => _requests
+      .where((r) =>
+          r.status == RequestStatus.accepted && r.helperId == _currentUserId)
+      .toList();
 
-  List<RecyclingRequest> get completedJobs =>
-      _requests.where((r) => r.status == RequestStatus.pickedUp && r.helperId == _currentUserId).toList();
+  List<RecyclingRequest> get completedJobs => _requests
+      .where((r) =>
+          r.status == RequestStatus.pickedUp && r.helperId == _currentUserId)
+      .toList();
 
-  Future<String?> login(String username, String password, bool asHelper) async {
+  Future<String?> login(String email, String password, bool asHelper) async {
     _isHelper = asHelper;
-    // For demo, we are using the email as username
-    final error = await _authService.login(username, password);
+    final error = await _authService.login(email, password);
     if (error == null) {
       _currentUserId = _authService.getCurrentUsername();
+      _currentUserDisplayName =
+          _authService.getCurrentDisplayName(fallbackEmail: email);
       debugPrint("Logged in as Helper/User ID: $_currentUserId");
       notifyListeners();
       fetchRequests();
@@ -52,19 +61,37 @@ class PantaProvider extends ChangeNotifier {
     return error;
   }
 
-  Future<String?> signUp(String username, String password, String role) async {
-    final result = await _authService.signUp(username, password, role);
+  Future<String?> signUp({
+    required String email,
+    required String password,
+    required String role,
+    required String name,
+  }) async {
+    final result = await _authService.signUp(
+      email: email,
+      password: password,
+      role: role,
+      name: name,
+    );
     if (result.success) {
-      _tempSignupUsername = result.username;
+      _pendingSignupEmail = result.email;
+      _pendingSignupUsername = result.cognitoUsername;
       return null;
     }
     return result.error;
   }
 
   Future<String?> confirmUser(String email, String code) async {
-    // Ideally use stored username, fallback to email if somehow missing (though likely to fail if alias used)
-    final usernameToConfirm = _tempSignupUsername ?? email;
-    return await _authService.confirmUser(usernameToConfirm, code);
+    final usernameToConfirm =
+        _pendingSignupUsername ?? _pendingSignupEmail ?? email;
+    final error = await _authService.confirmUser(usernameToConfirm, code);
+
+    if (error == null) {
+      _pendingSignupEmail = null;
+      _pendingSignupUsername = null;
+    }
+
+    return error;
   }
 
   Future<void> fetchRequests({bool silent = false}) async {
@@ -101,12 +128,8 @@ class PantaProvider extends ChangeNotifier {
   }
 
   Future<bool> createRequest(
-      String title,
-      DateTime from,
-      DateTime to,
-      String location,
-      {String description = '', double reward = 0.0} // Add optional args
-  ) async {
+      String title, DateTime from, DateTime to, String location,
+      {String description = '', double reward = 0.0, String? imageUrl}) async {
     final token = await _authService.getToken();
     if (token == null) return false;
 
@@ -116,24 +139,27 @@ class PantaProvider extends ChangeNotifier {
     // Try to get FCM Token
     String? fcmToken;
     try {
-        // Request permission primarily for iOS/Web
-        NotificationSettings settings = await FirebaseMessaging.instance.requestPermission(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
+      // Request permission primarily for iOS/Web
+      NotificationSettings settings =
+          await FirebaseMessaging.instance.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
 
-        if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-           // On Web, you need a VAPID key. Get this from Firebase Console -> Cloud Messaging -> Web Configuration
-           fcmToken = await FirebaseMessaging.instance.getToken(
-             vapidKey: kIsWeb ? "BL4573IrUlN0kK8MKBbLMFCSM-TPVjleJcgAKciiCO32VEEpVuugg4iXA6G341Kp2ZQE1SqqFZokA0ADSnGXUiI" : null,
-           );
-           debugPrint("FCM Token: $fcmToken");
-        } else {
-           debugPrint('User declined or has not accepted permission');
-        }
+      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+        // On Web, you need a VAPID key. Get this from Firebase Console -> Cloud Messaging -> Web Configuration
+        fcmToken = await FirebaseMessaging.instance.getToken(
+          vapidKey: kIsWeb
+              ? "BL4573IrUlN0kK8MKBbLMFCSM-TPVjleJcgAKciiCO32VEEpVuugg4iXA6G341Kp2ZQE1SqqFZokA0ADSnGXUiI"
+              : null,
+        );
+        debugPrint("FCM Token: $fcmToken");
+      } else {
+        debugPrint('User declined or has not accepted permission');
+      }
     } catch (e) {
-        debugPrint("Failed to get FCM token: $e");
+      debugPrint("Failed to get FCM token: $e");
     }
 
     final body = json.encode({
@@ -142,8 +168,10 @@ class PantaProvider extends ChangeNotifier {
       'scheduledTo': to.toUtc().toIso8601String(),
       'location': location,
       'description': description, // Add description
-      'reward': reward,           // Add reward
-      'imageUrl': 'assets/images/generic.png',
+      'reward': reward, // Add reward
+      'imageUrl': (imageUrl == null || imageUrl.isEmpty)
+          ? 'assets/images/generic.png'
+          : imageUrl,
       'isRated': false,
       'creatorDeviceToken': fcmToken, // Send token
     });
@@ -252,20 +280,27 @@ class PantaProvider extends ChangeNotifier {
       scheduledTo: DateTime.parse(json['scheduledTo']),
       location: json['location'],
       description: json['description'] ?? '',
-      reward: json['reward'] != null ? double.tryParse(json['reward'].toString()) ?? 0.0 : 0.0,
+      reward: json['reward'] != null
+          ? double.tryParse(json['reward'].toString()) ?? 0.0
+          : 0.0,
       status: _parseStatus(json['status']),
       helperId: json['helperId'],
       isRated: json['isRated'] ?? false,
-      rating: json['rating'] != null ? double.tryParse(json['rating'].toString()) : null,
+      rating: json['rating'] != null
+          ? double.tryParse(json['rating'].toString())
+          : null,
       ratingComment: json['ratingComment'],
     );
   }
 
   RequestStatus _parseStatus(String status) {
     switch (status) {
-      case 'accepted': return RequestStatus.accepted;
-      case 'pickedUp': return RequestStatus.pickedUp;
-      default: return RequestStatus.pending;
+      case 'accepted':
+        return RequestStatus.accepted;
+      case 'pickedUp':
+        return RequestStatus.pickedUp;
+      default:
+        return RequestStatus.pending;
     }
   }
 }
