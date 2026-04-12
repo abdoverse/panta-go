@@ -14,7 +14,7 @@ class ApiConfig {
   }
 
   static String _requiredEnvironmentValue(String name) {
-    final value = String.fromEnvironment(name, defaultValue: '').trim();
+    final value = _environmentValue(name);
     if (value.isEmpty) {
       throw StateError('$name must be provided at build time.');
     }
@@ -51,15 +51,10 @@ class ApiConfig {
         'COGNITO_CLIENT_ID',
       );
 
-  static String get region => const String.fromEnvironment(
-        'AWS_REGION',
-        defaultValue: '',
-      ).trim().isNotEmpty
-          ? const String.fromEnvironment(
-              'AWS_REGION',
-              defaultValue: '',
-            ).trim()
-          : _fallbackRegion;
+  static String get region {
+    final configuredRegion = _environmentValue('AWS_REGION');
+    return configuredRegion.isNotEmpty ? configuredRegion : _fallbackRegion;
+  }
 
   static String get _fallbackRegion {
     if (_isProduction) {
@@ -69,10 +64,7 @@ class ApiConfig {
   }
 
   static String? get firebaseWebVapidKey {
-    final value = const String.fromEnvironment(
-      'FIREBASE_WEB_VAPID_KEY',
-      defaultValue: '',
-    ).trim();
+    final value = _environmentValue('FIREBASE_WEB_VAPID_KEY');
     return value.isEmpty ? null : value;
   }
 
