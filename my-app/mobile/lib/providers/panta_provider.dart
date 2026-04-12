@@ -1,8 +1,10 @@
-import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+
 import 'package:flutter/foundation.dart'; // Add this for kIsWeb
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
+
 import '../models/request_model.dart';
 import '../services/api_config.dart';
 import '../services/auth_service.dart';
@@ -33,8 +35,12 @@ class PantaProvider extends ChangeNotifier {
       _requests.where((r) => r.status == RequestStatus.pickedUp).toList();
 
   // For Helper Dashboard
-  List<RecyclingRequest> get availableJobs =>
-      _requests.where((r) => r.status == RequestStatus.pending).toList();
+  List<RecyclingRequest> get availableJobs => _requests
+      .where((r) =>
+          r.status == RequestStatus.pending &&
+          (_currentUserId == null ||
+              !r.canceledHelperIds.contains(_currentUserId)))
+      .toList();
 
   List<RecyclingRequest> get acceptedJobs => _requests
       .where((r) =>
@@ -45,6 +51,27 @@ class PantaProvider extends ChangeNotifier {
       .where((r) =>
           r.status == RequestStatus.pickedUp && r.helperId == _currentUserId)
       .toList();
+
+  int get helperCompletedCount => completedJobs.length;
+  int get helperCancellationCount => _requests
+      .where((r) =>
+          _currentUserId != null &&
+          r.canceledHelperIds.contains(_currentUserId))
+      .length;
+  double? get helperAverageRating {
+    final ratedJobs = completedJobs
+        .where((job) => job.rating != null)
+        .toList(growable: false);
+    if (ratedJobs.isEmpty) {
+      return null;
+    }
+
+    final total = ratedJobs.fold<double>(
+      0,
+      (sum, job) => sum + (job.rating ?? 0),
+    );
+    return total / ratedJobs.length;
+  }
 
   Future<String?> login(String email, String password, bool asHelper) async {
     _isHelper = asHelper;
@@ -127,9 +154,55 @@ class PantaProvider extends ChangeNotifier {
     }
   }
 
+  Future<String?> _uploadRequestImage(
+    Uint8List imageBytes, {
+    required String fileName,
+    required String mimeType,
+  }) async {
+    final token = await _authService.getToken();
+    if (token == null) return null;
+
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('${ApiConfig.baseUrl}/api/v1/uploads/request-image'),
+    );
+    request.headers['Authorization'] = 'Bearer $token';
+    request.files.add(
+      http.MultipartFile.fromBytes(
+        'file',
+        imageBytes,
+        filename: fileName,
+        contentType: MediaType.parse(mimeType),
+      ),
+    );
+
+    try {
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      if (response.statusCode == 201) {
+        final payload = json.decode(response.body) as Map<String, dynamic>;
+        return payload['uploadKey'] as String?;
+      }
+      debugPrint(
+          'Failed to upload request image: ${response.statusCode} ${response.body}');
+    } catch (e) {
+      debugPrint('Error uploading request image: $e');
+    }
+
+    return null;
+  }
+
   Future<bool> createRequest(
-      String title, DateTime from, DateTime to, String location,
-      {String description = '', double reward = 0.0, String? imageUrl}) async {
+    String title,
+    DateTime from,
+    DateTime to,
+    String location, {
+    String description = '',
+    double reward = 0.0,
+    Uint8List? imageBytes,
+    String? imageFileName,
+    String? imageMimeType,
+  }) async {
     final token = await _authService.getToken();
     if (token == null) return false;
 
@@ -162,6 +235,24 @@ class PantaProvider extends ChangeNotifier {
       debugPrint("Failed to get FCM token: $e");
     }
 
+    String? imageUploadKey;
+    if (imageBytes != null &&
+        imageFileName != null &&
+        imageFileName.isNotEmpty &&
+        imageMimeType != null &&
+        imageMimeType.isNotEmpty) {
+      imageUploadKey = await _uploadRequestImage(
+        imageBytes,
+        fileName: imageFileName,
+        mimeType: imageMimeType,
+      );
+      if (imageUploadKey == null) {
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+    }
+
     final body = json.encode({
       'title': title,
       'scheduledFrom': from.toUtc().toIso8601String(),
@@ -169,9 +260,8 @@ class PantaProvider extends ChangeNotifier {
       'location': location,
       'description': description, // Add description
       'reward': reward, // Add reward
-      'imageUrl': (imageUrl == null || imageUrl.isEmpty)
-          ? 'assets/images/generic.png'
-          : imageUrl,
+      'imageUrl': imageUploadKey == null ? 'assets/images/generic.png' : null,
+      'imageUploadKey': imageUploadKey,
       'isRated': false,
       'creatorDeviceToken': fcmToken, // Send token
     });
@@ -244,6 +334,27 @@ class PantaProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> cancelRequest(String id) async {
+    final token = await _authService.getToken();
+    if (token == null) return;
+
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/api/v1/requests/cancel'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode({'id': id}),
+      );
+      if (response.statusCode == 200) {
+        await fetchRequests();
+      }
+    } catch (e) {
+      debugPrint('Error canceling request: $e');
+    }
+  }
+
   Future<void> rateHelper(String id, double rating, {String? comment}) async {
     final token = await _authService.getToken();
     if (token == null) return;
@@ -285,6 +396,10 @@ class PantaProvider extends ChangeNotifier {
           : 0.0,
       status: _parseStatus(json['status']),
       helperId: json['helperId'],
+      canceledHelperIds: (json['canceledHelperIds'] as List<dynamic>?)
+              ?.map((item) => item.toString())
+              .toList(growable: false) ??
+          const [],
       isRated: json['isRated'] ?? false,
       rating: json['rating'] != null
           ? double.tryParse(json['rating'].toString())

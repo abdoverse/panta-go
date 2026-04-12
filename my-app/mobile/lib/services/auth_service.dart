@@ -207,7 +207,6 @@ class AuthService {
 
   // Session Management
   Future<void> _cacheSession(CognitoUserSession session) async {
-    final prefs = await SharedPreferences.getInstance();
     // In a real app, use SecureStorage data encryption
     // Here we serialize the session manually or just rely on re-login for simplicity if complexity is high
     // The library doesn't have a built-in "toJson" for session easily,

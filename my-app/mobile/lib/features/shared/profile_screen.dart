@@ -12,14 +12,17 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final displayName =
-        context.watch<PantaProvider>().currentUserDisplayName?.trim();
+    final provider = context.watch<PantaProvider>();
+    final displayName = provider.currentUserDisplayName?.trim();
     final resolvedName = (displayName == null || displayName.isEmpty)
         ? (isHelper ? 'Helper' : 'Recycler')
         : displayName;
     final subtitle = isHelper ? 'Helper' : 'Recycler';
     final avatarIcon =
         isHelper ? Icons.local_shipping_rounded : Icons.person_rounded;
+    final completedJobs = provider.helperCompletedCount;
+    final canceledPickups = provider.helperCancellationCount;
+    final averageRating = provider.helperAverageRating;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Profile')),
@@ -68,12 +71,67 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
+          if (isHelper) ...[
+            Text(
+              'Helper stats',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _HelperStatTile(
+                            icon: Icons.task_alt_rounded,
+                            label: 'Completed jobs',
+                            value: '$completedJobs',
+                            iconColor: AppTheme.primaryGreen,
+                            backgroundColor: AppTheme.accentLeaf,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _HelperStatTile(
+                            icon: Icons.cancel_outlined,
+                            label: 'Cancelled pickups',
+                            value: '$canceledPickups',
+                            iconColor: Theme.of(context).colorScheme.error,
+                            backgroundColor: const Color(0xFFFEE2E2),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    _HelperSummaryRow(
+                      icon: Icons.star_rounded,
+                      title: 'Recycler rating',
+                      value: averageRating == null
+                          ? 'No ratings yet'
+                          : '${averageRating.toStringAsFixed(1)} / 5',
+                    ),
+                    const SizedBox(height: 8),
+                    _HelperSummaryRow(
+                      icon: Icons.insights_rounded,
+                      title: 'Reliability context',
+                      value:
+                          '$completedJobs completed · $canceledPickups cancelled',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
           Text(
             'Account',
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 12),
-          Card(
+          const Card(
             child: Column(
               children: [
                 _ProfileItem(
@@ -81,19 +139,19 @@ class ProfileScreen extends StatelessWidget {
                   title: 'Settings',
                   subtitle: 'Manage app preferences',
                 ),
-                const Divider(height: 1),
+                Divider(height: 1),
                 _ProfileItem(
                   icon: Icons.notifications_none_rounded,
                   title: 'Notifications',
                   subtitle: 'Stay updated on activity',
                 ),
-                const Divider(height: 1),
+                Divider(height: 1),
                 _ProfileItem(
                   icon: Icons.eco_outlined,
                   title: 'Impact stats',
                   subtitle: 'Track your recycling contribution',
                 ),
-                const Divider(height: 1),
+                Divider(height: 1),
                 _ProfileItem(
                   icon: Icons.help_outline_rounded,
                   title: 'Help & support',
@@ -117,6 +175,93 @@ class ProfileScreen extends StatelessWidget {
                 );
               },
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HelperStatTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color iconColor;
+  final Color backgroundColor;
+
+  const _HelperStatTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.iconColor,
+    required this.backgroundColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: iconColor),
+          const SizedBox(height: 16),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: AppTheme.textPrimary,
+                ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HelperSummaryRow extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String value;
+
+  const _HelperSummaryRow({
+    required this.icon,
+    required this.title,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceMuted,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: AppTheme.primaryGreen, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              title,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.textPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
           ),
         ],
       ),

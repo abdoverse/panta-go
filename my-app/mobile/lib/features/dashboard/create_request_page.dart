@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -31,7 +30,8 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
   DateTime _fromDate = DateTime.now();
   DateTime _toDate = DateTime.now().add(const Duration(hours: 2));
   Uint8List? _selectedPhotoBytes;
-  String? _selectedPhotoDataUrl;
+  String? _selectedPhotoMimeType;
+  String? _selectedPhotoFileName;
 
   @override
   void initState() {
@@ -142,7 +142,8 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                                         onPressed: () {
                                           setState(() {
                                             _selectedPhotoBytes = null;
-                                            _selectedPhotoDataUrl = null;
+                                            _selectedPhotoMimeType = null;
+                                            _selectedPhotoFileName = null;
                                           });
                                         },
                                         icon: const Icon(Icons.close,
@@ -391,7 +392,9 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                                   reward:
                                       double.tryParse(_rewardController.text) ??
                                           0.0,
-                                  imageUrl: _selectedPhotoDataUrl,
+                                  imageBytes: _selectedPhotoBytes,
+                                  imageMimeType: _selectedPhotoMimeType,
+                                  imageFileName: _selectedPhotoFileName,
                                 );
                                 if (success && context.mounted) {
                                   Navigator.pop(context);
@@ -440,7 +443,8 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
 
       setState(() {
         _selectedPhotoBytes = bytes;
-        _selectedPhotoDataUrl = 'data:$mimeType;base64,${base64Encode(bytes)}';
+        _selectedPhotoMimeType = mimeType;
+        _selectedPhotoFileName = _normalizedFileName(file.name, mimeType);
       });
     } catch (error) {
       if (!mounted) return;
@@ -464,6 +468,28 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
     }
 
     return 'image/jpeg';
+  }
+
+  String _normalizedFileName(String name, String mimeType) {
+    final trimmed = name.trim();
+    if (trimmed.isNotEmpty && trimmed.contains('.')) {
+      return trimmed;
+    }
+
+    return 'request-image.${_extensionForMimeType(mimeType)}';
+  }
+
+  String _extensionForMimeType(String mimeType) {
+    switch (mimeType) {
+      case 'image/png':
+        return 'png';
+      case 'image/webp':
+        return 'webp';
+      case 'image/gif':
+        return 'gif';
+      default:
+        return 'jpg';
+    }
   }
 }
 

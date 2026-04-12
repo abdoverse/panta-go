@@ -1,0 +1,34 @@
+name: Copilot Setup Steps
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+      - .github/copilot-instructions.md
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+      - .github/copilot-instructions.md
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 59
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Enable Flutter web
+        run: flutter config --enable-web
+
+      - name: Install Flutter dependencies
+        working-directory: my-app/mobile
+        run: flutter pub get

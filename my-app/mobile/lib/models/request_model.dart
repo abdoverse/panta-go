@@ -8,9 +8,11 @@ class RecyclingRequest {
   final DateTime scheduledTo;
   final String location;
   final String description;
-  final double? reward; // Changed to nullable to safe-guard against hot-reload nulls
+  final double?
+      reward; // Changed to nullable to safe-guard against hot-reload nulls
   final RequestStatus status;
   final String? helperId;
+  final List<String> canceledHelperIds;
   final bool isRated;
   final double? rating;
   final String? ratingComment;
@@ -26,6 +28,7 @@ class RecyclingRequest {
     this.reward = 0.0,
     this.status = RequestStatus.pending,
     this.helperId,
+    this.canceledHelperIds = const [],
     this.isRated = false,
     this.rating,
     this.ratingComment,
@@ -34,6 +37,7 @@ class RecyclingRequest {
   RecyclingRequest copyWith({
     RequestStatus? status,
     String? helperId,
+    List<String>? canceledHelperIds,
     bool? isRated,
     double? rating,
     String? ratingComment,
@@ -51,6 +55,7 @@ class RecyclingRequest {
       reward: reward ?? this.reward,
       status: status ?? this.status,
       helperId: helperId ?? this.helperId,
+      canceledHelperIds: canceledHelperIds ?? this.canceledHelperIds,
       isRated: isRated ?? this.isRated,
       rating: rating ?? this.rating,
       ratingComment: ratingComment ?? this.ratingComment,

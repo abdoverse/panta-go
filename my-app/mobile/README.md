@@ -19,22 +19,31 @@ Secure user identification and signing.
 - [ ] Obtain BankID Test Certificates.
 - [ ] Implement Backend support for Swish BankID RP API (Auth/Sign).
 
-## 📱 iOS Deployment Strategy (Ubuntu / Linux)
 
-Since we are developing on Ubuntu, we cannot build the iOS app directly using Xcode. We will use the **Sideload Strategy**.
+## 📱 iOS Development on Ubuntu (The "Free" Strategy)
 
-### 1. Build the IPA (Cloud)
-We use a CI/CD service like **Codemagic** or **GitHub Actions** to build the app in the cloud (on MacOS machines).
-- Even with a free Apple ID, Codemagic can generate an `.ipa` file (signed with a Development Certificate).
+Since you are developing on Ubuntu without access to Xcode, we use a cloud-based build strategy combined with a local sideloading tool.
+
+### 1. Build the IPA (Cloud with Codemagic)
+We use `codemagic.yaml` to configure a cloud build environment that has Xcode.
+1.  Push your code to GitHub.
+2.  Log in to [Codemagic](https://codemagic.io/).
+3.  Add your repository.
+4.  Start a new build using the `ios-workflow`.
+5.  Wait for the build to complete.
+6.  Download the `Runner.ipa` artifact from the build dashboard.
 
 ### 2. Sideload to iPhone (Local)
-Once the `.ipa` file is built and downloaded to Ubuntu:
-- Use **Sideloader** (Linux-friendly) or **Sideloadly** (via Wine) to install the `.ipa` onto your iPhone.
-- You will need to "trust" the developer app in your iPhone settings after installation.
+Once you have the `Runner.ipa`, install it on your iPhone using a Linux-compatible tool. This process signs the app with your free Apple ID.
 
-### TODO
-- [ ] Set up `codemagic.yaml` or GitHub Action workflow for iOS build.
-- [ ] Install Sideloader on Ubuntu.
+*   **Sideloader (Recommended for Linux):**
+    *   An open-source tool to sign and install .ipa files on Linux.
+    *   [GitHub Repository](https://github.com/Dadoum/Sideloader)
+*   **Sideloadly:**
+    *   A popular tool that can run on Linux via Wine.
+    *   [Website](https://sideloadly.io/)
+
+**Note:** Apps signed with a free Apple ID expire after 7 days and must be re-signed/re-installed.
 
 ## 📱 Notifications Support
 

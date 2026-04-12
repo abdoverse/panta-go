@@ -5,7 +5,6 @@ import 'package:firebase_messaging/firebase_messaging.dart'; // Import messaging
 import 'package:intl/date_symbol_data_local.dart'; // Add this import
 import 'app.dart';
 import 'providers/panta_provider.dart';
-import 'services/api_config.dart';
 import 'firebase_options.dart'; // Import the new options file
 import 'core/constants/app_constants.dart'; // Import AppConstants
 
@@ -19,7 +18,8 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await initializeDateFormatting(AppConstants.defaultLocaleId, null); // Initialize default locale
+  await initializeDateFormatting(
+      AppConstants.defaultLocaleId, null); // Initialize default locale
 
   try {
     // Pass the options here as well
@@ -31,7 +31,8 @@ void main() async {
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
     // Set foreground presentation options (iOS mainly)
-    await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
+    await FirebaseMessaging.instance
+        .setForegroundNotificationPresentationOptions(
       alert: true,
       badge: true,
       sound: true,

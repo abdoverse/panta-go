@@ -90,11 +90,11 @@ class _HelperHomePageState extends State<HelperHomePage> {
       backgroundColor: const Color(0xFFF8F9FA),
       body: IndexedStack(
         index: _currentIndex,
-        children: [
-          const _MarketplaceView(),
-          const _MyJobsView(),
-          const _HistoryView(), // New History Tab
-          const ProfileScreen(isHelper: true),
+        children: const [
+          _MarketplaceView(),
+          _MyJobsView(),
+          _HistoryView(), // New History Tab
+          ProfileScreen(isHelper: true),
         ],
       ),
       bottomNavigationBar: NavigationBar(
@@ -523,17 +523,74 @@ class _JobCard extends StatelessWidget {
                     ),
                   )
                 else
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton(
-                      onPressed: () {
-                        context.read<PantaProvider>().completeRequest(job.id);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text("Marked as Picked Up!")));
-                      },
-                      child: const Text("Mark Complete"),
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () async {
+                            final confirmed = await showDialog<bool>(
+                              context: context,
+                              builder: (dialogContext) => AlertDialog(
+                                title: const Text("Cancel pickup?"),
+                                content: const Text(
+                                  "This job will become available again for another helper, and the recycler will be notified.",
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.of(dialogContext).pop(false),
+                                    child: const Text("Keep Job"),
+                                  ),
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.of(dialogContext).pop(true),
+                                    child: const Text("Cancel Pickup"),
+                                  ),
+                                ],
+                              ),
+                            );
+
+                            if (confirmed != true || !context.mounted) {
+                              return;
+                            }
+
+                            await context
+                                .read<PantaProvider>()
+                                .cancelRequest(job.id);
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  "Pickup cancelled. The request is available to other helpers again.",
+                                ),
+                              ),
+                            );
+                          },
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor:
+                                Theme.of(context).colorScheme.error,
+                          ),
+                          child: const Text("Cancel Pickup"),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () async {
+                            await context
+                                .read<PantaProvider>()
+                                .completeRequest(job.id);
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Marked as Picked Up!"),
+                              ),
+                            );
+                          },
+                          child: const Text("Mark Complete"),
+                        ),
+                      ),
+                    ],
                   )
               ],
             ),
@@ -582,8 +639,9 @@ class _TimeRemainingDisplay extends StatelessWidget {
   String _formatDuration(Duration d) {
     if (d.inDays > 0) return "${d.inDays} day${d.inDays > 1 ? 's' : ''}";
     if (d.inHours > 0) return "${d.inHours} hr${d.inHours > 1 ? 's' : ''}";
-    if (d.inMinutes > 0)
+    if (d.inMinutes > 0) {
       return "${d.inMinutes} min${d.inMinutes > 1 ? 's' : ''}";
+    }
     return "moments";
   }
 

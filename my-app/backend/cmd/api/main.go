@@ -1,13 +1,19 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"crypto/rand"
+	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
+	pathpkg "path"
 	"strings"
 	"time"
 
@@ -15,31 +21,34 @@ import (
 	"firebase.google.com/go/v4/messaging"
 	"google.golang.org/api/option"
 
+	"github.com/MicahParks/keyfunc/v2"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/MicahParks/keyfunc/v2"
 )
 
 // Request Data Model
 type RecyclingRequest struct {
-	ID            string    `json:"id" dynamodbav:"id"`
-	Title         string    `json:"title" dynamodbav:"title"`
-	ImageUrl      string    `json:"imageUrl" dynamodbav:"imageUrl"`
-	ScheduledFrom time.Time `json:"scheduledFrom" dynamodbav:"scheduledFrom"`
-	ScheduledTo   time.Time `json:"scheduledTo" dynamodbav:"scheduledTo"`
-	Location      string    `json:"location" dynamodbav:"location"`
-	Description   string    `json:"description" dynamodbav:"description"`
-	Reward        float64   `json:"reward" dynamodbav:"reward"`
-	Status        string    `json:"status" dynamodbav:"status"`
-	HelperID      string    `json:"helperId,omitempty" dynamodbav:"helperId,omitempty"`
-	IsRated       bool      `json:"isRated" dynamodbav:"isRated"`
-	Rating        float64   `json:"rating,omitempty" dynamodbav:"rating,omitempty"`
-	RatingComment string    `json:"ratingComment,omitempty" dynamodbav:"ratingComment,omitempty"`
-	CreatorDeviceToken string `json:"creatorDeviceToken,omitempty" dynamodbav:"creatorDeviceToken,omitempty"`
+	ID                 string    `json:"id" dynamodbav:"id"`
+	Title              string    `json:"title" dynamodbav:"title"`
+	ImageUrl           string    `json:"imageUrl" dynamodbav:"imageUrl"`
+	ImageUploadKey     string    `json:"imageUploadKey,omitempty" dynamodbav:"-"`
+	ScheduledFrom      time.Time `json:"scheduledFrom" dynamodbav:"scheduledFrom"`
+	ScheduledTo        time.Time `json:"scheduledTo" dynamodbav:"scheduledTo"`
+	Location           string    `json:"location" dynamodbav:"location"`
+	Description        string    `json:"description" dynamodbav:"description"`
+	Reward             float64   `json:"reward" dynamodbav:"reward"`
+	Status             string    `json:"status" dynamodbav:"status"`
+	HelperID           string    `json:"helperId,omitempty" dynamodbav:"helperId,omitempty"`
+	CanceledHelperIDs  []string  `json:"canceledHelperIds,omitempty" dynamodbav:"canceledHelperIds,omitempty"`
+	IsRated            bool      `json:"isRated" dynamodbav:"isRated"`
+	Rating             float64   `json:"rating,omitempty" dynamodbav:"rating,omitempty"`
+	RatingComment      string    `json:"ratingComment,omitempty" dynamodbav:"ratingComment,omitempty"`
+	CreatorDeviceToken string    `json:"creatorDeviceToken,omitempty" dynamodbav:"creatorDeviceToken,omitempty"`
 }
 
 // Auth Types
@@ -53,18 +62,55 @@ type LoginResponse struct {
 }
 
 type Claims struct {
-	Role string `json:"nickname"`
-	Name string `json:"cognito:username"`
+	Role            string `json:"nickname"`
+	CognitoUsername string `json:"cognito:username"`
+	DisplayName     string `json:"name"`
+	Email           string `json:"email"`
 	jwt.RegisteredClaims
 }
 
+func (c *Claims) helperID() string {
+	if username := strings.TrimSpace(c.CognitoUsername); username != "" {
+		return username
+	}
+	if name := strings.TrimSpace(c.DisplayName); name != "" {
+		return name
+	}
+	return strings.TrimSpace(c.Email)
+}
+
+func (c *Claims) notificationName() string {
+	if name := strings.TrimSpace(c.DisplayName); name != "" {
+		return name
+	}
+	if email := strings.TrimSpace(c.Email); email != "" {
+		return strings.Split(email, "@")[0]
+	}
+	return c.helperID()
+}
+
 var (
-	svc       *dynamodb.Client
-	tableName string
-	jwtSecret = []byte(os.Getenv("JWT_SECRET"))
-	hub       *Hub
-	fcmClient *messaging.Client
+	svc             *dynamodb.Client
+	s3Client        *s3.Client
+	s3PresignClient *s3.PresignClient
+	tableName       string
+	imageBucketName string
+	jwtSecret       = []byte(os.Getenv("JWT_SECRET"))
+	hub             *Hub
+	fcmClient       *messaging.Client
 )
+
+const (
+	requestImageUploadLimitBytes = 8 << 20
+	requestImageURLTTL           = 24 * time.Hour
+)
+
+var allowedImageContentTypes = map[string]string{
+	"image/jpeg": "jpg",
+	"image/png":  "png",
+	"image/webp": "webp",
+	"image/gif":  "gif",
+}
 
 // Helper to send push notification
 func sendPushNotification(token string, title string, body string) {
@@ -144,8 +190,8 @@ func initJWKS() {
 		RefreshErrorHandler: func(err error) {
 			log.Printf("There was an error with the JWKS refresh: %v", err)
 		},
-		RefreshInterval: time.Hour,
-		RefreshTimeout:  time.Second * 10,
+		RefreshInterval:   time.Hour,
+		RefreshTimeout:    time.Second * 10,
 		RefreshUnknownKID: true,
 	}
 	jwks, err = keyfunc.Get(jwksURL, options)
@@ -165,9 +211,15 @@ func init() {
 	}
 
 	svc = dynamodb.NewFromConfig(cfg)
+	s3Client = s3.NewFromConfig(cfg)
+	s3PresignClient = s3.NewPresignClient(s3Client)
 	tableName = os.Getenv("TABLE_NAME")
+	imageBucketName = os.Getenv("IMAGE_BUCKET_NAME")
 	if tableName == "" {
 		log.Println("Warning: TABLE_NAME environment variable is not set")
+	}
+	if imageBucketName == "" {
+		log.Println("Warning: IMAGE_BUCKET_NAME environment variable is not set")
 	}
 	if len(jwtSecret) == 0 {
 		jwtSecret = []byte("default-secret-key-change-me")
@@ -208,6 +260,209 @@ func jsonResponse(w http.ResponseWriter, status int, data interface{}) {
 // Basic error checking helper
 func errorIs(err error, target interface{}) bool {
 	return errors.As(err, target)
+}
+
+func newRequestID() string {
+	return fmt.Sprintf("%s-%s", time.Now().UTC().Format("20060102150405"), randomHex(8))
+}
+
+func randomHex(length int) string {
+	if length <= 0 {
+		return ""
+	}
+
+	buf := make([]byte, (length+1)/2)
+	if _, err := rand.Read(buf); err != nil {
+		log.Fatalf("failed to generate random bytes: %v", err)
+	}
+
+	return hex.EncodeToString(buf)[:length]
+}
+
+func sanitizePathSegment(value string) string {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return "anonymous"
+	}
+
+	replacer := strings.NewReplacer("/", "-", "\\", "-", " ", "-", ":", "-")
+	return replacer.Replace(trimmed)
+}
+
+func tempUploadPrefix(ownerID string) string {
+	return fmt.Sprintf("users/%s/request-images/uploads/", sanitizePathSegment(ownerID))
+}
+
+func finalRequestImageKey(requestID string, extension string) string {
+	return fmt.Sprintf("requests/%s/images/original.%s", sanitizePathSegment(requestID), strings.TrimPrefix(extension, "."))
+}
+
+func parseS3ImageReference(reference string) (bucket string, key string, ok bool) {
+	if !strings.HasPrefix(reference, "s3://") {
+		return "", "", false
+	}
+
+	trimmed := strings.TrimPrefix(reference, "s3://")
+	parts := strings.SplitN(trimmed, "/", 2)
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		return "", "", false
+	}
+
+	return parts[0], parts[1], true
+}
+
+func resolveImageURL(ctx context.Context, storedValue string) (string, error) {
+	storedValue = strings.TrimSpace(storedValue)
+	if storedValue == "" {
+		return storedValue, nil
+	}
+
+	bucket := imageBucketName
+	key := storedValue
+
+	if parsedBucket, parsedKey, ok := parseS3ImageReference(storedValue); ok {
+		bucket = parsedBucket
+		key = parsedKey
+	} else if strings.HasPrefix(storedValue, "http") || strings.HasPrefix(storedValue, "data:") || strings.HasPrefix(storedValue, "assets/") {
+		return storedValue, nil
+	}
+
+	if s3PresignClient == nil {
+		return "", fmt.Errorf("s3 presign client is not configured")
+	}
+
+	presigned, err := s3PresignClient.PresignGetObject(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
+	}, func(options *s3.PresignOptions) {
+		options.Expires = requestImageURLTTL
+	})
+	if err != nil {
+		return "", fmt.Errorf("presign image %s: %w", key, err)
+	}
+
+	return presigned.URL, nil
+}
+
+func imageExtensionForContentType(contentType string) (string, bool) {
+	normalized := strings.ToLower(strings.TrimSpace(contentType))
+	if ext, ok := allowedImageContentTypes[normalized]; ok {
+		return ext, true
+	}
+	return "", false
+}
+
+func uploadImageBytes(ctx context.Context, bucket string, key string, payload []byte, contentType string, metadata map[string]string) (string, error) {
+	if s3Client == nil {
+		return "", fmt.Errorf("s3 client is not configured")
+	}
+	if bucket == "" {
+		return "", fmt.Errorf("image bucket is not configured")
+	}
+
+	_, err := s3Client.PutObject(ctx, &s3.PutObjectInput{
+		Bucket:      aws.String(bucket),
+		Key:         aws.String(key),
+		Body:        bytes.NewReader(payload),
+		ContentType: aws.String(contentType),
+		Metadata:    metadata,
+	})
+	if err != nil {
+		return "", fmt.Errorf("put object %s: %w", key, err)
+	}
+
+	return key, nil
+}
+
+func finalizeUploadedRequestImage(ctx context.Context, ownerID string, requestID string, uploadKey string) (string, error) {
+	if imageBucketName == "" {
+		return "", fmt.Errorf("image bucket is not configured")
+	}
+
+	expectedPrefix := tempUploadPrefix(ownerID)
+	if !strings.HasPrefix(uploadKey, expectedPrefix) {
+		return "", fmt.Errorf("upload key does not belong to the current user")
+	}
+
+	extension := pathpkg.Ext(uploadKey)
+	if extension == "" {
+		return "", fmt.Errorf("upload key is missing a file extension")
+	}
+
+	finalKey := finalRequestImageKey(requestID, extension)
+	copySource := fmt.Sprintf("%s/%s", imageBucketName, uploadKey)
+
+	if _, err := s3Client.CopyObject(ctx, &s3.CopyObjectInput{
+		Bucket:            aws.String(imageBucketName),
+		CopySource:        aws.String(copySource),
+		Key:               aws.String(finalKey),
+		MetadataDirective: "COPY",
+	}); err != nil {
+		return "", fmt.Errorf("copy uploaded image: %w", err)
+	}
+
+	if _, err := s3Client.DeleteObject(ctx, &s3.DeleteObjectInput{
+		Bucket: aws.String(imageBucketName),
+		Key:    aws.String(uploadKey),
+	}); err != nil {
+		return "", fmt.Errorf("delete temporary upload: %w", err)
+	}
+
+	return finalKey, nil
+}
+
+func parseDataURLImage(payload string) ([]byte, string, error) {
+	if !strings.HasPrefix(payload, "data:") {
+		return nil, "", fmt.Errorf("image payload is not a data URL")
+	}
+
+	header, encoded, found := strings.Cut(payload, ",")
+	if !found {
+		return nil, "", fmt.Errorf("invalid data URL payload")
+	}
+
+	contentType := strings.TrimPrefix(header, "data:")
+	contentType = strings.TrimSuffix(contentType, ";base64")
+	if _, ok := imageExtensionForContentType(contentType); !ok {
+		return nil, "", fmt.Errorf("unsupported image content type: %s", contentType)
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(encoded)
+	if err != nil {
+		return nil, "", fmt.Errorf("decode base64 image: %w", err)
+	}
+
+	return decoded, contentType, nil
+}
+
+func prepareRequestImageReference(ctx context.Context, claims *Claims, requestID string, uploadKey string, imageURL string) (string, error) {
+	switch {
+	case strings.TrimSpace(uploadKey) != "":
+		return finalizeUploadedRequestImage(ctx, claims.helperID(), requestID, strings.TrimSpace(uploadKey))
+	case strings.HasPrefix(strings.TrimSpace(imageURL), "data:"):
+		imageBytes, contentType, err := parseDataURLImage(strings.TrimSpace(imageURL))
+		if err != nil {
+			return "", err
+		}
+
+		extension, _ := imageExtensionForContentType(contentType)
+		return uploadImageBytes(
+			ctx,
+			imageBucketName,
+			finalRequestImageKey(requestID, extension),
+			imageBytes,
+			contentType,
+			map[string]string{
+				"request-id":  requestID,
+				"uploaded-by": sanitizePathSegment(claims.helperID()),
+				"source":      "legacy-data-url",
+			},
+		)
+	case strings.TrimSpace(imageURL) == "":
+		return "assets/images/generic.png", nil
+	default:
+		return imageURL, nil
+	}
 }
 
 // CORS Middleware
@@ -319,8 +574,9 @@ func main() {
 
 		expirationTime := time.Now().Add(24 * time.Hour)
 		claims := &Claims{
-			Role: req.Role,
-			Name: req.Name,
+			Role:            req.Role,
+			CognitoUsername: req.Name,
+			DisplayName:     req.Name,
 			RegisteredClaims: jwt.RegisteredClaims{
 				ExpiresAt: jwt.NewNumericDate(expirationTime),
 				Issuer:    "panta-backend",
@@ -340,6 +596,89 @@ func main() {
 	// -------------------------------------------------------------------------
 	// Recycling Requests API
 	// -------------------------------------------------------------------------
+
+	mux.HandleFunc("/api/v1/uploads/request-image", authMiddleware(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		claims, ok := r.Context().Value("user").(*Claims)
+		if !ok {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+		if imageBucketName == "" {
+			jsonResponse(w, 500, map[string]string{"error": "Image storage is not configured"})
+			return
+		}
+
+		r.Body = http.MaxBytesReader(w, r.Body, requestImageUploadLimitBytes+(1<<20))
+		file, header, err := r.FormFile("file")
+		if err != nil {
+			jsonResponse(w, 400, map[string]string{"error": "Request image file is required"})
+			return
+		}
+		defer file.Close()
+
+		fileBytes, err := io.ReadAll(io.LimitReader(file, requestImageUploadLimitBytes+1))
+		if err != nil {
+			jsonResponse(w, 400, map[string]string{"error": "Failed to read request image"})
+			return
+		}
+		if len(fileBytes) == 0 {
+			jsonResponse(w, 400, map[string]string{"error": "Request image is empty"})
+			return
+		}
+		if len(fileBytes) > requestImageUploadLimitBytes {
+			jsonResponse(w, 400, map[string]string{"error": "Request image exceeds the 8 MB limit"})
+			return
+		}
+
+		contentType := http.DetectContentType(fileBytes)
+		extension, ok := imageExtensionForContentType(contentType)
+		if !ok {
+			jsonResponse(w, 400, map[string]string{"error": "Unsupported image type. Use JPEG, PNG, WebP, or GIF."})
+			return
+		}
+
+		filename := strings.TrimSpace(header.Filename)
+		if filename == "" {
+			filename = "request-image"
+		}
+		if existingExtension := pathpkg.Ext(filename); existingExtension != "" {
+			filename = strings.TrimSuffix(filename, existingExtension)
+		}
+		filename = sanitizePathSegment(filename)
+
+		uploadKey := fmt.Sprintf(
+			"%s%s-%s.%s",
+			tempUploadPrefix(claims.helperID()),
+			time.Now().UTC().Format("2006/01/02/150405"),
+			fmt.Sprintf("%s-%s", filename, randomHex(8)),
+			extension,
+		)
+
+		if _, err := uploadImageBytes(
+			r.Context(),
+			imageBucketName,
+			uploadKey,
+			fileBytes,
+			contentType,
+			map[string]string{
+				"uploaded-by": sanitizePathSegment(claims.helperID()),
+				"source":      "multipart-upload",
+			},
+		); err != nil {
+			log.Printf("Failed to upload request image: %v", err)
+			jsonResponse(w, 500, map[string]string{"error": "Failed to upload request image"})
+			return
+		}
+
+		jsonResponse(w, 201, map[string]string{
+			"uploadKey": uploadKey,
+		})
+	}))
 
 	// GET /api/v1/requests - Get all requests (Public or Protected? Let's protect it)
 	mux.HandleFunc("/api/v1/requests", authMiddleware(func(w http.ResponseWriter, r *http.Request) {
@@ -362,21 +701,46 @@ func main() {
 				return
 			}
 
+			for i := range requests {
+				resolvedURL, err := resolveImageURL(r.Context(), requests[i].ImageUrl)
+				if err != nil {
+					log.Printf("Failed to resolve image URL for request %s: %v", requests[i].ID, err)
+					jsonResponse(w, 500, map[string]string{"error": "Failed to resolve request images"})
+					return
+				}
+				requests[i].ImageUrl = resolvedURL
+			}
+
 			jsonResponse(w, 200, requests)
 			return
 		}
 
 		// POST /api/v1/requests - Create a new request
 		if r.Method == http.MethodPost {
+			claims, ok := r.Context().Value("user").(*Claims)
+			if !ok {
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+
 			var req RecyclingRequest
 			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 				jsonResponse(w, 400, map[string]string{"error": fmt.Sprintf("Invalid payload: %v", err)})
 				return
 			}
 
-			req.ID = time.Now().Format("20060102150405")
-			if req.ImageUrl == "" {
+			req.ID = newRequestID()
+			if strings.TrimSpace(req.ImageUrl) == "" && strings.TrimSpace(req.ImageUploadKey) == "" {
 				req.ImageUrl = "assets/images/generic.png"
+			}
+			if req.ImageUrl != "assets/images/generic.png" || strings.TrimSpace(req.ImageUploadKey) != "" {
+				imageReference, err := prepareRequestImageReference(r.Context(), claims, req.ID, req.ImageUploadKey, req.ImageUrl)
+				if err != nil {
+					log.Printf("Failed to prepare image for request %s: %v", req.ID, err)
+					jsonResponse(w, 400, map[string]string{"error": "Failed to process request image"})
+					return
+				}
+				req.ImageUrl = imageReference
 			}
 			req.Status = "pending"
 
@@ -439,12 +803,12 @@ func main() {
 			Key: map[string]types.AttributeValue{
 				"id": &types.AttributeValueMemberS{Value: payload.ID},
 			},
-			UpdateExpression:          aws.String("SET #status = :accepted, helperId = :helperId"),
-			ConditionExpression:       aws.String("#status = :pending"),
-			ExpressionAttributeNames:  map[string]string{"#status": "status"},
+			UpdateExpression:         aws.String("SET #status = :accepted, helperId = :helperId"),
+			ConditionExpression:      aws.String("#status = :pending AND (attribute_not_exists(canceledHelperIds) OR NOT contains(canceledHelperIds, :helperId))"),
+			ExpressionAttributeNames: map[string]string{"#status": "status"},
 			ExpressionAttributeValues: map[string]types.AttributeValue{
 				":accepted": &types.AttributeValueMemberS{Value: "accepted"},
-				":helperId": &types.AttributeValueMemberS{Value: claims.Name},
+				":helperId": &types.AttributeValueMemberS{Value: claims.helperID()},
 				":pending":  &types.AttributeValueMemberS{Value: "pending"},
 			},
 			ReturnValues: types.ReturnValueAllNew,
@@ -468,7 +832,7 @@ func main() {
 				go sendPushNotification(
 					updatedReq.CreatorDeviceToken,
 					"Request Accepted! 🚛",
-					fmt.Sprintf("%s has accepted your request and is on the way.", claims.Name),
+					fmt.Sprintf("%s has accepted your request and is on the way.", claims.notificationName()),
 				)
 			}
 		}
@@ -479,10 +843,86 @@ func main() {
 		jsonResponse(w, 200, map[string]string{"status": "accepted"})
 	}))
 
+	// POST /api/v1/requests/cancel
+	mux.HandleFunc("/api/v1/requests/cancel", authMiddleware(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		claims, ok := r.Context().Value("user").(*Claims)
+		if !ok {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		var payload struct {
+			ID string `json:"id"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			jsonResponse(w, 400, map[string]string{"error": "Invalid payload"})
+			return
+		}
+
+		helperID := claims.helperID()
+		out, err := svc.UpdateItem(context.TODO(), &dynamodb.UpdateItemInput{
+			TableName: aws.String(tableName),
+			Key: map[string]types.AttributeValue{
+				"id": &types.AttributeValueMemberS{Value: payload.ID},
+			},
+			UpdateExpression:    aws.String("SET #status = :pending, canceledHelperIds = list_append(if_not_exists(canceledHelperIds, :emptyList), :helperList) REMOVE helperId"),
+			ConditionExpression: aws.String("#status = :accepted AND helperId = :helperId"),
+			ExpressionAttributeNames: map[string]string{
+				"#status": "status",
+			},
+			ExpressionAttributeValues: map[string]types.AttributeValue{
+				":pending":   &types.AttributeValueMemberS{Value: "pending"},
+				":helperId":  &types.AttributeValueMemberS{Value: helperID},
+				":emptyList": &types.AttributeValueMemberL{Value: []types.AttributeValue{}},
+				":helperList": &types.AttributeValueMemberL{Value: []types.AttributeValue{
+					&types.AttributeValueMemberS{Value: helperID},
+				}},
+			},
+			ReturnValues: types.ReturnValueAllNew,
+		})
+
+		if err != nil {
+			log.Printf("Failed to cancel request: %v", err)
+			var cfe *types.ConditionalCheckFailedException
+			if errorIs(err, &cfe) {
+				jsonResponse(w, 400, map[string]string{"error": "Request is no longer assigned to you"})
+			} else {
+				jsonResponse(w, 500, map[string]string{"error": "Failed to cancel pickup"})
+			}
+			return
+		}
+
+		var updatedReq RecyclingRequest
+		if err := attributevalue.UnmarshalMap(out.Attributes, &updatedReq); err == nil {
+			if updatedReq.CreatorDeviceToken != "" {
+				go sendPushNotification(
+					updatedReq.CreatorDeviceToken,
+					"Pickup Cancelled",
+					fmt.Sprintf("%s can no longer complete your pickup. Your request is available for another helper again.", claims.notificationName()),
+				)
+			}
+		}
+
+		hub.broadcast <- []byte(`{"type":"refresh"}`)
+
+		jsonResponse(w, 200, map[string]string{"status": "pending"})
+	}))
+
 	// POST /api/v1/requests/complete
 	mux.HandleFunc("/api/v1/requests/complete", authMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		claims, ok := r.Context().Value("user").(*Claims)
+		if !ok {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
 
@@ -499,16 +939,24 @@ func main() {
 			Key: map[string]types.AttributeValue{
 				"id": &types.AttributeValueMemberS{Value: payload.ID},
 			},
-			UpdateExpression:          aws.String("SET #status = :pickedUp"),
-			ExpressionAttributeNames:  map[string]string{"#status": "status"},
+			UpdateExpression:         aws.String("SET #status = :pickedUp"),
+			ConditionExpression:      aws.String("#status = :accepted AND helperId = :helperId"),
+			ExpressionAttributeNames: map[string]string{"#status": "status"},
 			ExpressionAttributeValues: map[string]types.AttributeValue{
 				":pickedUp": &types.AttributeValueMemberS{Value: "pickedUp"},
+				":accepted": &types.AttributeValueMemberS{Value: "accepted"},
+				":helperId": &types.AttributeValueMemberS{Value: claims.helperID()},
 			},
 		})
 
 		if err != nil {
 			log.Printf("Failed to complete request: %v", err)
-			jsonResponse(w, 500, map[string]string{"error": "Failed to update request"})
+			var cfe *types.ConditionalCheckFailedException
+			if errorIs(err, &cfe) {
+				jsonResponse(w, 400, map[string]string{"error": "Request is no longer assigned to you"})
+			} else {
+				jsonResponse(w, 500, map[string]string{"error": "Failed to update request"})
+			}
 			return
 		}
 
