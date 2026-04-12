@@ -78,6 +78,11 @@ func TestRequestReturnsToHelperPool(t *testing.T) {
 			want:    true,
 		},
 		{
+			name:    "cancelled request with stale helper assignment but recorded cancellation",
+			request: RecyclingRequest{Status: "cancelled", HelperID: " helper-1 ", CanceledHelperIDs: []string{"helper-9", "HELPER-1"}},
+			want:    true,
+		},
+		{
 			name:    "cancelled request with active helper",
 			request: RecyclingRequest{Status: "cancelled", HelperID: "helper-1"},
 			want:    false,
@@ -97,6 +102,44 @@ func TestRequestReturnsToHelperPool(t *testing.T) {
 			got := requestReturnsToHelperPool(tc.request)
 			if got != tc.want {
 				t.Fatalf("requestReturnsToHelperPool(%+v) = %t, want %t", tc.request, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestHelperCancellationRecorded(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name    string
+		request RecyclingRequest
+		want    bool
+	}{
+		{
+			name:    "matches helper assignment",
+			request: RecyclingRequest{HelperID: "helper-1", CanceledHelperIDs: []string{"helper-2", "HELPER-1"}},
+			want:    true,
+		},
+		{
+			name:    "records cancellation without helper assignment",
+			request: RecyclingRequest{CanceledHelperIDs: []string{"helper-1"}},
+			want:    true,
+		},
+		{
+			name:    "ignores empty cancellation list",
+			request: RecyclingRequest{HelperID: "helper-1"},
+			want:    false,
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := helperCancellationRecorded(tc.request)
+			if got != tc.want {
+				t.Fatalf("helperCancellationRecorded(%+v) = %t, want %t", tc.request, got, tc.want)
 			}
 		})
 	}

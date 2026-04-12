@@ -257,7 +257,19 @@ func requestReturnsToHelperPool(request RecyclingRequest) bool {
 	if !strings.EqualFold(status, "cancelled") {
 		return false
 	}
-	return !requestHasActiveHelper(request)
+	return cancelledRequestCanReturnToHelperPool(request)
+}
+
+func cancelledRequestCanReturnToHelperPool(request RecyclingRequest) bool {
+	if !requestHasActiveHelper(request) {
+		return true
+	}
+
+	if strings.TrimSpace(request.HelperID) == "" {
+		return true
+	}
+
+	return helperCancellationRecorded(request)
 }
 
 func requestHasActiveHelper(request RecyclingRequest) bool {
@@ -266,6 +278,28 @@ func requestHasActiveHelper(request RecyclingRequest) bool {
 		return false
 	}
 	return !helperHasCancelledRequest(request.CanceledHelperIDs, helperID)
+}
+
+func helperCancellationRecorded(request RecyclingRequest) bool {
+	if len(request.CanceledHelperIDs) == 0 {
+		return false
+	}
+
+	helperID := strings.TrimSpace(request.HelperID)
+	if helperID == "" {
+		return true
+	}
+
+	for _, cancelledHelperID := range request.CanceledHelperIDs {
+		if strings.TrimSpace(cancelledHelperID) == "" {
+			continue
+		}
+		if strings.EqualFold(strings.TrimSpace(cancelledHelperID), helperID) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func helperHasCancelledRequest(cancelledHelperIDs []string, helperID string) bool {
