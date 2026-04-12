@@ -173,6 +173,7 @@ func TestFilterHelperAssignedRequests(t *testing.T) {
 		{ID: "accepted-other", Status: "accepted", HelperID: "helper-1"},
 		{ID: "pending-returned-to-pool", Status: "pending", HelperID: helperID},
 		{ID: "cancelled-returned-to-pool", Status: "cancelled", HelperID: helperID, CanceledHelperIDs: []string{helperID}},
+		{ID: "cancelled-returned-to-pool-mixed-case", Status: "cancelled", HelperID: " HELPER-2 ", CanceledHelperIDs: []string{helperID}},
 	}
 
 	filtered := filterHelperAssignedRequests(requests, helperID)

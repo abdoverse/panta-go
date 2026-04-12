@@ -326,7 +326,7 @@ func filterHelperAssignedRequests(requests []RecyclingRequest, helperID string) 
 	filtered := make([]RecyclingRequest, 0, len(requests))
 	normalizedHelperID := strings.TrimSpace(helperID)
 	for _, request := range requests {
-		if strings.TrimSpace(request.HelperID) != normalizedHelperID {
+		if !strings.EqualFold(strings.TrimSpace(request.HelperID), normalizedHelperID) {
 			continue
 		}
 		if requestReturnsToHelperPool(request) {
