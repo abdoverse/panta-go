@@ -226,13 +226,10 @@ func listHelperAccessibleRequests(ctx context.Context, helperID string) ([]Recyc
 	), nil
 }
 
-func filterHelperVisiblePendingRequests(requests []RecyclingRequest, helperID string) []RecyclingRequest {
+func filterHelperVisiblePendingRequests(requests []RecyclingRequest, _ string) []RecyclingRequest {
 	filtered := make([]RecyclingRequest, 0, len(requests))
 	for _, request := range requests {
 		if !strings.EqualFold(strings.TrimSpace(request.Status), "pending") {
-			continue
-		}
-		if helperPreviouslyCancelledRequest(request, helperID) {
 			continue
 		}
 		request.HelperID = ""
@@ -250,15 +247,6 @@ func filterHelperAssignedRequests(requests []RecyclingRequest, helperID string) 
 		filtered = append(filtered, request)
 	}
 	return filtered
-}
-
-func helperPreviouslyCancelledRequest(request RecyclingRequest, helperID string) bool {
-	for _, cancelledHelperID := range request.CanceledHelperIDs {
-		if strings.TrimSpace(cancelledHelperID) == helperID {
-			return true
-		}
-	}
-	return false
 }
 
 func queryRequests(ctx context.Context, input *dynamodb.QueryInput) ([]RecyclingRequest, error) {
