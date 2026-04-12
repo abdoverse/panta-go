@@ -226,16 +226,32 @@ func listHelperAccessibleRequests(ctx context.Context, helperID string) ([]Recyc
 	), nil
 }
 
-func filterHelperVisiblePendingRequests(requests []RecyclingRequest, _ string) []RecyclingRequest {
+func filterHelperVisiblePendingRequests(requests []RecyclingRequest, helperID string) []RecyclingRequest {
 	filtered := make([]RecyclingRequest, 0, len(requests))
 	for _, request := range requests {
 		if !strings.EqualFold(strings.TrimSpace(request.Status), "pending") {
+			continue
+		}
+		if helperHasCancelledRequest(request.CanceledHelperIDs, helperID) {
 			continue
 		}
 		request.HelperID = ""
 		filtered = append(filtered, request)
 	}
 	return filtered
+}
+
+func helperHasCancelledRequest(cancelledHelperIDs []string, helperID string) bool {
+	normalizedHelperID := strings.TrimSpace(helperID)
+	if normalizedHelperID == "" {
+		return false
+	}
+	for _, cancelledHelperID := range cancelledHelperIDs {
+		if strings.EqualFold(strings.TrimSpace(cancelledHelperID), normalizedHelperID) {
+			return true
+		}
+	}
+	return false
 }
 
 func filterHelperAssignedRequests(requests []RecyclingRequest, helperID string) []RecyclingRequest {
