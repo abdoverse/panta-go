@@ -11,6 +11,7 @@ import '../../services/auth_service.dart';
 import '../../services/api_config.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../shared/widgets/loading_skeletons.dart';
+import '../shared/widgets/location_actions.dart';
 
 class HelperHomePage extends StatefulWidget {
   const HelperHomePage({super.key});
@@ -393,24 +394,7 @@ class _JobCard extends StatelessWidget {
                   ),
                 ],
                 const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                            color: Colors.grey[100],
-                            borderRadius: BorderRadius.circular(8)),
-                        child: const Icon(Icons.location_on,
-                            size: 18, color: AppTheme.primaryGreen)),
-                    const SizedBox(width: 12),
-                    Expanded(
-                        child: Text(job.location,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(fontWeight: FontWeight.w500))),
-                  ],
-                ),
+                LocationActions(address: job.location),
                 const SizedBox(height: 8),
                 Row(
                   children: [

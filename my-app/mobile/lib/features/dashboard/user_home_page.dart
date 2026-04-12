@@ -12,6 +12,7 @@ import 'package:intl/intl.dart';
 import '../../core/constants/app_constants.dart';
 import 'package:flutter_animate/flutter_animate.dart'; // Ensure animate is imported
 import '../shared/widgets/loading_skeletons.dart'; // Import skeletons
+import '../shared/widgets/location_actions.dart';
 
 class UserHomePage extends StatefulWidget {
   const UserHomePage({super.key});
@@ -392,12 +393,14 @@ class _RequestCard extends StatelessWidget {
                           ),
                         ],
                       ),
+                      const SizedBox(height: 12),
+                      LocationActions(address: request.location),
                     ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             if (isInteractable &&
                 request.status == RequestStatus.pickedUp &&
                 !request.isRated)
