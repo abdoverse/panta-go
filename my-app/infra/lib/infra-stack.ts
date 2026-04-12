@@ -19,6 +19,8 @@ export class InfraStack extends cdk.Stack {
 
     const requestsTableName = 'panta-go-requests';
     const requestImagesBucketName = 'panta-go-request-images';
+    const backendCpu = '256';
+    const backendMemory = '512';
 
     const backendAsset = new assets.DockerImageAsset(this, 'BackendAsset', {
       directory: path.join(__dirname, '../../backend'),
@@ -109,8 +111,9 @@ export class InfraStack extends cdk.Stack {
 
     const expressService = new ecs.CfnExpressGatewayService(this, 'PantaGoBackendService', {
       serviceName: 'panta-go-backend',
-      cpu: '256',
-      memory: '512',
+      // ECS Express / Fargate already runs at the smallest supported task size.
+      cpu: backendCpu,
+      memory: backendMemory,
       executionRoleArn: taskExecutionRole.roleArn,
       infrastructureRoleArn: infrastructureRole.roleArn,
       taskRoleArn: taskRole.roleArn,
