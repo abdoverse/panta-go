@@ -1,7 +1,7 @@
 # Agent Backlog
 # Managed by langgraph_multi_agent.py.
-# Last heartbeat at: 2026-04-12T14:12:18.068323+00:00
-# Loop status: active | active_agents=2 | approved=1 | ready_approved=0 | pending=0 | in_progress=1 | done=5
+# Last heartbeat at: 2026-04-12T14:13:32.646854+00:00
+# Loop status: active | active_agents=1 | approved=2 | ready_approved=1 | pending=0 | in_progress=0 | done=5
 # Approve work by changing an item's status from pending to approved.
 # Active status values: pending, approved, in_progress
 # Fields: id | status | priority | complexity | dependencies | title
@@ -19,14 +19,9 @@ plan-4 | approved | medium | medium | plan-5 | Slim down mobile state management
   `my-app/mobile/lib/providers/panta_provider.dart`, `my-app/mobile/lib/services/*.dart`, feature screens.
 
 ## both
-plan-5 | in_progress | high | medium | none | Finish auth hardening and runtime configuration cleanup
-  Owner agent: backend_dev+frontend_dev
-  Started at: 2026-04-12T14:11:54.386825+00:00
-  Last heartbeat at: 2026-04-12T14:12:17.993865+00:00
-  Last progress at: 2026-04-12T14:11:54.879101+00:00
-  Progress note: frontend_dev [frontend-alignment]: Checking whether the active task touches the mobile/web surface and keeping the web-first workflow aligned with the repo instructions.
-  Agent activity: frontend_dev | 2026-04-12T14:12:17.993865+00:00 | frontend-alignment | Checking whether the active task touches the mobile/web surface and keeping the web-first workflow aligned with the repo instructions. | cd my-app/mobile && flutter test
-  Agent activity: backend_dev | 2026-04-12T14:12:17.993865+00:00 | implementing | Extracting backend responsibilities out of main.go into clearer module boundaries. | edit my-app/backend/cmd/api/main.go and create backend package files
+plan-5 | approved | high | medium | none | Finish auth hardening and runtime configuration cleanup
+  Last progress at: 2026-04-12T14:12:51.814844+00:00
+  Progress note: Real worker running (pid 1349184); waiting for task-relevant repository edits.
   Goal:
   Tighten session restore/logout behavior and remove remaining production-sensitive runtime assumptions.
   Why:

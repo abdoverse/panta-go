@@ -151,7 +151,7 @@ class AuthService {
         await _invalidateSession();
         return false;
       }
-      return true;
+      return _isUsableSession(session);
     } catch (_) {
       await _invalidateSession();
       return false;
@@ -162,7 +162,11 @@ class AuthService {
   Future<String?> getToken() async {
     try {
       final session = await _loadSession();
-      return session?.getIdToken().getJwtToken();
+      if (session == null || !_isUsableSession(session)) {
+        await _invalidateSession();
+        return null;
+      }
+      return session.getIdToken().getJwtToken();
     } catch (_) {
       await _invalidateSession();
       return null;
@@ -228,7 +232,7 @@ class AuthService {
   }
 
   Future<CognitoUserSession?> _loadSession() async {
-    if (_session != null && _session!.isValid()) {
+    if (_session != null && _isUsableSession(_session!)) {
       return _session;
     }
 
@@ -245,13 +249,23 @@ class AuthService {
       await _invalidateSession();
       return null;
     }
-    if (restoredSession == null || !restoredSession.isValid()) {
+    if (restoredSession == null || !_isUsableSession(restoredSession)) {
       await _invalidateSession();
       return null;
     }
 
     _session = restoredSession;
     return _session;
+  }
+
+  bool _isUsableSession(CognitoUserSession session) {
+    if (!session.isValid()) {
+      return false;
+    }
+
+    final idToken = session.getIdToken().getJwtToken().trim();
+    final accessToken = session.getAccessToken().getJwtToken().trim();
+    return idToken.isNotEmpty && accessToken.isNotEmpty;
   }
 
   Future<void> _clearLocalSession({CognitoUser? currentUser}) async {
