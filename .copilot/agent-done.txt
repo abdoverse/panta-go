@@ -4,339 +4,36 @@
 # Fields: id | status | priority | complexity | dependencies | title
 
 ## backend
-plan-50 | done | high | medium | none | Fix cancelled pickups not returning to the available helper pool
+plan-51 | done | high | medium | none | Optimize ECS Express deployment to the minimum safe footprint to reduce cost
   Owner agent: backend_dev
-  Started at: 2026-04-12T18:19:34.452133+00:00
-  Last heartbeat at: 2026-04-12T18:20:18.830069+00:00
-  Last progress at: 2026-04-12T18:20:18.830069+00:00
+  Started at: 2026-04-12T18:25:10.139173+00:00
+  Last heartbeat at: 2026-04-12T18:26:49.194110+00:00
+  Last progress at: 2026-04-12T18:26:49.194110+00:00
   Progress note: tester [done]: Validation passed and the task was committed, pushed, and deployed.
-  Agent activity: tester | 2026-04-12T18:20:18.816411+00:00 | validation | Running the existing validation commands after backend implementation handoff. | cd my-app/mobile && flutter test
-  Agent activity: backend_dev | 2026-04-12T18:19:53.105187+00:00 | working | Normalized helper assignment matching so |
-  Agent activity: backend_dev | 2026-04-12T18:19:46.074178+00:00 | working | Normalized helper assignment matching so |
-  Agent activity: backend_dev | 2026-04-12T18:19:42.666173+00:00 | working | Normalized helper assignment matching so |
-  Agent activity: backend_dev | 2026-04-12T18:19:38.254167+00:00 | working | Located cancellation and helper-pool logic |
-  Agent activity: backend_dev | 2026-04-12T18:19:33.423161+00:00 | working | Located cancellation and helper-pool logic |
-  Agent activity: backend_dev | 2026-04-12T18:19:26.602151+00:00 | working | Located cancellation and helper-pool logic |
-  Agent activity: backend_dev | 2026-04-12T18:19:22.010145+00:00 | assigned | Inspecting backend cancellation |
-  Overview: Do not use 'cdk watch' with this version of the cdk cli.
-  Upgrade to ^2.1106.0.
-  Affected versions: cli: >=2.1103.0 <2.1106.0
-  More information at: https://github.com/aws/aws-cdk/issues/37013
-  Overview: We do not collect customer content and we anonymize the
-  telemetry we do collect. See the attached issue for more
-  information on what data is collected, why, and how to
-  opt-out. Telemetry will NOT be collected for any CDK CLI
-  version prior to version 2.1100.0 - regardless of
-  opt-in/out. You can also view the telemetry we collect by
-  logging it to a local file, by adding
-  `--telemetry-file=my/local/file` to any `cdk` command.
-  Affected versions: cli: >=2.1100.0 <2.1106.1
-  More information at: https://github.com/aws/aws-cdk/issues/34892
-  Agent activity: backend_dev | 2026-04-12T18:18:17.362053+00:00 | working | Found helper-pool responses keeping |
-  Agent activity: backend_dev | 2026-04-12T18:18:13.010047+00:00 | working | Found helper-pool responses keeping |
-  Agent activity: backend_dev | 2026-04-12T18:18:08.487040+00:00 | working | Found helper-pool responses keeping |
-  Agent activity: backend_dev | 2026-04-12T18:18:01.971031+00:00 | working | Found helper-pool responses keeping |
-  Agent activity: backend_dev | 2026-04-12T18:17:58.120025+00:00 | working | Found helper-pool responses keeping |
-  Agent activity: backend_dev | 2026-04-12T18:17:43.877004+00:00 | assigned | Inspecting cancelled pickup helper-pool |
-  Agent activity: backend_dev | 2026-04-12T18:17:43.877004+00:00 | assigned | Inspecting cancelled pickup helper-pool |
-  Agent activity: backend_dev | 2026-04-12T18:17:39.181998+00:00 | assigned | Inspecting cancelled pickup helper-pool |
-  Overview: Do not use 'cdk watch' with this version of the cdk cli.
-  Upgrade to ^2.1106.0.
-  Affected versions: cli: >=2.1103.0 <2.1106.0
-  More information at: https://github.com/aws/aws-cdk/issues/37013
-  Overview: We do not collect customer content and we anonymize the
-  telemetry we do collect. See the attached issue for more
-  information on what data is collected, why, and how to
-  opt-out. Telemetry will NOT be collected for any CDK CLI
-  version prior to version 2.1100.0 - regardless of
-  opt-in/out. You can also view the telemetry we collect by
-  logging it to a local file, by adding
-  `--telemetry-file=my/local/file` to any `cdk` command.
-  Affected versions: cli: >=2.1100.0 <2.1106.1
-  More information at: https://github.com/aws/aws-cdk/issues/34892
-  Agent activity: backend_dev | 2026-04-12T18:16:34.432900+00:00 | ready_for_validation | Helper-assigned stale |
-  Agent activity: backend_dev | 2026-04-12T18:16:28.821892+00:00 | working | Found helper visibility logic around |
-  Agent activity: backend_dev | 2026-04-12T18:16:24.595885+00:00 | working | Found helper visibility logic around |
-  Agent activity: backend_dev | 2026-04-12T18:16:14.054869+00:00 | working | Found helper visibility logic around |
-  Agent activity: backend_dev | 2026-04-12T18:16:13.976868+00:00 | working | Found helper visibility logic around |
-  Agent activity: backend_dev | 2026-04-12T18:16:03.812853+00:00 | working | Found helper visibility logic around |
-  Agent activity: backend_dev | 2026-04-12T18:15:57.500843+00:00 | working | Found helper visibility logic around |
-  Agent activity: backend_dev | 2026-04-12T18:15:53.849837+00:00 | working | Found helper visibility logic around |
-  Agent activity: backend_dev | 2026-04-12T18:15:49.444830+00:00 | working | Found helper visibility logic around |
-  Agent activity: backend_dev | 2026-04-12T18:15:33.030804+00:00 | assigned | Inspecting cancelled pickup helper-pool |
-  Agent activity: backend_dev | 2026-04-12T18:15:33.030804+00:00 | assigned | Inspecting cancelled pickup helper-pool |
-  Agent activity: backend_dev | 2026-04-12T18:15:29.358798+00:00 | assigned | Inspecting cancelled pickup helper-pool |
-  Overview: Do not use 'cdk watch' with this version of the cdk cli.
-  Upgrade to ^2.1106.0.
-  Affected versions: cli: >=2.1103.0 <2.1106.0
-  More information at: https://github.com/aws/aws-cdk/issues/37013
-  Overview: We do not collect customer content and we anonymize the
-  telemetry we do collect. See the attached issue for more
-  information on what data is collected, why, and how to
-  opt-out. Telemetry will NOT be collected for any CDK CLI
-  version prior to version 2.1100.0 - regardless of
-  opt-in/out. You can also view the telemetry we collect by
-  logging it to a local file, by adding
-  `--telemetry-file=my/local/file` to any `cdk` command.
-  Affected versions: cli: >=2.1100.0 <2.1106.1
-  More information at: https://github.com/aws/aws-cdk/issues/34892
-  Agent activity: backend_dev | 2026-04-12T18:14:30.898702+00:00 | working | Found helper-pool filter still blocks some |
-  Agent activity: backend_dev | 2026-04-12T18:14:23.575690+00:00 | working | Found helper-pool filter still blocks some |
-  Agent activity: backend_dev | 2026-04-12T18:14:18.748681+00:00 | working | Found helper-pool filter still blocks some |
-  Agent activity: backend_dev | 2026-04-12T18:14:11.544669+00:00 | working | Found helper-pool filter still blocks some |
-  Agent activity: backend_dev | 2026-04-12T18:14:07.636662+00:00 | working | Found helper-pool filter still blocks some |
-  Agent activity: backend_dev | 2026-04-12T18:14:02.378653+00:00 | working | Found helper-pool filter still blocks some |
-  Agent activity: backend_dev | 2026-04-12T18:13:48.783630+00:00 | assigned | Inspecting cancelled pickup helper-pool |
-  Agent activity: backend_dev | 2026-04-12T18:13:48.783630+00:00 | assigned | Inspecting cancelled pickup helper-pool |
-  Agent activity: backend_dev | 2026-04-12T18:13:45.000623+00:00 | assigned | Inspecting cancelled pickup helper-pool |
-  Agent activity: backend_dev | 2026-04-12T18:13:17.015574+00:00 | working | Found cancelled helper-pool filter still |
-  Agent activity: backend_dev | 2026-04-12T18:13:17.015574+00:00 | working | Found cancelled helper-pool filter still |
-  Agent activity: backend_dev | 2026-04-12T18:13:13.256567+00:00 | assigned | Inspecting cancelled pickup helper-pool |
-  Overview: Do not use 'cdk watch' with this version of the cdk cli.
-  Upgrade to ^2.1106.0.
-  Affected versions: cli: >=2.1103.0 <2.1106.0
-  More information at: https://github.com/aws/aws-cdk/issues/37013
-  Overview: We do not collect customer content and we anonymize the
-  telemetry we do collect. See the attached issue for more
-  information on what data is collected, why, and how to
-  opt-out. Telemetry will NOT be collected for any CDK CLI
-  version prior to version 2.1100.0 - regardless of
-  opt-in/out. You can also view the telemetry we collect by
-  logging it to a local file, by adding
-  `--telemetry-file=my/local/file` to any `cdk` command.
-  Affected versions: cli: >=2.1100.0 <2.1106.1
-  More information at: https://github.com/aws/aws-cdk/issues/34892
-  Agent activity: backend_dev | 2026-04-12T18:12:08.869449+00:00 | working | Found helper pool visibility logic still |
-  Agent activity: backend_dev | 2026-04-12T18:12:02.601437+00:00 | working | Found helper pool visibility logic still |
-  Agent activity: backend_dev | 2026-04-12T18:12:00.363433+00:00 | working | Found helper pool visibility logic still |
-  Agent activity: backend_dev | 2026-04-12T18:11:56.180425+00:00 | working | Found helper pool visibility logic still |
-  Agent activity: backend_dev | 2026-04-12T18:11:47.471408+00:00 | working | Found helper pool visibility logic still |
-  Agent activity: backend_dev | 2026-04-12T18:11:35.974385+00:00 | working | Found helper pool visibility logic still |
-  Agent activity: backend_dev | 2026-04-12T18:11:35.974385+00:00 | working | Found helper pool visibility logic still |
-  Agent activity: backend_dev | 2026-04-12T18:11:30.553375+00:00 | working | Found helper pool visibility logic still |
-  Agent activity: backend_dev | 2026-04-12T18:11:21.881358+00:00 | assigned | Inspecting cancelled pickup eligibility |
-  Agent activity: backend_dev | 2026-04-12T18:11:21.881358+00:00 | assigned | Inspecting cancelled pickup eligibility |
-  Agent activity: backend_dev | 2026-04-12T18:11:15.697346+00:00 | assigned | Inspecting cancelled pickup eligibility |
-  Agent activity: backend_dev | 2026-04-12T18:11:07.026328+00:00 | assigned | Inspecting cancelled pickup eligibility |
-  Overview: Do not use 'cdk watch' with this version of the cdk cli.
-  Upgrade to ^2.1106.0.
-  Affected versions: cli: >=2.1103.0 <2.1106.0
-  More information at: https://github.com/aws/aws-cdk/issues/37013
-  Overview: We do not collect customer content and we anonymize the
-  telemetry we do collect. See the attached issue for more
-  information on what data is collected, why, and how to
-  opt-out. Telemetry will NOT be collected for any CDK CLI
-  version prior to version 2.1100.0 - regardless of
-  opt-in/out. You can also view the telemetry we collect by
-  logging it to a local file, by adding
-  `--telemetry-file=my/local/file` to any `cdk` command.
-  Affected versions: cli: >=2.1100.0 <2.1106.1
-  More information at: https://github.com/aws/aws-cdk/issues/34892
-  Agent activity: backend_dev | 2026-04-12T18:09:57.340183+00:00 | working | Found helper pool filter still blocks some |
-  Agent activity: backend_dev | 2026-04-12T18:09:57.340183+00:00 | working | Found helper pool filter still blocks some |
-  Agent activity: backend_dev | 2026-04-12T18:09:50.259168+00:00 | working | Found helper pool filter still blocks some |
-  Agent activity: backend_dev | 2026-04-12T18:09:44.242155+00:00 | working | Found helper pool filter still blocks some |
-  Agent activity: backend_dev | 2026-04-12T18:09:35.522136+00:00 | working | Found helper pool filter still blocks some |
-  Agent activity: backend_dev | 2026-04-12T18:09:31.433127+00:00 | working | Found helper pool filter still blocks some |
-  Agent activity: backend_dev | 2026-04-12T18:09:26.313116+00:00 | assigned | Investigating cancelled pickup helper |
-  Agent activity: backend_dev | 2026-04-12T18:09:22.465107+00:00 | assigned | Investigating cancelled pickup helper |
-  Agent activity: backend_dev | 2026-04-12T18:08:51.373037+00:00 | working | Found helper pool filter still blocks |
-  Agent activity: backend_dev | 2026-04-12T18:08:51.373037+00:00 | working | Found helper pool filter still blocks |
-  Agent activity: backend_dev | 2026-04-12T18:08:46.334025+00:00 | working | Found helper pool filter still blocks |
-  Agent activity: backend_dev | 2026-04-12T18:08:38.942008+00:00 | working | Found helper pool filter still blocks |
-  Agent activity: backend_dev | 2026-04-12T18:08:36.177001+00:00 | working | Found helper pool filter still blocks |
-  Agent activity: backend_dev | 2026-04-12T18:08:31.229990+00:00 | assigned | Investigating cancelled pickup helper |
-  Agent activity: backend_dev | 2026-04-12T18:08:22.898970+00:00 | assigned | Investigating cancelled pickup helper |
-  Overview: Do not use 'cdk watch' with this version of the cdk cli.
-  Upgrade to ^2.1106.0.
-  Affected versions: cli: >=2.1103.0 <2.1106.0
-  More information at: https://github.com/aws/aws-cdk/issues/37013
-  Overview: We do not collect customer content and we anonymize the
-  telemetry we do collect. See the attached issue for more
-  information on what data is collected, why, and how to
-  opt-out. Telemetry will NOT be collected for any CDK CLI
-  version prior to version 2.1100.0 - regardless of
-  opt-in/out. You can also view the telemetry we collect by
-  logging it to a local file, by adding
-  `--telemetry-file=my/local/file` to any `cdk` command.
-  Affected versions: cli: >=2.1100.0 <2.1106.1
-  More information at: https://github.com/aws/aws-cdk/issues/34892
-  Agent activity: backend_dev | 2026-04-12T18:07:12.254795+00:00 | working | Found helper pool visibility logic rejecting cancelled |
-  Agent activity: backend_dev | 2026-04-12T18:07:04.679775+00:00 | working | Found helper pool visibility logic rejecting cancelled |
-  Agent activity: backend_dev | 2026-04-12T18:07:00.243763+00:00 | working | Found helper pool visibility logic rejecting cancelled |
-  Agent activity: backend_dev | 2026-04-12T18:06:42.407716+00:00 | working | Found helper pool visibility logic rejecting cancelled |
-  Agent activity: backend_dev | 2026-04-12T18:06:42.407716+00:00 | working | Found helper pool visibility logic rejecting cancelled |
-  Agent activity: backend_dev | 2026-04-12T18:06:42.407716+00:00 | working | Found helper pool visibility logic rejecting cancelled |
-  Agent activity: backend_dev | 2026-04-12T18:06:30.579684+00:00 | working | Found helper pool visibility logic rejecting cancelled |
-  Agent activity: backend_dev | 2026-04-12T18:06:30.579684+00:00 | working | Found helper pool visibility logic rejecting cancelled |
-  Agent activity: backend_dev | 2026-04-12T18:06:23.129664+00:00 | working | Found helper pool visibility logic rejecting cancelled |
-  Agent activity: backend_dev | 2026-04-12T18:06:17.425648+00:00 | assigned | Investigating cancelled pickup helper |
-  Agent activity: backend_dev | 2026-04-12T18:06:11.645632+00:00 | assigned | Investigating cancelled pickup helper |
-  Agent activity: backend_dev | 2026-04-12T18:05:45.047557+00:00 | working | Found helper visibility filter and |
-  Agent activity: backend_dev | 2026-04-12T18:05:45.047557+00:00 | working | Found helper visibility filter and |
-  Agent activity: backend_dev | 2026-04-12T18:05:42.602550+00:00 | working | Found helper visibility filter and |
-  Agent activity: backend_dev | 2026-04-12T18:05:35.168528+00:00 | working | Found helper visibility filter and |
-  Agent activity: backend_dev | 2026-04-12T18:05:31.026516+00:00 | working | Found helper visibility filter and |
-  Agent activity: backend_dev | 2026-04-12T18:05:25.153499+00:00 | working | Found helper visibility filter and |
-  Agent activity: backend_dev | 2026-04-12T18:05:17.383476+00:00 | assigned | Investigating cancelled pickup pool |
-  Agent activity: backend_dev | 2026-04-12T18:04:50.962396+00:00 | working | Found helper visibility logic still |
-  Agent activity: backend_dev | 2026-04-12T18:04:50.962396+00:00 | working | Found helper visibility logic still |
-  Agent activity: backend_dev | 2026-04-12T18:04:43.589373+00:00 | working | Found helper visibility logic still |
-  Agent activity: backend_dev | 2026-04-12T18:04:36.262350+00:00 | assigned | Investigating cancelled pickup helper |
-  Agent activity: backend_dev | 2026-04-12T18:04:36.198350+00:00 | assigned | Investigating cancelled pickup helper |
-  Overview: Do not use 'cdk watch' with this version of the cdk cli.
-  Upgrade to ^2.1106.0.
-  Affected versions: cli: >=2.1103.0 <2.1106.0
-  More information at: https://github.com/aws/aws-cdk/issues/37013
-  Overview: We do not collect customer content and we anonymize the
-  telemetry we do collect. See the attached issue for more
-  information on what data is collected, why, and how to
-  opt-out. Telemetry will NOT be collected for any CDK CLI
-  version prior to version 2.1100.0 - regardless of
-  opt-in/out. You can also view the telemetry we collect by
-  logging it to a local file, by adding
-  `--telemetry-file=my/local/file` to any `cdk` command.
-  Affected versions: cli: >=2.1100.0 <2.1106.1
-  More information at: https://github.com/aws/aws-cdk/issues/34892
-  Agent activity: backend_dev | 2026-04-12T18:03:25.133115+00:00 | working | Found helper pool filter excluding |
-  Agent activity: backend_dev | 2026-04-12T18:03:20.186098+00:00 | working | Found helper pool filter excluding |
-  Agent activity: backend_dev | 2026-04-12T18:03:17.392088+00:00 | working | Found helper pool filter excluding |
-  Agent activity: backend_dev | 2026-04-12T18:03:06.610050+00:00 | working | Found helper pool filter excluding |
-  Agent activity: backend_dev | 2026-04-12T18:03:02.677036+00:00 | working | Found helper pool filter excluding |
-  Agent activity: backend_dev | 2026-04-12T18:02:57.412017+00:00 | working | Found helper pool filter excluding |
-  Agent activity: backend_dev | 2026-04-12T18:02:51.360995+00:00 | assigned | Investigating cancelled pickup pool |
-  Agent activity: backend_dev | 2026-04-12T18:02:47.147980+00:00 | assigned | Investigating cancelled pickup pool |
-  Overview: Do not use 'cdk watch' with this version of the cdk cli.
-  Upgrade to ^2.1106.0.
-  Affected versions: cli: >=2.1103.0 <2.1106.0
-  More information at: https://github.com/aws/aws-cdk/issues/37013
-  Overview: We do not collect customer content and we anonymize the
-  telemetry we do collect. See the attached issue for more
-  information on what data is collected, why, and how to
-  opt-out. Telemetry will NOT be collected for any CDK CLI
-  version prior to version 2.1100.0 - regardless of
-  opt-in/out. You can also view the telemetry we collect by
-  logging it to a local file, by adding
-  `--telemetry-file=my/local/file` to any `cdk` command.
-  Affected versions: cli: >=2.1100.0 <2.1106.1
-  More information at: https://github.com/aws/aws-cdk/issues/34892
-  Overview: Do not use 'cdk watch' with this version of the cdk cli.
-  Upgrade to ^2.1106.0.
-  Affected versions: cli: >=2.1103.0 <2.1106.0
-  More information at: https://github.com/aws/aws-cdk/issues/37013
-  Overview: We do not collect customer content and we anonymize the
-  telemetry we do collect. See the attached issue for more
-  information on what data is collected, why, and how to
-  opt-out. Telemetry will NOT be collected for any CDK CLI
-  version prior to version 2.1100.0 - regardless of
-  opt-in/out. You can also view the telemetry we collect by
-  logging it to a local file, by adding
-  `--telemetry-file=my/local/file` to any `cdk` command.
-  Affected versions: cli: >=2.1100.0 <2.1106.1
-  More information at: https://github.com/aws/aws-cdk/issues/34892
-  Agent activity: backend_dev | 2026-04-12T17:59:34.424167+00:00 | ready_for_validation | Cancelled unassigned pickups |
-  Agent activity: backend_dev | 2026-04-12T17:59:28.978140+00:00 | working | Found request and helper pool code in |
-  Agent activity: backend_dev | 2026-04-12T17:59:24.115116+00:00 | working | Found request and helper pool code in |
-  Agent activity: backend_dev | 2026-04-12T17:59:16.835080+00:00 | working | Found request and helper pool code in |
-  Agent activity: backend_dev | 2026-04-12T17:59:10.309047+00:00 | working | Found request and helper pool code in |
-  Agent activity: backend_dev | 2026-04-12T17:58:57.112980+00:00 | working | Found request and helper pool code in |
-  Agent activity: backend_dev | 2026-04-12T17:58:57.112980+00:00 | working | Found request and helper pool code in |
-  Agent activity: backend_dev | 2026-04-12T17:58:50.225945+00:00 | working | Found request and helper pool code in |
-  Agent activity: backend_dev | 2026-04-12T17:58:50.225945+00:00 | working | Found request and helper pool code in |
-  Agent activity: backend_dev | 2026-04-12T17:58:40.134892+00:00 | working | Found request and helper pool code in |
-  Agent activity: backend_dev | 2026-04-12T17:58:32.780852+00:00 | working | Found request and helper pool code in |
-  Agent activity: backend_dev | 2026-04-12T17:58:32.780852+00:00 | working | Found request and helper pool code in |
-  Agent activity: backend_dev | 2026-04-12T17:58:26.824820+00:00 | assigned | Investigating cancelled pickup pool |
-  Overview: Do not use 'cdk watch' with this version of the cdk cli.
-  Upgrade to ^2.1106.0.
-  Affected versions: cli: >=2.1103.0 <2.1106.0
-  More information at: https://github.com/aws/aws-cdk/issues/37013
-  Overview: We do not collect customer content and we anonymize the
-  telemetry we do collect. See the attached issue for more
-  information on what data is collected, why, and how to
-  opt-out. Telemetry will NOT be collected for any CDK CLI
-  version prior to version 2.1100.0 - regardless of
-  opt-in/out. You can also view the telemetry we collect by
-  logging it to a local file, by adding
-  `--telemetry-file=my/local/file` to any `cdk` command.
-  Affected versions: cli: >=2.1100.0 <2.1106.1
-  More information at: https://github.com/aws/aws-cdk/issues/34892
-  Agent activity: backend_dev | 2026-04-12T17:57:21.007445+00:00 | working | Found helper pool visibility logic around |
-  Agent activity: backend_dev | 2026-04-12T17:57:08.776371+00:00 | working | Found helper pool visibility logic around |
-  Agent activity: backend_dev | 2026-04-12T17:57:08.776371+00:00 | working | Found helper pool visibility logic around |
-  Agent activity: backend_dev | 2026-04-12T17:57:04.949347+00:00 | working | Found helper pool visibility logic around |
-  Agent activity: backend_dev | 2026-04-12T17:56:52.314269+00:00 | working | Found helper pool visibility logic around |
-  Agent activity: backend_dev | 2026-04-12T17:56:52.314269+00:00 | working | Found helper pool visibility logic around |
-  Agent activity: backend_dev | 2026-04-12T17:56:44.344218+00:00 | working | Found helper pool visibility logic around |
-  Agent activity: backend_dev | 2026-04-12T17:56:36.980171+00:00 | working | Found helper pool visibility logic around |
-  Agent activity: backend_dev | 2026-04-12T17:56:32.539142+00:00 | working | Found helper pool visibility logic around |
-  Agent activity: backend_dev | 2026-04-12T17:56:20.372062+00:00 | assigned | Investigating cancelled pickup |
-  Agent activity: backend_dev | 2026-04-12T17:56:20.372062+00:00 | assigned | Investigating cancelled pickup |
-  Agent activity: backend_dev | 2026-04-12T17:56:16.200034+00:00 | assigned | Investigating cancelled pickup |
-  Overview: Do not use 'cdk watch' with this version of the cdk cli.
-  Upgrade to ^2.1106.0.
-  Affected versions: cli: >=2.1103.0 <2.1106.0
-  More information at: https://github.com/aws/aws-cdk/issues/37013
-  Overview: We do not collect customer content and we anonymize the
-  telemetry we do collect. See the attached issue for more
-  information on what data is collected, why, and how to
-  opt-out. Telemetry will NOT be collected for any CDK CLI
-  version prior to version 2.1100.0 - regardless of
-  opt-in/out. You can also view the telemetry we collect by
-  logging it to a local file, by adding
-  `--telemetry-file=my/local/file` to any `cdk` command.
-  Affected versions: cli: >=2.1100.0 <2.1106.1
-  More information at: https://github.com/aws/aws-cdk/issues/34892
-  Agent activity: backend_dev | 2026-04-12T17:55:06.455540+00:00 | ready_for_validation | Cancelled pickups now stay |
-  Agent activity: backend_dev | 2026-04-12T17:54:59.244486+00:00 | working | Found helper visibility filter excluding |
-  Agent activity: backend_dev | 2026-04-12T17:54:55.286455+00:00 | working | Found helper visibility filter excluding |
-  Agent activity: backend_dev | 2026-04-12T17:54:48.148401+00:00 | working | Found helper visibility filter excluding |
-  Agent activity: backend_dev | 2026-04-12T17:54:43.194362+00:00 | working | Found helper visibility filter excluding |
-  Agent activity: backend_dev | 2026-04-12T17:54:32.284276+00:00 | working | Found helper visibility filter excluding |
-  Agent activity: backend_dev | 2026-04-12T17:54:32.284276+00:00 | working | Found helper visibility filter excluding |
-  Agent activity: backend_dev | 2026-04-12T17:54:24.484213+00:00 | assigned | Investigating cancelled pickup helper |
-  Agent activity: backend_dev | 2026-04-12T17:53:55.797976+00:00 | working | Found helper visibility filter excluding |
-  Agent activity: backend_dev | 2026-04-12T17:53:55.797976+00:00 | working | Found helper visibility filter excluding |
-  Agent activity: backend_dev | 2026-04-12T17:53:43.622872+00:00 | working | Found helper visibility filter excluding |
-  Agent activity: backend_dev | 2026-04-12T17:53:43.622872+00:00 | working | Found helper visibility filter excluding |
-  Agent activity: backend_dev | 2026-04-12T17:53:39.524836+00:00 | assigned | Investigating cancelled pickup pool |
-  Agent activity: backend_dev | 2026-04-12T17:53:09.465567+00:00 | working | Found helper pool filter and request |
-  Agent activity: backend_dev | 2026-04-12T17:53:09.465567+00:00 | working | Found helper pool filter and request |
-  Agent activity: backend_dev | 2026-04-12T17:53:02.709505+00:00 | working | Found helper pool filter and request |
-  Agent activity: backend_dev | 2026-04-12T17:52:58.375465+00:00 | working | Found helper pool filter and request |
-  Agent activity: backend_dev | 2026-04-12T17:52:49.390380+00:00 | assigned | Investigating pickup cancellation |
-  Agent activity: backend_dev | 2026-04-12T17:52:49.390380+00:00 | assigned | Investigating pickup cancellation |
-  Overview: Do not use 'cdk watch' with this version of the cdk cli.
-  Upgrade to ^2.1106.0.
-  Affected versions: cli: >=2.1103.0 <2.1106.0
-  More information at: https://github.com/aws/aws-cdk/issues/37013
-  Overview: We do not collect customer content and we anonymize the
-  telemetry we do collect. See the attached issue for more
-  information on what data is collected, why, and how to
-  opt-out. Telemetry will NOT be collected for any CDK CLI
-  version prior to version 2.1100.0 - regardless of
-  opt-in/out. You can also view the telemetry we collect by
-  logging it to a local file, by adding
-  `--telemetry-file=my/local/file` to any `cdk` command.
-  Affected versions: cli: >=2.1100.0 <2.1106.1
-  More information at: https://github.com/aws/aws-cdk/issues/34892
-  Agent activity: backend_dev | 2026-04-12T17:51:41.834698+00:00 | working | Found cancellation flow and helper pool |
-  Agent activity: backend_dev | 2026-04-12T17:51:36.189637+00:00 | working | Found cancellation flow and helper pool |
-  Agent activity: backend_dev | 2026-04-12T17:51:29.913569+00:00 | working | Found cancellation flow and helper pool |
-  Agent activity: backend_dev | 2026-04-12T17:51:21.206473+00:00 | working | Found cancellation flow and helper pool |
-  Agent activity: backend_dev | 2026-04-12T17:51:17.094427+00:00 | working | Found cancellation flow and helper pool |
-  Agent activity: backend_dev | 2026-04-12T17:51:06.335306+00:00 | working | Found cancellation flow and helper pool |
-  Agent activity: backend_dev | 2026-04-12T17:51:06.335306+00:00 | working | Found cancellation flow and helper pool |
-  Agent activity: backend_dev | 2026-04-12T17:50:54.536170+00:00 | assigned | Investigating backend pickup cancellation |
-  Agent activity: backend_dev | 2026-04-12T17:50:54.536170+00:00 | assigned | Investigating backend pickup cancellation |
-  Agent activity: backend_dev | 2026-04-12T17:50:49.938116+00:00 | assigned | Investigating backend pickup cancellation |
-  Agent activity: backend_dev | 2026-04-12T17:50:46.648077+00:00 | assigned | Investigating backend pickup cancellation |
+  Agent activity: tester | 2026-04-12T18:26:49.180930+00:00 | validation | Running the existing validation commands after backend implementation handoff. | cd my-app/mobile && flutter test
+  Agent activity: backend_dev | 2026-04-12T18:26:27.485030+00:00 | working | Infra code change is correct but the |
+  Agent activity: backend_dev | 2026-04-12T18:26:21.819994+00:00 | working | Infra code change is correct but the |
+  Agent activity: backend_dev | 2026-04-12T18:26:00.538857+00:00 | working | Infra code change is correct but the |
+  Agent activity: backend_dev | 2026-04-12T18:26:00.538857+00:00 | working | Infra code change is correct but the |
+  Agent activity: backend_dev | 2026-04-12T18:26:00.538857+00:00 | working | Infra code change is correct but the |
+  Agent activity: backend_dev | 2026-04-12T18:25:57.593838+00:00 | working | Infra code change is correct but the |
+  Agent activity: backend_dev | 2026-04-12T18:25:52.346803+00:00 | working | Infra code change is correct but the |
+  Agent activity: backend_dev | 2026-04-12T18:25:47.736772+00:00 | working | Refining ECS Express |
+  Agent activity: backend_dev | 2026-04-12T18:25:26.327627+00:00 | working | Refining ECS Express |
+  Agent activity: backend_dev | 2026-04-12T18:25:26.327627+00:00 | working | Refining ECS Express |
+  Agent activity: backend_dev | 2026-04-12T18:25:26.327627+00:00 | working | Refining ECS Express |
+  Agent activity: backend_dev | 2026-04-12T18:25:26.327627+00:00 | working | Refining ECS Express |
+  Agent activity: backend_dev | 2026-04-12T18:25:08.561504+00:00 | working | Editing infra stack to |
+  Agent activity: backend_dev | 2026-04-12T18:25:08.561504+00:00 | working | Editing infra stack to |
+  Agent activity: backend_dev | 2026-04-12T18:25:08.561504+00:00 | working | Editing infra stack to |
+  Agent activity: backend_dev | 2026-04-12T18:24:54.072401+00:00 | assigned | Optimizing ECS Express defaults for lower |
+  Agent activity: backend_dev | 2026-04-12T18:24:54.072401+00:00 | assigned | Optimizing ECS Express defaults for lower |
   Goal:
-  Ensure that when a pickup is cancelled, it is correctly reclassified and becomes visible again in the available pool when business rules allow it.
+  Reduce always-on infrastructure cost by tuning ECS Express capacity, task sizing, and related infra defaults down to the minimum safe production footprint.
   Why:
-  This is a core marketplace correctness bug. If cancelled pickups disappear instead of returning to the pool, supply-demand flow breaks and it should be fixed before new feature work.
+  Cost control is a top-priority operational task; oversized default ECS Express settings can burn cash before growth justifies them.
   Likely files:
-  pickup/request status models, cancellation handlers, pool eligibility queries, request list APIs, helper marketplace/provider filtering logic.
+  `my-app/infra/lib/infra-stack.ts`, ECS service/task definitions, autoscaling settings, environment sizing config, deployment defaults.
 
 plan-3 | done | high | medium | none | Add backend tests and production safety rails
   Owner agent: backend_dev

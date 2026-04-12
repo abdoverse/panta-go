@@ -62,11 +62,15 @@ test('backend service uses safer deployment defaults and structured logging rete
   const template = Template.fromStack(stack);
 
   template.hasResourceProperties('AWS::Logs::LogGroup', {
-    RetentionInDays: 30,
+    RetentionInDays: 14,
   });
 
   template.hasResourceProperties('AWS::ECS::ExpressGatewayService', {
     HealthCheckPath: '/health',
+    ScalingTarget: {
+      MaxTaskCount: 1,
+      MinTaskCount: 1,
+    },
     PrimaryContainer: Match.objectLike({
       AwsLogsConfiguration: Match.objectLike({
         LogStreamPrefix: 'PantaGoBackendService',
@@ -83,6 +87,6 @@ test('backend service uses safer deployment defaults and structured logging rete
 
   const serializedDeploymentConfig = JSON.stringify(deploymentResourceEntry?.[1]);
   expect(serializedDeploymentConfig).toContain('\\"minimumHealthyPercent\\":100');
-  expect(serializedDeploymentConfig).toContain('\\"maximumPercent\\":150');
+  expect(serializedDeploymentConfig).toContain('\\"maximumPercent\\":200');
   expect(serializedDeploymentConfig).toContain('\\"rollback\\":true');
 });

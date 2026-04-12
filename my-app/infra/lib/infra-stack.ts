@@ -21,6 +21,8 @@ export class InfraStack extends cdk.Stack {
     const requestImagesBucketName = 'panta-go-request-images';
     const backendCpu = '256';
     const backendMemory = '512';
+    const steadyStateTaskCount = 1;
+    const logRetentionDays = 14;
 
     const backendAsset = new assets.DockerImageAsset(this, 'BackendAsset', {
       directory: path.join(__dirname, '../../backend'),
@@ -132,7 +134,7 @@ export class InfraStack extends cdk.Stack {
     firebaseServiceAccountSecret.grantRead(taskExecutionRole);
 
     const logGroup = new logs.LogGroup(this, 'PantaExpressLogGroup', {
-      retention: 30,
+      retention: logRetentionDays,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
@@ -168,8 +170,8 @@ export class InfraStack extends cdk.Stack {
         },
       },
       scalingTarget: {
-        minTaskCount: 1,
-        maxTaskCount: 2,
+        minTaskCount: steadyStateTaskCount,
+        maxTaskCount: steadyStateTaskCount,
       },
     });
     expressService.node.addDependency(backendAsset);
@@ -274,14 +276,14 @@ export class InfraStack extends cdk.Stack {
           parameters: {
             cluster: 'default',
             service: expressService.attrServiceArn,
-              deploymentConfiguration: {
-                deploymentCircuitBreaker: {
-                  enable: true,
-                  rollback: true,
-                },
-                maximumPercent: 150,
-                minimumHealthyPercent: 100,
+            deploymentConfiguration: {
+              deploymentCircuitBreaker: {
+                enable: true,
+                rollback: true,
               },
+              maximumPercent: 200,
+              minimumHealthyPercent: 100,
+            },
           },
           outputPaths: ['service.serviceArn'],
           physicalResourceId: cr.PhysicalResourceId.of(
@@ -294,14 +296,14 @@ export class InfraStack extends cdk.Stack {
           parameters: {
             cluster: 'default',
             service: expressService.attrServiceArn,
-              deploymentConfiguration: {
-                deploymentCircuitBreaker: {
-                  enable: true,
-                  rollback: true,
-                },
-                maximumPercent: 150,
-                minimumHealthyPercent: 100,
+            deploymentConfiguration: {
+              deploymentCircuitBreaker: {
+                enable: true,
+                rollback: true,
               },
+              maximumPercent: 200,
+              minimumHealthyPercent: 100,
+            },
           },
           outputPaths: ['service.serviceArn'],
           physicalResourceId: cr.PhysicalResourceId.of(
