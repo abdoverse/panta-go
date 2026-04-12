@@ -36,7 +36,7 @@ VALID_COMPLEXITIES = ("small", "medium", "large")
 STALE_PROGRESS_MINUTES = 15
 CLAIM_TIMEOUT_MINUTES = 5
 NO_LOCAL_CHANGE_BLOCK_MINUTES = 2
-WORKER_NO_EDIT_TIMEOUT_MINUTES = 4
+WORKER_NO_EDIT_TIMEOUT_MINUTES = 2
 IGNORED_DIRECTORIES = {
     ".git",
     ".dart_tool",
@@ -877,12 +877,18 @@ def render_backlog_text(backlog: list[BacklogItem]) -> str:
     approved_items = [item for item in backlog if item["status"] == "approved"]
     in_progress_items = [item for item in backlog if item["status"] == "in_progress"]
     ready_approved = ready_approved_items(backlog)
-    active_agents = active_agent_count(backlog)
+    launched_workers = sum(
+        1
+        for item in backlog
+        if item["progress_note"].startswith("Real worker ")
+        or item["progress_note"].startswith("Previous real worker")
+    )
+    active_agents = active_agent_count(backlog) + launched_workers
     grouped = {category: [] for category in VALID_CATEGORIES}
     for item in active_items:
         grouped[item["category"]].append(item)
 
-    if in_progress_items:
+    if in_progress_items or launched_workers:
         loop_status = "active"
     elif ready_approved:
         loop_status = "ready"
@@ -1302,6 +1308,12 @@ def build_runtime_summary(
     approved_items = [item for item in backlog if item["status"] == "approved"]
     done_items = [item for item in backlog if item["status"] == "done"]
     ready_approved = ready_approved_items(backlog)
+    launched_workers = sum(
+        1
+        for item in backlog
+        if item["progress_note"].startswith("Real worker ")
+        or item["progress_note"].startswith("Previous real worker")
+    )
 
     agents: dict[str, dict[str, Any]] = {}
     complexity_points = {"small": 1, "medium": 2, "large": 3}
@@ -1366,7 +1378,7 @@ def build_runtime_summary(
             "backlog_ready_approved": len(ready_approved),
             "backlog_in_progress": len(active_items),
             "done": len(done_items),
-            "active_agents": len(agents),
+            "active_agents": len(agents) + launched_workers,
             "stale_active_tasks": sum(
                 1
                 for item in active_items
@@ -1678,16 +1690,17 @@ def build_worker_prompt(item: BacklogItem, instructions_text: str) -> str:
         f"Dependencies: {dependency_text}\n\n"
         f"{item['details']}\n\n"
         "Requirements:\n"
+        "- Inspect at most 3 likely files before the first edit.\n"
         "- Make real repository edits for this backlog item.\n"
         "- Start editing task-relevant files quickly; do not spend the session only investigating.\n"
+        "- Make the first code edit within the first minute of work.\n"
         "- Make the first code edit before running validation commands.\n"
         "- Keep pre-edit investigation minimal and focused on the listed likely files.\n"
         "- Run only existing relevant validation commands, and only after the first code edit exists.\n"
         "- Do not ask the user questions.\n"
         "- Do not commit or push; leave validated edits in the working tree for the orchestrator.\n"
         "- Prefer task-relevant paths only.\n\n"
-        "Repository instructions:\n"
-        f"{instructions_text or '(none)'}\n"
+        "Use `.github/copilot-instructions.md` for repo conventions if needed, but do not spend the session restating or re-reading unrelated sections.\n"
     ).strip()
 
 
