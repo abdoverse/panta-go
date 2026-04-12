@@ -132,6 +132,7 @@ export class InfraStack extends cdk.Stack {
     firebaseServiceAccountSecret.grantRead(taskExecutionRole);
 
     const logGroup = new logs.LogGroup(this, 'PantaExpressLogGroup', {
+      retention: 30,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
@@ -168,7 +169,7 @@ export class InfraStack extends cdk.Stack {
       },
       scalingTarget: {
         minTaskCount: 1,
-        maxTaskCount: 1,
+        maxTaskCount: 2,
       },
     });
     expressService.node.addDependency(backendAsset);
@@ -233,7 +234,7 @@ export class InfraStack extends cdk.Stack {
             Attributes: [
               {
                 Key: 'deregistration_delay.timeout_seconds',
-                Value: '0',
+                Value: '30',
               },
             ],
           },
@@ -249,7 +250,7 @@ export class InfraStack extends cdk.Stack {
             Attributes: [
               {
                 Key: 'deregistration_delay.timeout_seconds',
-                Value: '0',
+                Value: '30',
               },
             ],
           },
@@ -273,14 +274,14 @@ export class InfraStack extends cdk.Stack {
           parameters: {
             cluster: 'default',
             service: expressService.attrServiceArn,
-            deploymentConfiguration: {
-              deploymentCircuitBreaker: {
-                enable: true,
-                rollback: true,
+              deploymentConfiguration: {
+                deploymentCircuitBreaker: {
+                  enable: true,
+                  rollback: true,
+                },
+                maximumPercent: 150,
+                minimumHealthyPercent: 100,
               },
-              maximumPercent: 200,
-              minimumHealthyPercent: 0,
-            },
           },
           outputPaths: ['service.serviceArn'],
           physicalResourceId: cr.PhysicalResourceId.of(
@@ -293,14 +294,14 @@ export class InfraStack extends cdk.Stack {
           parameters: {
             cluster: 'default',
             service: expressService.attrServiceArn,
-            deploymentConfiguration: {
-              deploymentCircuitBreaker: {
-                enable: true,
-                rollback: true,
+              deploymentConfiguration: {
+                deploymentCircuitBreaker: {
+                  enable: true,
+                  rollback: true,
+                },
+                maximumPercent: 150,
+                minimumHealthyPercent: 100,
               },
-              maximumPercent: 200,
-              minimumHealthyPercent: 0,
-            },
           },
           outputPaths: ['service.serviceArn'],
           physicalResourceId: cr.PhysicalResourceId.of(

@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"firebase.google.com/go/v4/messaging"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -22,10 +24,10 @@ var (
 	fcmClient       *messaging.Client
 )
 
-func init() {
+func initializeApplication() error {
 	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
-		log.Fatalf("unable to load SDK config, %v", err)
+		return fmt.Errorf("load AWS SDK config: %w", err)
 	}
 
 	svc = dynamodb.NewFromConfig(cfg)
@@ -39,12 +41,34 @@ func init() {
 	if imageBucketName == "" {
 		log.Println("Warning: IMAGE_BUCKET_NAME environment variable is not set")
 	}
-	if len(jwtSecret) == 0 {
-		jwtSecret = []byte("default-secret-key-change-me")
+
+	resolvedSecret, err := resolveJWTSecret()
+	if err != nil {
+		return err
 	}
+	jwtSecret = resolvedSecret
 
 	initFirebase()
 	checkCredentials()
+	return nil
+}
+
+func resolveJWTSecret() ([]byte, error) {
+	if configuredSecret := strings.TrimSpace(os.Getenv("JWT_SECRET")); configuredSecret != "" {
+		return []byte(configuredSecret), nil
+	}
+
+	if isProductionEnvironment() {
+		return nil, fmt.Errorf("JWT_SECRET must be set when APP_ENV=production")
+	}
+
+	log.Println("Warning: JWT_SECRET is unset; using the local development fallback secret")
+	return []byte("default-secret-key-change-me"), nil
+}
+
+func isProductionEnvironment() bool {
+	env := strings.ToLower(strings.TrimSpace(os.Getenv("APP_ENV")))
+	return env == "production"
 }
 
 func checkCredentials() {

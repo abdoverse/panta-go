@@ -5,14 +5,6 @@
 # Fields: id | status | priority | complexity | dependencies | title
 
 ## backend
-plan-3 | planned | high | medium | none | Add backend tests and production safety rails
-  Goal:
-  Add meaningful backend coverage, safer rollout defaults, and better observability.
-  Why:
-  Infra and mobile have validation, but backend critical flows are still under-tested.
-  Likely files:
-  `my-app/backend/...`, `my-app/infra/lib/infra-stack.ts`, `my-app/infra/test/infra.test.ts`.
-
 plan-15 | planned | high | medium | plan-11 | Add payout ledger, receipt, and export APIs
   Goal:
   Expose payout history, downloadable receipts, and export-ready summaries for completed helper earnings.
@@ -133,6 +125,22 @@ plan-39 | planned | medium | medium | plan-12 | Add a personal reminders center 
   Users often want fewer interruptions, not zero communication.
   Likely files:
   notification preferences UI, reminder state, inbox surfaces, scheduling helpers.
+
+plan-45 | planned | high | medium | none | Add a photo-first request composer with smart booking defaults
+  Goal:
+  Let users create a pickup or delivery request from a fast camera-first flow with suggested titles, item details, and saved-location defaults.
+  Why:
+  A faster request creation experience reduces drop-off and makes the app feel much more immediate for busy customers.
+  Likely files:
+  request creation UI, photo upload components, preset/address state, backend attachment and draft request metadata.
+
+plan-46 | planned | high | medium | none | Add customer-set pricing with guided budget recommendations
+  Goal:
+  Let users choose what they want to pay while showing smart recommended price ranges based on task type, size, distance, and urgency.
+  Why:
+  Customers feel more in control when they set the budget, but guidance is needed to keep pricing realistic and conversion healthy.
+  Likely files:
+  pricing input UI, request quote logic, recommendation models, backend pricing heuristics and validation.
 
 ## both
 plan-6 | planned | medium | medium | none | Add marketplace timeline and in-app activity visibility
@@ -302,3 +310,27 @@ plan-44 | planned | high | medium | plan-19,plan-24 | Add a household membership
   This is a practical monetization and retention feature that still feels directly valuable in the app.
   Likely files:
   membership/paywall UI, wallet/credit surfaces, backend subscription/benefit logic, booking priority rules.
+
+plan-47 | planned | high | medium | plan-21,plan-41 | Add same-day helper matching with flexible time-slot booking
+  Goal:
+  Help users get matched quickly with nearby helpers, then choose from clear arrival windows or same-day slot options that fit their schedule.
+  Why:
+  Fast matching matters more when customers can still keep control over timing instead of feeling assigned into a rigid dispatch flow.
+  Likely files:
+  request booking UI, marketplace matching surfaces, helper availability models, backend scheduling and slot ranking logic.
+
+plan-48 | planned | high | large | plan-8 | Add pay-on-completion escrow and protected release flow
+  Goal:
+  Hold customer payment safely in-app and release it only after the task is confirmed complete, with clear handling for disputes or partial completion.
+  Why:
+  A protected payment flow is one of the strongest trust features for a marketplace where strangers coordinate real-world work.
+  Likely files:
+  checkout and completion UI, backend payment intent and settlement flows, dispute hooks, payout/release state models.
+
+plan-49 | planned | high | medium | plan-8,plan-14 | Add task-specific trust add-ons like delivery protection and verified recycling
+  Goal:
+  Offer optional protection for valuable deliveries and verifiable proof for recycling and disposal jobs directly inside the request flow.
+  Why:
+  Trust works best when it is built around the specific job the customer is booking, not only around general account verification.
+  Likely files:
+  request flow UI, protection and verification option models, backend proof capture and status logic, completion surfaces.

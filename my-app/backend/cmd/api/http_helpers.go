@@ -3,10 +3,12 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
+	"time"
 )
 
 func jsonResponse(w http.ResponseWriter, status int, data interface{}) {
@@ -37,6 +39,38 @@ func enableCORS(next http.Handler) http.Handler {
 		}
 
 		next.ServeHTTP(w, r)
+	})
+}
+
+type statusCapturingResponseWriter struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+func (w *statusCapturingResponseWriter) WriteHeader(statusCode int) {
+	w.statusCode = statusCode
+	w.ResponseWriter.WriteHeader(statusCode)
+}
+
+func logRequests(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		recorder := &statusCapturingResponseWriter{
+			ResponseWriter: w,
+			statusCode:     http.StatusOK,
+		}
+
+		next.ServeHTTP(recorder, r)
+
+		log.Printf(
+			"request method=%s path=%s status=%d duration=%s origin=%q remote=%s",
+			r.Method,
+			r.URL.Path,
+			recorder.statusCode,
+			time.Since(start).Round(time.Millisecond),
+			r.Header.Get("Origin"),
+			r.RemoteAddr,
+		)
 	})
 }
 

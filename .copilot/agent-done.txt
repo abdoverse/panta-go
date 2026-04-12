@@ -4,6 +4,112 @@
 # Fields: id | status | priority | complexity | dependencies | title
 
 ## backend
+plan-3 | done | high | medium | none | Add backend tests and production safety rails
+  Owner agent: backend_dev
+  Started at: 2026-04-12T17:18:51.611842+00:00
+  Last heartbeat at: 2026-04-12T17:27:36.223417+00:00
+  Last progress at: 2026-04-12T17:27:36.223417+00:00
+  Progress note: tester [done]: Validation passed and the task was delivered to git.
+  Agent activity: tester | 2026-04-12T17:27:36.210009+00:00 | validation | Running the existing validation commands after backend implementation handoff. | cd my-app/mobile && flutter test
+  Agent activity: backend_dev | 2026-04-12T17:27:09.834289+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:27:00.622275+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:27:00.622275+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:26:19.484207+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:26:19.484207+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:26:19.484207+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:26:19.484207+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:26:19.484207+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:26:19.484207+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:26:19.484207+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:26:14.025197+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:26:09.512189+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:25:40.194134+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:25:40.194134+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:25:40.194134+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:25:40.194134+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:25:40.194134+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:25:27.306108+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:25:27.306108+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:25:05.312063+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:25:05.312063+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:25:05.312063+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:25:05.312063+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:24:58.837049+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:24:55.038040+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:24:45.090018+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:24:43.737015+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:24:29.094981+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:24:29.094981+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:24:23.945969+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:24:16.433951+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:24:13.760944+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:24:07.364928+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:23:48.065879+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:23:48.065879+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:23:48.065879+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:23:45.122872+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:23:35.329846+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:23:35.329846+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:23:11.041778+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:23:11.041778+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:23:11.041778+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:23:11.041778+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:23:06.530765+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:22:58.863743+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:22:54.801731+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:22:39.535685+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:22:39.535685+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:22:39.535685+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:22:28.868651+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:22:25.956642+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:22:21.397628+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:22:06.127578+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:22:06.127578+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:22:06.127578+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:21:54.661539+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:21:54.661539+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:21:39.379485+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:21:39.379485+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:21:39.379485+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:21:28.414446+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:21:28.414446+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:21:21.727421+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:21:08.482371+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:21:08.482371+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:21:05.417360+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:20:58.991335+00:00 | working | Validation exposed one Go parallel-env |
+  Agent activity: backend_dev | 2026-04-12T17:20:52.919311+00:00 | working | Found existing infra assertions and |
+  Agent activity: backend_dev | 2026-04-12T17:20:41.876266+00:00 | working | Found existing infra assertions and |
+  Agent activity: backend_dev | 2026-04-12T17:20:41.876266+00:00 | working | Found existing infra assertions and |
+  Agent activity: backend_dev | 2026-04-12T17:20:35.500240+00:00 | working | Found existing infra assertions and |
+  Agent activity: backend_dev | 2026-04-12T17:20:30.136218+00:00 | working | Found existing infra assertions and |
+  Agent activity: backend_dev | 2026-04-12T17:20:25.391198+00:00 | working | Found existing infra assertions and |
+  Agent activity: backend_dev | 2026-04-12T17:20:18.537169+00:00 | working | Found existing infra assertions and |
+  Agent activity: backend_dev | 2026-04-12T17:20:11.533139+00:00 | working | Found existing infra assertions and |
+  Agent activity: backend_dev | 2026-04-12T17:19:56.615073+00:00 | working | Found existing infra assertions and |
+  Agent activity: backend_dev | 2026-04-12T17:19:56.615073+00:00 | working | Found existing infra assertions and |
+  Agent activity: backend_dev | 2026-04-12T17:19:56.615073+00:00 | working | Found existing infra assertions and |
+  Agent activity: backend_dev | 2026-04-12T17:19:45.774023+00:00 | working | Found existing infra assertions and |
+  Agent activity: backend_dev | 2026-04-12T17:19:45.774023+00:00 | working | Found existing infra assertions and |
+  Agent activity: backend_dev | 2026-04-12T17:19:41.489003+00:00 | working | Found existing infra assertions and |
+  Agent activity: backend_dev | 2026-04-12T17:19:34.883972+00:00 | working | Found existing infra assertions and |
+  Agent activity: backend_dev | 2026-04-12T17:19:23.991920+00:00 | working | Found existing infra assertions and |
+  Agent activity: backend_dev | 2026-04-12T17:19:23.991920+00:00 | working | Found existing infra assertions and |
+  Agent activity: backend_dev | 2026-04-12T17:19:09.839850+00:00 | working | Found existing infra assertions and |
+  Agent activity: backend_dev | 2026-04-12T17:19:09.839850+00:00 | working | Found existing infra assertions and |
+  Agent activity: backend_dev | 2026-04-12T17:19:00.918805+00:00 | working | Found existing infra assertions and |
+  Agent activity: backend_dev | 2026-04-12T17:19:00.918805+00:00 | working | Found existing infra assertions and |
+  Agent activity: backend_dev | 2026-04-12T17:18:55.884780+00:00 | working | Found existing infra assertions and |
+  Agent activity: backend_dev | 2026-04-12T17:18:46.980733+00:00 | working | Found existing infra assertions and |
+  Agent activity: backend_dev | 2026-04-12T17:18:36.919680+00:00 | assigned | Starting backend safety rails work with |
+  Agent activity: backend_dev | 2026-04-12T17:18:36.919680+00:00 | assigned | Starting backend safety rails work with |
+  Goal:
+  Add meaningful backend coverage, safer rollout defaults, and better observability.
+  Why:
+  Infra and mobile have validation, but backend critical flows are still under-tested.
+  Likely files:
+  `my-app/backend/...`, `my-app/infra/lib/infra-stack.ts`, `my-app/infra/test/infra.test.ts`.
+
 plan-1 | done | high | large | none | Harden request ownership and query access
   Status:
   Completed with real backend and infra changes. Replaced scan-heavy request reads with ownership-aware DynamoDB query flows, persisted `creatorId` on create, and restricted rating to the request creator after pickup.

@@ -55,3 +55,34 @@ test('requests table exposes ownership and access query indexes', () => {
     ]),
   });
 });
+
+test('backend service uses safer deployment defaults and structured logging retention', () => {
+  const app = new cdk.App();
+  const stack = new InfraStack(app, 'MyTestStack');
+  const template = Template.fromStack(stack);
+
+  template.hasResourceProperties('AWS::Logs::LogGroup', {
+    RetentionInDays: 30,
+  });
+
+  template.hasResourceProperties('AWS::ECS::ExpressGatewayService', {
+    HealthCheckPath: '/health',
+    PrimaryContainer: Match.objectLike({
+      AwsLogsConfiguration: Match.objectLike({
+        LogStreamPrefix: 'PantaGoBackendService',
+      }),
+    }),
+  });
+
+  const customResources = template.findResources('Custom::AWS');
+  const deploymentResourceEntry = Object.entries(customResources).find(([logicalId]) =>
+    logicalId.includes('TuneManagedEcsDeployment'),
+  );
+
+  expect(deploymentResourceEntry).toBeDefined();
+
+  const serializedDeploymentConfig = JSON.stringify(deploymentResourceEntry?.[1]);
+  expect(serializedDeploymentConfig).toContain('\\"minimumHealthyPercent\\":100');
+  expect(serializedDeploymentConfig).toContain('\\"maximumPercent\\":150');
+  expect(serializedDeploymentConfig).toContain('\\"rollback\\":true');
+});

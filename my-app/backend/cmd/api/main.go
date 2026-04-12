@@ -7,6 +7,10 @@ import (
 )
 
 func main() {
+	if err := initializeApplication(); err != nil {
+		log.Fatal(err)
+	}
+
 	initJWKS()
 
 	hub = newHub()
@@ -21,7 +25,7 @@ func main() {
 	}
 	log.Printf("Server starting on port %s", port)
 
-	handler := enableCORS(mux)
+	handler := logRequests(enableCORS(mux))
 	certFile := os.Getenv("TLS_CERT_FILE")
 	keyFile := os.Getenv("TLS_KEY_FILE")
 
