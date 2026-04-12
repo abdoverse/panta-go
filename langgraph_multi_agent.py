@@ -21,7 +21,7 @@ except ImportError:  # Optional at runtime when falling back to deterministic ro
 
 DEFAULT_PROJECT_PATH = Path(".").resolve()
 DEFAULT_INSTRUCTIONS_FILE = Path(".github/copilot-instructions.md")
-DEFAULT_MODEL = "gpt-4o-mini"
+DEFAULT_MODEL = "gpt-5.4"
 DEFAULT_BACKLOG_FILE = ".copilot/agent-backlog.txt"
 DEFAULT_PLAN_FILE = ".copilot/agent-plan.md"
 DEFAULT_DONE_FILE = ".copilot/agent-done.txt"
@@ -32,6 +32,7 @@ VALID_PRIORITIES = ("high", "medium", "low")
 VALID_COMPLEXITIES = ("small", "medium", "large")
 STALE_PROGRESS_MINUTES = 15
 CLAIM_TIMEOUT_MINUTES = 5
+NO_LOCAL_CHANGE_BLOCK_MINUTES = 2
 IGNORED_DIRECTORIES = {
     ".git",
     ".dart_tool",
@@ -58,6 +59,7 @@ class AgentReport(TypedDict):
     summary: str
     targets: list[str]
     commands: list[str]
+    outcome: str
 
 
 class AgentUpdate(TypedDict):
@@ -1008,12 +1010,13 @@ def render_plan_text(plan_items: list[PlanItem]) -> str:
 
 
 def apply_agent_reports_to_backlog(
-    backlog: list[BacklogItem], reports: list[AgentReport]
-) -> list[BacklogItem]:
+    backlog: list[BacklogItem], reports: list[AgentReport], project_path: Path
+) -> tuple[list[BacklogItem], Optional[str]]:
     if not reports:
-        return backlog
+        return backlog, None
 
     update_time = now_iso()
+    delivery_candidate_id: Optional[str] = None
     for item in backlog:
         if item["status"] != "in_progress":
             continue
@@ -1054,7 +1057,125 @@ def apply_agent_reports_to_backlog(
             item["progress_note"] = progress_note
             item["last_progress_at"] = update_time
 
-    return backlog
+        tester_report = next(
+            (report for report in relevant_reports if report["agent"] == "tester"),
+            None,
+        )
+        if tester_report is None:
+            continue
+
+        if tester_report.get("outcome") == "failed":
+            item["blocked_reason"] = (
+                "Validation failed; commit delivery was not attempted until tests pass."
+            )
+            item["progress_note"] = f"tester [failed]: {tester_report['summary']}"
+            item["last_progress_at"] = update_time
+            continue
+
+        if (
+            tester_report.get("outcome") == "passed"
+            and delivery_candidate_id is None
+            and relevant_changed_paths(project_path, item)
+        ):
+            item["blocked_reason"] = ""
+            item["progress_note"] = (
+                "tester [validated]: Validation passed; preparing git commit delivery."
+            )
+            item["last_progress_at"] = update_time
+            delivery_candidate_id = item["id"]
+
+    return backlog, delivery_candidate_id
+
+
+def changed_paths_within(project_path: Path, paths: list[str]) -> list[str]:
+    if not paths:
+        return []
+    completed = subprocess.run(
+        ["git", "--no-pager", "status", "--porcelain", "--", *paths],
+        cwd=project_path,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    if completed.returncode != 0:
+        return []
+    changed: list[str] = []
+    for line in completed.stdout.splitlines():
+        if len(line) < 4:
+            continue
+        path = line[3:].strip()
+        if " -> " in path:
+            path = path.split(" -> ", 1)[1].strip()
+        if path:
+            changed.append(path)
+    return changed
+
+
+def commit_completed_item(
+    project_path: Path,
+    item: BacklogItem,
+    backlog_path: Path,
+    done_path: Path,
+    plan_path: Path,
+) -> tuple[bool, str]:
+    relevant_paths = relevant_changed_paths(project_path, item)
+    metadata_paths = [
+        os.path.relpath(path, project_path)
+        for path in (backlog_path, done_path, plan_path)
+    ]
+    commit_paths = changed_paths_within(
+        project_path,
+        sorted(dict.fromkeys(relevant_paths + metadata_paths)),
+    )
+    if not commit_paths:
+        return False, "No task-relevant local changes were available to commit."
+
+    add_completed = subprocess.run(
+        ["git", "add", "--", *commit_paths],
+        cwd=project_path,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    if add_completed.returncode != 0:
+        return False, (add_completed.stderr or add_completed.stdout).strip()
+
+    commit_message = (
+        f"Complete {item['id']}: {item['title']}\n\n"
+        "Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n"
+    )
+    commit_completed = subprocess.run(
+        ["git", "commit", "--only", "-F", "-", "--", *commit_paths],
+        cwd=project_path,
+        input=commit_message,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    if commit_completed.returncode != 0:
+        return False, (commit_completed.stderr or commit_completed.stdout).strip()
+
+    sha_completed = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=project_path,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    if sha_completed.returncode != 0:
+        return True, "committed"
+    return True, sha_completed.stdout.strip()
+
+
+def pending_done_delivery_item(
+    backlog: list[BacklogItem], project_path: Path
+) -> Optional[BacklogItem]:
+    for item in backlog:
+        if item["status"] != "done":
+            continue
+        if relevant_changed_paths(project_path, item):
+            return item
+    return None
 
 
 def ready_approved_items(backlog: list[BacklogItem]) -> list[BacklogItem]:
@@ -1076,6 +1197,40 @@ def active_agent_count(backlog: list[BacklogItem]) -> int:
             continue
         agents.add(item["owner_agent"] or assigned_agent_for_item(item))
     return len(agents)
+
+
+def mark_no_change_stalls(
+    backlog: list[BacklogItem], project_path: Path
+) -> list[BacklogItem]:
+    for item in backlog:
+        if item["status"] != "in_progress":
+            continue
+        relevant_paths = relevant_changed_paths(project_path, item)
+        age = elapsed_minutes(item["started_at"]) or 0
+        if relevant_paths:
+            if item["blocked_reason"].startswith("No task-relevant local code changes detected"):
+                item["blocked_reason"] = ""
+            continue
+        if age < NO_LOCAL_CHANGE_BLOCK_MINUTES:
+            continue
+        item["blocked_reason"] = (
+            "No task-relevant local code changes detected after claim; "
+            "a real worker has not started producing repository edits."
+        )
+        item["progress_note"] = (
+            "backend_dev [blocked]: No task-relevant local code changes detected yet."
+        )
+        item["last_progress_at"] = now_iso()
+        item["agent_updates"] = [
+            {
+                "agent": item["owner_agent"] or assigned_agent_for_item(item),
+                "updated_at": item["last_progress_at"],
+                "phase": "blocked",
+                "activity": "No task-relevant local code changes detected yet.",
+                "next_command": "start a real worker on the backlog item",
+            }
+        ]
+    return backlog
 
 
 def sync_project_workflow_files(
@@ -1245,6 +1400,7 @@ def load_or_create_project_backlog(
         backlog = recover_stalled_items(backlog)
     backlog = promote_ready_backlog_items(backlog)
     backlog = normalize_active_backlog_metadata(backlog)
+    backlog = mark_no_change_stalls(backlog, project_path)
 
     sync_project_workflow_files(backlog, backlog_path, done_path, plan_items, plan_path)
     return backlog, plan_items, backlog_path, done_path, plan_path
@@ -1683,6 +1839,7 @@ def backend_dev(state: State) -> dict[str, Any]:
             "cd my-app/backend && docker build -t panta-go-backend-verify .",
             "cd my-app/infra && npm test -- --runInBand && npm run build",
         ],
+        "outcome": "working",
     }
     return {"reports": state["reports"] + [report], "next_step": "dispatch"}
 
@@ -1711,6 +1868,7 @@ def frontend_dev(state: State) -> dict[str, Any]:
             "cd my-app/mobile && flutter test",
             "cd my-app/mobile && flutter run -d web-server --web-hostname 127.0.0.1 --web-port 3000",
         ],
+        "outcome": "working",
     }
     return {"reports": state["reports"] + [report], "next_step": "dispatch"}
 
@@ -1748,6 +1906,13 @@ def tester(state: State) -> dict[str, Any]:
     test_results = run_detected_tests(project_path) if state["run_tests"] else []
     active_item = state.get("active_backlog_item")
     backend_update = latest_agent_update(active_item, "backend_dev")
+    outcome = "skipped"
+
+    if state["run_tests"]:
+        if test_results and all(result["status"] == "passed" for result in test_results):
+            outcome = "passed"
+        elif test_results:
+            outcome = "failed"
 
     summary = (
         "Tester agent executed the detected validation commands."
@@ -1779,6 +1944,7 @@ def tester(state: State) -> dict[str, Any]:
             "cd my-app/mobile && flutter test",
             "cd my-app/infra && npm test -- --runInBand",
         ],
+        "outcome": outcome,
     }
     return {
         "reports": state["reports"] + [report],
@@ -1916,7 +2082,7 @@ def run_once(
             "iterations": 0,
             "project_path": str(project_path),
             "max_iterations": args.max_iterations,
-            "run_tests": args.run_tests and not heartbeat_only,
+            "run_tests": (args.run_tests or args.watch) and not heartbeat_only,
             "model": args.model,
             "final_summary": "",
             "backlog": backlog,
@@ -1936,8 +2102,57 @@ def run_once(
     else:
         base_summary = result
 
-    backlog = apply_agent_reports_to_backlog(backlog, result.get("reports", []))
+    backlog, delivery_candidate_id = apply_agent_reports_to_backlog(
+        backlog,
+        result.get("reports", []),
+        project_path,
+    )
+    delivery_item = None
+    if delivery_candidate_id is not None:
+        delivery_item = next(
+            (
+                item
+                for item in backlog
+                if item["id"] == delivery_candidate_id and item["status"] == "in_progress"
+            ),
+            None,
+        )
+        if delivery_item is not None:
+            delivery_item["status"] = "done"
+            delivery_item["blocked_reason"] = ""
+            delivery_item["progress_note"] = (
+                "tester [done]: Validation passed and the task was delivered to git."
+            )
+            delivery_item["last_progress_at"] = now_iso()
+            delivery_item["last_heartbeat_at"] = delivery_item["last_progress_at"]
+    else:
+        delivery_item = pending_done_delivery_item(backlog, project_path)
     sync_project_workflow_files(backlog, backlog_path, done_path, plan_items, plan_path)
+    if delivery_item is not None:
+        delivered, delivery_message = commit_completed_item(
+            project_path,
+            delivery_item,
+            backlog_path,
+            done_path,
+            plan_path,
+        )
+        if not delivered and delivery_candidate_id is not None:
+            delivery_item["status"] = "in_progress"
+            delivery_item["blocked_reason"] = (
+                f"Validation passed, but git commit delivery failed: {delivery_message}"
+            )
+            delivery_item["progress_note"] = (
+                "tester [blocked]: Validation passed, but git commit delivery failed."
+            )
+            delivery_item["last_progress_at"] = now_iso()
+            delivery_item["last_heartbeat_at"] = delivery_item["last_progress_at"]
+            sync_project_workflow_files(
+                backlog,
+                backlog_path,
+                done_path,
+                plan_items,
+                plan_path,
+            )
 
     runtime_summary = build_runtime_summary(
         backlog=backlog,

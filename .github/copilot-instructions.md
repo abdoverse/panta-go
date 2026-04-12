@@ -28,8 +28,11 @@
 - Every plan item must declare **priority**, **complexity** (`small`, `medium`, `large`), and **dependencies** before it is approved into backlog.
 - When a plan item is marked `approved`, the agent must move it into `.copilot/agent-backlog.txt` as `pending` and remove it from `.copilot/agent-plan.md`.
 - The backlog is the **second gate**. Users approve actual execution by marking a backlog item `approved`.
-- For automatic pickup, run `python langgraph_multi_agent.py --project-path . --watch --poll-interval 10` from the repo root.
+- For automatic pickup, run `python langgraph_multi_agent.py --project-path . --watch --poll-interval 10 --run-tests` from the repo root.
 - In watch mode, approved plan items are moved to backlog automatically, and approved backlog items are claimed automatically by switching them to `in_progress`.
+- Watcher invariant: if the workflow depends on automatic plan/backlog movement, the agent must leave **exactly one** `langgraph_multi_agent.py --watch` process running before it concludes.
+- Watcher verification is mandatory after any loop change, recovery action, or process restart: check the live process list, confirm there is one watcher for this repo, and confirm the backlog heartbeat is moving.
+- If no watcher is running, the agent must start one immediately. If multiple watchers are running, the agent must stop the extras and leave one current watcher.
 - The loop may work on up to **3 non-colliding in-progress items at a time**.
 - Use declared dependencies to prevent conflicting work, and mention relevant dependencies explicitly in the task instruction when they matter.
 - When one in-progress item finishes, the loop should pick the next ready **highest-priority** approved item whose dependencies are already satisfied.
@@ -39,6 +42,8 @@
 - Heartbeats and progress are different: heartbeat proves the watcher and agent loop are alive, while progress only moves when the active step meaningfully changes.
 - Agent activity entries should say the current phase and the next command or action, for example analysis, editing, validating, deploying, or blocked.
 - If an item is blocked, record the blocker explicitly so the watcher can surface it instead of looking passively healthy.
+- An `in_progress` task with no task-relevant local code changes after a short grace period must be marked `blocked`; the loop must never report that state as healthy progress.
+- Tester work must not start until task-relevant implementation changes exist for the item being validated.
 - The live status snapshot must classify each active item as `claimed_no_checkpoint`, `progressing`, `blocked`, or `stale`.
 - The live status snapshot must show stale tasks when the watcher heartbeat is current but task progress has not moved for too long.
 - If a task stays `claimed_no_checkpoint` beyond the claim timeout, it should be considered recoverable rather than trusted as active execution.
@@ -52,3 +57,5 @@
 ## Agent delivery workflow
 
 - After an approved feature is implemented and validated, the agent must create a git commit and push it to the remote `main` branch.
+- When tester validation approves the work, the agent must complete the delivery chain without pausing at a local-only state: commit, push to `main`, and deploy using the existing project deployment path.
+- A task is not complete just because it reached `.copilot/agent-done.txt`; the loop must not treat backlog archival as finished delivery unless git commit delivery also succeeded.
