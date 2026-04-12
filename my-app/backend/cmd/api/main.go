@@ -842,7 +842,7 @@ func main() {
 				"id": &types.AttributeValueMemberS{Value: payload.ID},
 			},
 			UpdateExpression:         aws.String("SET #status = :accepted, helperId = :helperId"),
-			ConditionExpression:      aws.String("#status = :pending AND (attribute_not_exists(canceledHelperIds) OR NOT contains(canceledHelperIds, :helperId))"),
+			ConditionExpression:      aws.String("#status = :pending"),
 			ExpressionAttributeNames: map[string]string{"#status": "status"},
 			ExpressionAttributeValues: map[string]types.AttributeValue{
 				":accepted": &types.AttributeValueMemberS{Value: "accepted"},

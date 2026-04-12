@@ -494,28 +494,30 @@ class _RequestCard extends StatelessWidget {
 }
 
 class _RequestImage extends StatelessWidget {
-  final String imageUrl;
+  final String? imageUrl;
 
   const _RequestImage({required this.imageUrl});
 
   @override
   Widget build(BuildContext context) {
+    final normalizedImageUrl = imageUrl?.trim();
+    if (normalizedImageUrl == null || normalizedImageUrl.isEmpty) {
+      return _fallbackImage();
+    }
+
     final hasRemoteSource =
-        imageUrl.startsWith('http') || imageUrl.startsWith('data:image/');
+        normalizedImageUrl.startsWith('http') ||
+        normalizedImageUrl.startsWith('data:image/');
 
     if (hasRemoteSource) {
       return Image.network(
-        imageUrl,
+        normalizedImageUrl,
         fit: BoxFit.cover,
         errorBuilder: (_, __, ___) => _fallbackImage(),
       );
     }
 
-    return Image.asset(
-      imageUrl,
-      fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => _fallbackImage(),
-    );
+    return _fallbackImage();
   }
 
   Widget _fallbackImage() {

@@ -168,12 +168,8 @@ class PantaProvider extends ChangeNotifier {
 
   // For Helper Dashboard
   List<RecyclingRequest> get availableJobs {
-    final jobs = _requests
-        .where((r) =>
-            r.status == RequestStatus.pending &&
-            (_currentUserId == null ||
-                !r.canceledHelperIds.contains(_currentUserId)))
-        .toList();
+    final jobs =
+        _requests.where((r) => r.status == RequestStatus.pending).toList();
     return sortRequestsByDistance(
       jobs,
       helperLatitude: _helperLatitude,
@@ -442,7 +438,7 @@ class PantaProvider extends ChangeNotifier {
       'locationLongitude': locationLongitude,
       'description': description, // Add description
       'reward': reward, // Add reward
-      'imageUrl': imageUploadKey == null ? 'assets/images/generic.png' : null,
+      'imageUrl': null,
       'imageUploadKey': imageUploadKey,
       'isRated': false,
       'creatorDeviceToken': fcmToken, // Send token
@@ -577,7 +573,7 @@ class PantaProvider extends ChangeNotifier {
     return RecyclingRequest(
       id: json['id'],
       title: json['title'],
-      imageUrl: json['imageUrl'] ?? 'assets/images/generic.png',
+      imageUrl: _parseImageUrl(json['imageUrl']),
       scheduledFrom: DateTime.parse(json['scheduledFrom']),
       scheduledTo: DateTime.parse(json['scheduledTo']),
       location: json['location'],
@@ -614,5 +610,15 @@ class PantaProvider extends ChangeNotifier {
       default:
         return RequestStatus.pending;
     }
+  }
+
+  String? _parseImageUrl(dynamic value) {
+    final imageUrl = value?.toString().trim();
+    if (imageUrl == null ||
+        imageUrl.isEmpty ||
+        imageUrl == 'assets/images/generic.png') {
+      return null;
+    }
+    return imageUrl;
   }
 }

@@ -365,30 +365,30 @@ class _JobCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Stack(
-            children: [
-              Container(
-                height: 140, // Increased height
-                width: double.infinity,
-                color: Colors.grey[200],
-                child: _RequestImage(imageUrl: job.imageUrl),
-              ),
-              // Overlay Gradient for text readability if we put text on top (optional, but nice)
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                height: 60,
-                child: Container(
-                  decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: [
-                    Colors.black.withOpacity(0.4),
-                    Colors.transparent
-                  ], begin: Alignment.bottomCenter, end: Alignment.topCenter)),
+          if (job.hasImage)
+            Stack(
+              children: [
+                Container(
+                  height: 140, // Increased height
+                  width: double.infinity,
+                  color: Colors.grey[200],
+                  child: _RequestImage(imageUrl: job.imageUrl),
                 ),
-              ),
-            ],
-          ),
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: 60,
+                  child: Container(
+                    decoration: BoxDecoration(
+                        gradient: LinearGradient(colors: [
+                      Colors.black.withOpacity(0.4),
+                      Colors.transparent
+                    ], begin: Alignment.bottomCenter, end: Alignment.topCenter)),
+                  ),
+                ),
+              ],
+            ),
           Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -788,18 +788,24 @@ class _CompletionCelebrationDialog extends StatelessWidget {
 }
 
 class _RequestImage extends StatelessWidget {
-  final String imageUrl;
+  final String? imageUrl;
 
   const _RequestImage({required this.imageUrl});
 
   @override
   Widget build(BuildContext context) {
+    final normalizedImageUrl = imageUrl?.trim();
+    if (normalizedImageUrl == null || normalizedImageUrl.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     final hasRemoteSource =
-        imageUrl.startsWith('http') || imageUrl.startsWith('data:image/');
+        normalizedImageUrl.startsWith('http') ||
+        normalizedImageUrl.startsWith('data:image/');
 
     if (hasRemoteSource) {
       return Image.network(
-        imageUrl,
+        normalizedImageUrl,
         fit: BoxFit.cover,
         errorBuilder: (_, __, ___) => const Center(
           child: Icon(Icons.image_not_supported, size: 40, color: Colors.grey),
@@ -807,13 +813,7 @@ class _RequestImage extends StatelessWidget {
       );
     }
 
-    return Image.asset(
-      imageUrl,
-      fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => const Center(
-        child: Icon(Icons.image_not_supported, size: 40, color: Colors.grey),
-      ),
-    );
+    return const SizedBox.shrink();
   }
 }
 

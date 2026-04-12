@@ -3,7 +3,7 @@ enum RequestStatus { pending, accepted, pickedUp }
 class RecyclingRequest {
   final String id;
   final String title;
-  final String imageUrl;
+  final String? imageUrl;
   final DateTime scheduledFrom;
   final DateTime scheduledTo;
   final String location;
@@ -22,7 +22,7 @@ class RecyclingRequest {
   RecyclingRequest({
     required this.id,
     required this.title,
-    required this.imageUrl,
+    this.imageUrl,
     required this.scheduledFrom,
     required this.scheduledTo,
     required this.location,
@@ -68,5 +68,12 @@ class RecyclingRequest {
       rating: rating ?? this.rating,
       ratingComment: ratingComment ?? this.ratingComment,
     );
+  }
+
+  bool get hasImage {
+    final value = imageUrl?.trim();
+    return value != null &&
+        value.isNotEmpty &&
+        value != 'assets/images/generic.png';
   }
 }
