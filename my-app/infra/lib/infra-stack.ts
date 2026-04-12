@@ -26,6 +26,7 @@ export class InfraStack extends cdk.Stack {
     const logRetentionDays = logs.RetentionDays.ONE_DAY;
     const deploymentMaximumPercent = 100;
     const deploymentMinimumHealthyPercent = 0;
+    const availabilityZoneRebalancing = 'DISABLED';
     const targetGroupDeregistrationDelaySeconds = '5';
 
     const backendAsset = new assets.DockerImageAsset(this, 'BackendAsset', {
@@ -303,6 +304,7 @@ export class InfraStack extends cdk.Stack {
           parameters: {
             cluster: 'default',
             service: expressService.attrServiceArn,
+            availabilityZoneRebalancing,
             deploymentConfiguration: {
               deploymentCircuitBreaker: {
                 enable: true,
@@ -323,6 +325,7 @@ export class InfraStack extends cdk.Stack {
           parameters: {
             cluster: 'default',
             service: expressService.attrServiceArn,
+            availabilityZoneRebalancing,
             deploymentConfiguration: {
               deploymentCircuitBreaker: {
                 enable: true,

@@ -90,6 +90,7 @@ test('backend service stays on the minimum safe ECS Express footprint', () => {
   expect(deploymentResourceEntry).toBeDefined();
 
   const serializedDeploymentConfig = JSON.stringify(deploymentResourceEntry?.[1]);
+  expect(serializedDeploymentConfig).toContain('\\"availabilityZoneRebalancing\\":\\"DISABLED\\"');
   expect(serializedDeploymentConfig).toContain('\\"minimumHealthyPercent\\":0');
   expect(serializedDeploymentConfig).toContain('\\"maximumPercent\\":100');
   expect(serializedDeploymentConfig).toContain('\\"rollback\\":true');
