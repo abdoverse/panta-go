@@ -193,19 +193,23 @@ func listCreatorRequests(ctx context.Context, creatorID string) ([]RecyclingRequ
 }
 
 func listHelperAccessibleRequests(ctx context.Context, helperID string) ([]RecyclingRequest, error) {
-	pendingRequests, err := queryRequests(ctx, &dynamodb.QueryInput{
-		TableName:              aws.String(tableName),
-		IndexName:              aws.String(requestsByStatusIndexName),
-		KeyConditionExpression: aws.String("#status = :pending"),
-		ExpressionAttributeNames: map[string]string{
-			"#status": "status",
-		},
-		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":pending": &types.AttributeValueMemberS{Value: "pending"},
-		},
-	})
-	if err != nil {
-		return nil, err
+	returnableRequests := make([]RecyclingRequest, 0)
+	for _, status := range helperPoolCandidateStatuses() {
+		requestsForStatus, err := queryRequests(ctx, &dynamodb.QueryInput{
+			TableName:              aws.String(tableName),
+			IndexName:              aws.String(requestsByStatusIndexName),
+			KeyConditionExpression: aws.String("#status = :status"),
+			ExpressionAttributeNames: map[string]string{
+				"#status": "status",
+			},
+			ExpressionAttributeValues: map[string]types.AttributeValue{
+				":status": &types.AttributeValueMemberS{Value: status},
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
+		returnableRequests = mergeRequestsByID(returnableRequests, requestsForStatus)
 	}
 
 	assignedRequests, err := queryRequests(ctx, &dynamodb.QueryInput{
@@ -221,9 +225,13 @@ func listHelperAccessibleRequests(ctx context.Context, helperID string) ([]Recyc
 	}
 
 	return mergeRequestsByID(
-		filterHelperVisiblePendingRequests(pendingRequests, helperID),
+		filterHelperVisiblePendingRequests(returnableRequests, helperID),
 		filterHelperAssignedRequests(assignedRequests, helperID),
 	), nil
+}
+
+func helperPoolCandidateStatuses() []string {
+	return []string{"pending", "cancelled"}
 }
 
 func filterHelperVisiblePendingRequests(requests []RecyclingRequest, helperID string) []RecyclingRequest {

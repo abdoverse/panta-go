@@ -2,6 +2,21 @@ package main
 
 import "testing"
 
+func TestHelperPoolCandidateStatuses(t *testing.T) {
+	t.Parallel()
+
+	statuses := helperPoolCandidateStatuses()
+	if len(statuses) != 2 {
+		t.Fatalf("len(helperPoolCandidateStatuses()) = %d, want 2", len(statuses))
+	}
+	if statuses[0] != "pending" {
+		t.Fatalf("helperPoolCandidateStatuses()[0] = %q, want %q", statuses[0], "pending")
+	}
+	if statuses[1] != "cancelled" {
+		t.Fatalf("helperPoolCandidateStatuses()[1] = %q, want %q", statuses[1], "cancelled")
+	}
+}
+
 func TestFilterHelperVisiblePendingRequests(t *testing.T) {
 	t.Parallel()
 
