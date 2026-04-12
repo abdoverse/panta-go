@@ -23,7 +23,9 @@ export class InfraStack extends cdk.Stack {
     const backendMemory = '512';
     const steadyStateTaskCount = 1;
     const maxTaskCount = 2;
-    const logRetentionDays = 7;
+    const logRetentionDays = 3;
+    const deploymentMaximumPercent = 100;
+    const deploymentMinimumHealthyPercent = 0;
 
     const backendAsset = new assets.DockerImageAsset(this, 'BackendAsset', {
       directory: path.join(__dirname, '../../backend'),
@@ -282,8 +284,8 @@ export class InfraStack extends cdk.Stack {
                 enable: true,
                 rollback: true,
               },
-              maximumPercent: 200,
-              minimumHealthyPercent: 100,
+               maximumPercent: deploymentMaximumPercent,
+               minimumHealthyPercent: deploymentMinimumHealthyPercent,
             },
           },
           outputPaths: ['service.serviceArn'],
@@ -302,8 +304,8 @@ export class InfraStack extends cdk.Stack {
                 enable: true,
                 rollback: true,
               },
-              maximumPercent: 200,
-              minimumHealthyPercent: 100,
+               maximumPercent: deploymentMaximumPercent,
+               minimumHealthyPercent: deploymentMinimumHealthyPercent,
             },
           },
           outputPaths: ['service.serviceArn'],
