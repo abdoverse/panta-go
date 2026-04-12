@@ -82,6 +82,54 @@ plan-4 | done | medium | medium | plan-5 | Slim down mobile state management
   `my-app/mobile/lib/providers/panta_provider.dart`, `my-app/mobile/lib/services/*.dart`, feature screens.
 
 ## both
+plan-7 | done | medium | medium | plan-1,plan-4 | Add saved addresses and reusable request templates
+  Owner agent: backend_dev+frontend_dev
+  Started at: 2026-04-12T16:03:47.260632+00:00
+  Last heartbeat at: 2026-04-12T16:07:16.804691+00:00
+  Last progress at: 2026-04-12T16:07:16.804691+00:00
+  Progress note: tester [done]: Validation passed and the task was delivered to git.
+  Agent activity: tester | 2026-04-12T16:07:16.789395+00:00 | validation | Running the existing validation commands after backend implementation handoff. | cd my-app/mobile && flutter test
+  Agent activity: backend_dev+frontend_dev | 2026-04-12T16:06:51.428333+00:00 | working | Starting implementation in backend request |
+  Agent activity: backend_dev+frontend_dev | 2026-04-12T16:06:43.773309+00:00 | working | Starting implementation in backend request |
+  Agent activity: backend_dev+frontend_dev | 2026-04-12T16:06:36.710287+00:00 | working | Starting implementation in backend request |
+  Agent activity: backend_dev+frontend_dev | 2026-04-12T16:06:24.447249+00:00 | working | Starting implementation in backend request |
+  Agent activity: backend_dev+frontend_dev | 2026-04-12T16:06:24.447249+00:00 | working | Starting implementation in backend request |
+  Agent activity: backend_dev+frontend_dev | 2026-04-12T16:06:24.447249+00:00 | working | Starting implementation in backend request |
+  Agent activity: backend_dev+frontend_dev | 2026-04-12T16:06:16.387224+00:00 | working | Starting implementation in backend request |
+  Agent activity: backend_dev+frontend_dev | 2026-04-12T16:06:08.743200+00:00 | working | Starting implementation in backend request |
+  Agent activity: backend_dev+frontend_dev | 2026-04-12T16:06:06.085192+00:00 | working | Starting implementation in backend request |
+  Agent activity: backend_dev+frontend_dev | 2026-04-12T16:06:00.656175+00:00 | working | Starting implementation in backend request |
+  Agent activity: backend_dev+frontend_dev | 2026-04-12T16:05:51.337146+00:00 | working | Starting implementation in backend request |
+  Agent activity: backend_dev+frontend_dev | 2026-04-12T16:05:47.906135+00:00 | working | Starting implementation in backend request |
+  Agent activity: backend_dev+frontend_dev | 2026-04-12T16:05:41.685115+00:00 | working | Starting implementation in backend request |
+  Agent activity: backend_dev+frontend_dev | 2026-04-12T16:05:38.310104+00:00 | working | Starting implementation in backend request |
+  Agent activity: backend_dev+frontend_dev | 2026-04-12T16:05:31.136082+00:00 | working | Starting implementation in backend request |
+  Agent activity: backend_dev+frontend_dev | 2026-04-12T16:05:27.954072+00:00 | working | Starting implementation in backend request |
+  Agent activity: backend_dev+frontend_dev | 2026-04-12T16:05:19.862046+00:00 | working | Starting implementation in backend request |
+  Agent activity: backend_dev+frontend_dev | 2026-04-12T16:04:59.341980+00:00 | working | Starting implementation in backend request |
+  Agent activity: backend_dev+frontend_dev | 2026-04-12T16:04:59.341980+00:00 | working | Starting implementation in backend request |
+  Agent activity: backend_dev+frontend_dev | 2026-04-12T16:04:59.341980+00:00 | working | Starting implementation in backend request |
+  Agent activity: backend_dev+frontend_dev | 2026-04-12T16:04:59.341980+00:00 | working | Starting implementation in backend request |
+  Agent activity: backend_dev+frontend_dev | 2026-04-12T16:04:43.917931+00:00 | working | Starting implementation in backend request |
+  Agent activity: backend_dev+frontend_dev | 2026-04-12T16:04:43.917931+00:00 | working | Starting implementation in backend request |
+  Agent activity: backend_dev+frontend_dev | 2026-04-12T16:04:37.995912+00:00 | working | Starting implementation in backend request |
+  Agent activity: backend_dev+frontend_dev | 2026-04-12T16:04:13.363832+00:00 | working | Starting implementation in backend request |
+  Agent activity: backend_dev+frontend_dev | 2026-04-12T16:04:13.363832+00:00 | working | Starting implementation in backend request |
+  Agent activity: backend_dev+frontend_dev | 2026-04-12T16:04:13.363832+00:00 | working | Starting implementation in backend request |
+  Agent activity: backend_dev+frontend_dev | 2026-04-12T16:04:13.363832+00:00 | working | Starting implementation in backend request |
+  Agent activity: backend_dev+frontend_dev | 2026-04-12T16:04:13.363832+00:00 | working | Starting implementation in backend request |
+  Agent activity: backend_dev+frontend_dev | 2026-04-12T16:04:08.688817+00:00 | working | Starting implementation in backend request |
+  Agent activity: backend_dev+frontend_dev | 2026-04-12T16:03:57.181780+00:00 | working | Starting implementation in backend request |
+  Agent activity: backend_dev+frontend_dev | 2026-04-12T16:03:57.181780+00:00 | working | Starting implementation in backend request |
+  Agent activity: backend_dev+frontend_dev | 2026-04-12T16:03:46.051743+00:00 | working | Starting implementation in backend request |
+  Agent activity: backend_dev+frontend_dev | 2026-04-12T16:03:46.051743+00:00 | working | Starting implementation in backend request |
+  Goal:
+  Make repeat pickup creation faster for returning users.
+  Why:
+  This is a high-value retention improvement with clear user-facing payoff.
+  Likely files:
+  request creation flow, profile/dashboard surfaces, backend request/template storage.
+
 plan-5 | done | high | medium | none | Finish auth hardening and runtime configuration cleanup
   Owner agent: backend_dev+frontend_dev
   Started at: 2026-04-12T14:35:51.274744+00:00

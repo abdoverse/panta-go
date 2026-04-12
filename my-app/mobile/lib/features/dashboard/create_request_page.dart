@@ -11,6 +11,7 @@ import '../../services/location_service.dart';
 import 'package:intl/intl.dart';
 import 'package:dotted_border/dotted_border.dart';
 import '../../core/constants/app_constants.dart';
+import '../../models/request_model.dart';
 
 class CreateRequestPage extends StatefulWidget {
   const CreateRequestPage({super.key});
@@ -33,6 +34,8 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
   Uint8List? _selectedPhotoBytes;
   String? _selectedPhotoMimeType;
   String? _selectedPhotoFileName;
+  bool _saveAsAddress = false;
+  bool _saveAsTemplate = false;
 
   @override
   void initState() {
@@ -70,6 +73,7 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final provider = context.watch<PantaProvider>();
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.newPickupRequest),
@@ -103,23 +107,23 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                           ? Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                 Icon(Icons.add_a_photo_outlined,
-                                     size: 48,
-                                     color:
-                                         AppTheme.primaryGreen.withOpacity(0.5)),
-                                 const SizedBox(height: 12),
-                                 Text(
-                                   l10n.addPhoto,
-                                   style: TextStyle(
-                                     color: AppTheme.textSecondary,
-                                     fontWeight: FontWeight.bold,
-                                   ),
-                                 ),
-                                 const SizedBox(height: 8),
-                                 Text(
-                                   l10n.tapToChooseImage,
-                                   style: TextStyle(color: Colors.grey[600]),
-                                 ),
+                                Icon(Icons.add_a_photo_outlined,
+                                    size: 48,
+                                    color:
+                                        AppTheme.primaryGreen.withOpacity(0.5)),
+                                const SizedBox(height: 12),
+                                Text(
+                                  l10n.addPhoto,
+                                  style: TextStyle(
+                                    color: AppTheme.textSecondary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  l10n.tapToChooseImage,
+                                  style: TextStyle(color: Colors.grey[600]),
+                                ),
                               ],
                             )
                           : ClipRRect(
@@ -148,11 +152,11 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                                             _selectedPhotoFileName = null;
                                           });
                                         },
-                                         icon: const Icon(Icons.close,
-                                             color: Colors.white),
-                                         tooltip: l10n.removePhoto,
-                                       ),
-                                     ),
+                                        icon: const Icon(Icons.close,
+                                            color: Colors.white),
+                                        tooltip: l10n.removePhoto,
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -176,6 +180,25 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
               Text(l10n.whatAreYouGettingRidOf,
                   style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 12),
+              if (provider.requestTemplates.isNotEmpty) ...[
+                Text(
+                  'Use a saved template',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: provider.requestTemplates.map((template) {
+                    return ActionChip(
+                      label: Text(template.name),
+                      avatar: const Icon(Icons.copy_all_rounded, size: 18),
+                      onPressed: () => _applyTemplate(template),
+                    );
+                  }).toList(growable: false),
+                ),
+                const SizedBox(height: 16),
+              ],
               TextFormField(
                 controller: _titleController,
                 style: const TextStyle(fontWeight: FontWeight.w600),
@@ -200,8 +223,28 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
               ),
 
               const SizedBox(height: 24),
-              Text(l10n.location, style: Theme.of(context).textTheme.titleLarge),
+              Text(l10n.location,
+                  style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 12),
+              if (provider.savedAddresses.isNotEmpty) ...[
+                Text(
+                  'Saved addresses',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: provider.savedAddresses.map((address) {
+                    return ActionChip(
+                      label: Text(address.label),
+                      avatar: const Icon(Icons.location_on_outlined, size: 18),
+                      onPressed: () => _applySavedAddress(address),
+                    );
+                  }).toList(growable: false),
+                ),
+                const SizedBox(height: 16),
+              ],
               TypeAheadField<LocationSuggestion>(
                 controller: _locationController,
                 suggestionsCallback: (pattern) async {
@@ -262,9 +305,9 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
               Row(
                 children: [
                   Expanded(
-                     child: _DateSelector(
-                        label: l10n.from,
-                        date: _fromDate,
+                    child: _DateSelector(
+                      label: l10n.from,
+                      date: _fromDate,
                       onTap: () async {
                         final date = await showDatePicker(
                           context: context,
@@ -373,55 +416,81 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                   return null;
                 },
               ),
+              const SizedBox(height: 16),
+              SwitchListTile.adaptive(
+                contentPadding: EdgeInsets.zero,
+                value: _saveAsAddress,
+                title: const Text('Save this address for later'),
+                subtitle: const Text('Keep this pickup location one tap away.'),
+                onChanged: (value) {
+                  setState(() {
+                    _saveAsAddress = value;
+                  });
+                },
+              ),
+              SwitchListTile.adaptive(
+                contentPadding: EdgeInsets.zero,
+                value: _saveAsTemplate,
+                title: const Text('Save as reusable template'),
+                subtitle:
+                    const Text('Reuse the title, notes, and reward next time.'),
+                onChanged: (value) {
+                  setState(() {
+                    _saveAsTemplate = value;
+                  });
+                },
+              ),
 
               const SizedBox(height: 40),
               SizedBox(
                 width: double.infinity,
                 height: 56,
-                child: Consumer<PantaProvider>(
-                  builder: (context, provider, child) {
-                    return ElevatedButton(
-                      onPressed: provider.isLoading
-                          ? null
-                          : () async {
-                              if (_formKey.currentState!.validate()) {
-                                final success = await provider.createRequest(
-                                  _titleController.text,
-                                  _fromDate,
-                                  _toDate,
-                                  _locationController.text,
-                                  locationLatitude: _selectedLocation?.lat,
-                                  locationLongitude: _selectedLocation?.lon,
-                                  description: _descriptionController.text,
-                                  reward:
-                                      double.tryParse(_rewardController.text) ??
-                                          0.0,
-                                  imageBytes: _selectedPhotoBytes,
-                                  imageMimeType: _selectedPhotoMimeType,
-                                  imageFileName: _selectedPhotoFileName,
-                                );
-                                if (success && context.mounted) {
-                                   Navigator.pop(context);
-                                   ScaffoldMessenger.of(context).showSnackBar(
-                                       SnackBar(
-                                           content: Text(l10n.requestCreated)));
-                                 }
-                               }
-                            },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryGreen,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16)),
-                        elevation: 0,
-                      ),
-                       child: provider.isLoading
-                           ? const CircularProgressIndicator(color: Colors.white)
-                           : Text(l10n.postRequest,
-                               style: TextStyle(
-                                   fontSize: 18, fontWeight: FontWeight.bold)),
-                    );
-                  },
+                child: ElevatedButton(
+                  onPressed: provider.isLoading
+                      ? null
+                      : () async {
+                          if (_formKey.currentState!.validate()) {
+                            final success = await provider.createRequest(
+                              _titleController.text,
+                              _fromDate,
+                              _toDate,
+                              _locationController.text,
+                              locationLatitude: _selectedLocation?.lat,
+                              locationLongitude: _selectedLocation?.lon,
+                              description: _descriptionController.text,
+                              reward: double.tryParse(_rewardController.text) ??
+                                  0.0,
+                              imageBytes: _selectedPhotoBytes,
+                              imageMimeType: _selectedPhotoMimeType,
+                              imageFileName: _selectedPhotoFileName,
+                              saveAddress: _saveAsAddress,
+                              saveTemplate: _saveAsTemplate,
+                            );
+                            if (success && context.mounted) {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(l10n.requestCreated)),
+                              );
+                            }
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryGreen,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: provider.isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : Text(
+                          l10n.postRequest,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -495,6 +564,33 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
         return 'jpg';
     }
   }
+
+  void _applySavedAddress(SavedAddress address) {
+    setState(() {
+      _locationController.text = address.location;
+      if (address.latitude != null && address.longitude != null) {
+        _selectedLocation = LocationSuggestion(
+          displayName: address.location,
+          title: address.location,
+          subtitle: address.label,
+          city: null,
+          lat: address.latitude!,
+          lon: address.longitude!,
+        );
+      } else {
+        _selectedLocation = null;
+      }
+    });
+  }
+
+  void _applyTemplate(RequestTemplate template) {
+    setState(() {
+      _titleController.text = template.title;
+      _descriptionController.text = template.description;
+      _rewardController.text = template.reward.toStringAsFixed(2);
+      _saveAsTemplate = false;
+    });
+  }
 }
 
 class _DateSelector extends StatelessWidget {
@@ -529,9 +625,7 @@ class _DateSelector extends StatelessWidget {
                 const Icon(Icons.event, size: 16, color: AppTheme.primaryGreen),
                 const SizedBox(width: 8),
                 // Force strict patterns like 24:00 usage in display
-                Text(
-                    DateFormat('d MMM, HH:mm', l10n.localeName)
-                        .format(date),
+                Text(DateFormat('d MMM, HH:mm', l10n.localeName).format(date),
                     style: const TextStyle(fontWeight: FontWeight.bold)),
               ],
             ),

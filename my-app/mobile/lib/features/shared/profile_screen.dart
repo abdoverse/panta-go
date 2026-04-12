@@ -30,6 +30,8 @@ class ProfileScreen extends StatelessWidget {
     final completedJobs = provider.helperCompletedCount;
     final canceledPickups = provider.helperCancellationCount;
     final reliabilityRating = provider.helperReliabilityRating;
+    final savedAddresses = provider.savedAddresses;
+    final requestTemplates = provider.requestTemplates;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.profileTitle)),
@@ -120,13 +122,67 @@ class ProfileScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     _HelperSummaryRow(
-                        icon: Icons.insights_rounded,
-                        title: l10n.reliabilityContext,
-                        value: l10n.reliabilitySummary(
-                          completedJobs,
-                          canceledPickups,
+                      icon: Icons.insights_rounded,
+                      title: l10n.reliabilityContext,
+                      value: l10n.reliabilitySummary(
+                        completedJobs,
+                        canceledPickups,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
+          if (!isHelper) ...[
+            Text(
+              'Pickup shortcuts',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    _HelperSummaryRow(
+                      icon: Icons.location_on_outlined,
+                      title: 'Saved addresses',
+                      value: '${savedAddresses.length}',
+                    ),
+                    if (savedAddresses.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          savedAddresses
+                              .map((item) => item.label)
+                              .take(2)
+                              .join(' • '),
+                          style: Theme.of(context).textTheme.bodyMedium,
                         ),
                       ),
+                    ],
+                    const SizedBox(height: 12),
+                    _HelperSummaryRow(
+                      icon: Icons.copy_all_rounded,
+                      title: 'Request templates',
+                      value: '${requestTemplates.length}',
+                    ),
+                    if (requestTemplates.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          requestTemplates
+                              .map((item) => item.name)
+                              .take(2)
+                              .join(' • '),
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

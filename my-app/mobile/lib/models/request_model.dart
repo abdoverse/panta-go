@@ -1,5 +1,51 @@
 enum RequestStatus { pending, accepted, pickedUp }
 
+class SavedAddress {
+  final String label;
+  final String location;
+  final double? latitude;
+  final double? longitude;
+
+  const SavedAddress({
+    required this.label,
+    required this.location,
+    this.latitude,
+    this.longitude,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'label': label,
+      'location': location,
+      'latitude': latitude,
+      'longitude': longitude,
+    };
+  }
+}
+
+class RequestTemplate {
+  final String name;
+  final String title;
+  final String description;
+  final double reward;
+
+  const RequestTemplate({
+    required this.name,
+    required this.title,
+    required this.description,
+    required this.reward,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'title': title,
+      'description': description,
+      'reward': reward,
+    };
+  }
+}
+
 class RecyclingRequest {
   final String id;
   final String title;

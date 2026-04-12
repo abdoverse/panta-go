@@ -29,6 +29,26 @@ type RecyclingRequest struct {
 	CreatorDeviceToken string    `json:"creatorDeviceToken,omitempty" dynamodbav:"creatorDeviceToken,omitempty"`
 }
 
+type SavedAddress struct {
+	Label     string   `json:"label" dynamodbav:"label"`
+	Location  string   `json:"location" dynamodbav:"location"`
+	Latitude  *float64 `json:"latitude,omitempty" dynamodbav:"latitude,omitempty"`
+	Longitude *float64 `json:"longitude,omitempty" dynamodbav:"longitude,omitempty"`
+}
+
+type RequestTemplate struct {
+	Name        string  `json:"name" dynamodbav:"name"`
+	Title       string  `json:"title" dynamodbav:"title"`
+	Description string  `json:"description" dynamodbav:"description"`
+	Reward      float64 `json:"reward" dynamodbav:"reward"`
+}
+
+type RequestPreferences struct {
+	ID             string            `json:"id,omitempty" dynamodbav:"id"`
+	SavedAddresses []SavedAddress    `json:"savedAddresses,omitempty" dynamodbav:"savedAddresses,omitempty"`
+	Templates      []RequestTemplate `json:"templates,omitempty" dynamodbav:"templates,omitempty"`
+}
+
 type LoginRequest struct {
 	Role string `json:"role"`
 	Name string `json:"username"`

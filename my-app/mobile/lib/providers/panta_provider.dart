@@ -45,6 +45,8 @@ class PantaProvider extends ChangeNotifier {
       panta_state.PantaRequestState();
   final panta_state.PantaHelperLocationState _locationState =
       panta_state.PantaHelperLocationState();
+  List<SavedAddress> _savedAddresses = const [];
+  List<RequestTemplate> _requestTemplates = const [];
   bool _isRestoringSession = true;
   Locale _locale = AppLocalizations.supportedLocales.first;
 
@@ -57,6 +59,8 @@ class PantaProvider extends ChangeNotifier {
   bool get isLoading => _requestState.isLoading;
   bool get isRestoringSession => _isRestoringSession;
   List<RecyclingRequest> get requests => _requestState.requests;
+  List<SavedAddress> get savedAddresses => _savedAddresses;
+  List<RequestTemplate> get requestTemplates => _requestTemplates;
   String? get currentUserDisplayName => _authState.currentUserDisplayName;
   Locale get locale => _locale;
 
@@ -193,6 +197,7 @@ class PantaProvider extends ChangeNotifier {
       debugPrint("Logged in as Helper/User ID: ${_authState.currentUserId}");
       notifyListeners();
       fetchRequests();
+      fetchRequestAssets();
       return null;
     }
     return error;
@@ -217,7 +222,10 @@ class PantaProvider extends ChangeNotifier {
         return;
       }
 
-      await fetchRequests(silent: true);
+      await Future.wait([
+        fetchRequests(silent: true),
+        fetchRequestAssets(silent: true),
+      ]);
     } finally {
       _isRestoringSession = false;
       notifyListeners();
@@ -227,6 +235,71 @@ class PantaProvider extends ChangeNotifier {
   Future<void> logout() async {
     await _authService.logout();
     _clearAuthenticatedState();
+  }
+
+  Future<void> fetchRequestAssets({bool silent = false}) async {
+    final token = await _authService.getToken();
+    if (token == null) {
+      _clearAuthenticatedState();
+      return;
+    }
+
+    try {
+      final responses = await Future.wait([
+        http.get(
+          ApiConfig.apiUri('/api/v1/requests/saved-addresses'),
+          headers: {'Authorization': 'Bearer $token'},
+        ),
+        http.get(
+          ApiConfig.apiUri('/api/v1/requests/templates'),
+          headers: {'Authorization': 'Bearer $token'},
+        ),
+      ]);
+
+      final addressesResponse = responses[0];
+      final templatesResponse = responses[1];
+      if (addressesResponse.statusCode == 200) {
+        final payload =
+            json.decode(addressesResponse.body) as Map<String, dynamic>;
+        final items = payload['savedAddresses'] as List<dynamic>? ?? const [];
+        _savedAddresses = items
+            .whereType<Map>()
+            .map(
+              (item) => _savedAddressFromJson(
+                item.map((key, value) => MapEntry(key.toString(), value)),
+              ),
+            )
+            .toList(growable: false);
+      } else if (!silent) {
+        debugPrint(
+          'Failed to load saved addresses: ${addressesResponse.statusCode}',
+        );
+      }
+
+      if (templatesResponse.statusCode == 200) {
+        final payload =
+            json.decode(templatesResponse.body) as Map<String, dynamic>;
+        final items = payload['templates'] as List<dynamic>? ?? const [];
+        _requestTemplates = items
+            .whereType<Map>()
+            .map(
+              (item) => _requestTemplateFromJson(
+                item.map((key, value) => MapEntry(key.toString(), value)),
+              ),
+            )
+            .toList(growable: false);
+      } else if (!silent) {
+        debugPrint(
+          'Failed to load request templates: ${templatesResponse.statusCode}',
+        );
+      }
+    } catch (e) {
+      if (!silent) {
+        debugPrint('Error loading request assets: $e');
+      }
+    } finally {
+      notifyListeners();
+    }
   }
 
   Future<String?> signUp({
@@ -350,6 +423,10 @@ class PantaProvider extends ChangeNotifier {
     Uint8List? imageBytes,
     String? imageFileName,
     String? imageMimeType,
+    bool saveAddress = false,
+    String? addressLabel,
+    bool saveTemplate = false,
+    String? templateName,
   }) async {
     final token = await _authService.getToken();
     if (token == null) return false;
@@ -431,6 +508,28 @@ class PantaProvider extends ChangeNotifier {
       );
 
       if (response.statusCode == 201) {
+        if (saveAddress) {
+          await saveAddressEntry(
+            SavedAddress(
+              label: _normalizeLabel(addressLabel, fallback: location),
+              location: location,
+              latitude: locationLatitude,
+              longitude: locationLongitude,
+            ),
+            silent: true,
+          );
+        }
+        if (saveTemplate) {
+          await saveRequestTemplate(
+            RequestTemplate(
+              name: _normalizeLabel(templateName, fallback: title),
+              title: title,
+              description: description,
+              reward: reward,
+            ),
+            silent: true,
+          );
+        }
         // Refresh list
         await fetchRequests();
         return true;
@@ -443,6 +542,88 @@ class PantaProvider extends ChangeNotifier {
     } finally {
       _setLoading(false);
       notifyListeners();
+    }
+  }
+
+  Future<bool> saveAddressEntry(
+    SavedAddress address, {
+    bool silent = false,
+  }) async {
+    final updated = [
+      address,
+      ..._savedAddresses.where(
+        (item) => item.location.toLowerCase() != address.location.toLowerCase(),
+      ),
+    ];
+    final success = await _putCollection(
+      path: '/api/v1/requests/saved-addresses',
+      body: {
+        'savedAddresses':
+            updated.map((item) => item.toJson()).toList(growable: false),
+      },
+    );
+    if (success) {
+      _savedAddresses = updated;
+      notifyListeners();
+      return true;
+    }
+    if (!silent) {
+      debugPrint('Failed to save address entry.');
+    }
+    return false;
+  }
+
+  Future<bool> saveRequestTemplate(
+    RequestTemplate template, {
+    bool silent = false,
+  }) async {
+    final updated = [
+      template,
+      ..._requestTemplates.where(
+        (item) => item.name.toLowerCase() != template.name.toLowerCase(),
+      ),
+    ];
+    final success = await _putCollection(
+      path: '/api/v1/requests/templates',
+      body: {
+        'templates':
+            updated.map((item) => item.toJson()).toList(growable: false),
+      },
+    );
+    if (success) {
+      _requestTemplates = updated;
+      notifyListeners();
+      return true;
+    }
+    if (!silent) {
+      debugPrint('Failed to save request template.');
+    }
+    return false;
+  }
+
+  Future<bool> _putCollection({
+    required String path,
+    required Map<String, dynamic> body,
+  }) async {
+    final token = await _authService.getToken();
+    if (token == null) {
+      _clearAuthenticatedState();
+      return false;
+    }
+
+    try {
+      final response = await http.put(
+        ApiConfig.apiUri(path),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode(body),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error updating $path: $e');
+      return false;
     }
   }
 
@@ -601,6 +782,38 @@ class PantaProvider extends ChangeNotifier {
     return imageUrl;
   }
 
+  SavedAddress _savedAddressFromJson(Map<String, dynamic> json) {
+    return SavedAddress(
+      label: (json['label'] ?? json['location'] ?? '').toString(),
+      location: (json['location'] ?? '').toString(),
+      latitude: json['latitude'] != null
+          ? double.tryParse(json['latitude'].toString())
+          : null,
+      longitude: json['longitude'] != null
+          ? double.tryParse(json['longitude'].toString())
+          : null,
+    );
+  }
+
+  RequestTemplate _requestTemplateFromJson(Map<String, dynamic> json) {
+    return RequestTemplate(
+      name: (json['name'] ?? json['title'] ?? '').toString(),
+      title: (json['title'] ?? '').toString(),
+      description: (json['description'] ?? '').toString(),
+      reward: json['reward'] != null
+          ? double.tryParse(json['reward'].toString()) ?? 0.0
+          : 0.0,
+    );
+  }
+
+  String _normalizeLabel(String? value, {required String fallback}) {
+    final trimmed = value?.trim();
+    if (trimmed != null && trimmed.isNotEmpty) {
+      return trimmed;
+    }
+    return fallback.trim();
+  }
+
   Future<void> _refreshAuthState({
     bool? helperOverride,
     String? fallbackEmail,
@@ -624,6 +837,8 @@ class PantaProvider extends ChangeNotifier {
     _authState.clearSession();
     _requestState.clear();
     _locationState.clear();
+    _savedAddresses = const [];
+    _requestTemplates = const [];
 
     if (notify) {
       notifyListeners();

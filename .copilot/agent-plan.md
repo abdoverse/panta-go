@@ -14,7 +14,21 @@ plan-3 | planned | high | medium | plan-2 | Add backend tests and production saf
   `my-app/backend/...`, `my-app/infra/lib/infra-stack.ts`, `my-app/infra/test/infra.test.ts`.
 
 ## frontend
-(empty)
+plan-12 | planned | high | medium | plan-6 | Add a notifications inbox and fine-grained notification preferences
+  Goal:
+  Give users a durable in-app notification center plus control over push and lifecycle alerts.
+  Why:
+  Marketplace visibility is much stronger with plan-6, but users still need a dependable place to review missed updates and tune noisy alerts.
+  Likely files:
+  `my-app/mobile/lib/screens/...`, notification/provider files, backend notification preference storage and delivery surfaces.
+
+plan-13 | planned | high | medium | plan-7 | Add a faster repeat-booking flow from request history
+  Goal:
+  Let recyclers recreate a past pickup from request history with address, material, and scheduling defaults prefilled.
+  Why:
+  Saved addresses and templates help proactive setup, but history-driven repeat booking is the shortest path to higher repeat usage.
+  Likely files:
+  request history screens, request creation flow, provider models, backend request duplication helpers if needed.
 
 ## both
 plan-6 | planned | medium | medium | plan-1,plan-4 | Add marketplace timeline and in-app activity visibility
@@ -24,14 +38,6 @@ plan-6 | planned | medium | medium | plan-1,plan-4 | Add marketplace timeline an
   Core request flow works, but visibility is still too opaque for helpers and recyclers.
   Likely files:
   dashboard screens, request models/provider, backend request/activity emission logic.
-
-plan-7 | planned | medium | medium | plan-1,plan-4 | Add saved addresses and reusable request templates
-  Goal:
-  Make repeat pickup creation faster for returning users.
-  Why:
-  This is a high-value retention improvement with clear user-facing payoff.
-  Likely files:
-  request creation flow, profile/dashboard surfaces, backend request/template storage.
 
 plan-8 | planned | medium | large | plan-5 | Add trust foundations for verification and payment-ready profiles
   Goal:
@@ -48,3 +54,27 @@ plan-9 | planned | medium | medium | plan-1,plan-6 | Add structured categories a
   The helper marketplace already sorts well, but it still lacks strong filtering and job qualification signals.
   Likely files:
   helper marketplace UI, request models/provider, backend filtering/index support.
+
+plan-10 | planned | high | large | plan-6,plan-8 | Add real-time chat and attachment sharing between recycler and helper
+  Goal:
+  Support in-app conversation on active requests, including lightweight image sharing for pickup coordination.
+  Why:
+  Once trust and activity visibility improve, direct coordination becomes the next high-value conversion and completion unlock.
+  Likely files:
+  backend websocket/message persistence files, mobile request detail screens, notification hooks, auth/ownership checks.
+
+plan-11 | planned | high | large | plan-8 | Add helper earnings, payout status, and completed-job summaries
+  Goal:
+  Show helpers their completed rewards, pending payouts, and a clean earnings history that can later connect to payments.
+  Why:
+  Verification-ready profiles are more valuable when helpers can immediately see economic progress and payout readiness.
+  Likely files:
+  helper dashboard/profile UI, backend reward aggregation endpoints, request completion/payout state models.
+
+plan-14 | planned | high | large | plan-1,plan-8 | Add issue reporting, moderation notes, and safety incident handling
+  Goal:
+  Let users report no-shows, unsafe interactions, and disputed pickups, with backend state to support follow-up and moderation.
+  Why:
+  As the marketplace grows, trust requires not only verification but also clear incident handling and accountability flows.
+  Likely files:
+  request detail/reporting UI, backend request/report models, admin/moderation support endpoints, notification surfaces.
