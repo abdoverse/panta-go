@@ -89,7 +89,8 @@ class AuthService {
 
   // Confirm Registration
   Future<String?> confirmUser(String email, String code) async {
-    final cognitoUser = CognitoUser(email, _userPool);
+    final normalizedEmail = email.trim().toLowerCase();
+    final cognitoUser = CognitoUser(normalizedEmail, _userPool);
     try {
       final success = await cognitoUser.confirmRegistration(code);
       if (success) {
@@ -207,7 +208,17 @@ class AuthService {
 
   // Logout
   Future<void> logout() async {
-    await _clearLocalSession();
+    final currentUser = _currentUser ?? await _userPool.getCurrentUser();
+    try {
+      if (currentUser != null) {
+        final session = await _loadSession();
+        if (session != null && session.isValid()) {
+          await currentUser.globalSignOut();
+        }
+      }
+    } finally {
+      await _clearLocalSession(currentUser: currentUser);
+    }
   }
 
   Future<CognitoUserSession?> _loadSession() async {
@@ -237,10 +248,10 @@ class AuthService {
     return _session;
   }
 
-  Future<void> _clearLocalSession() async {
-    final currentUser = _currentUser ?? await _userPool.getCurrentUser();
-    if (currentUser != null) {
-      await currentUser.signOut();
+  Future<void> _clearLocalSession({CognitoUser? currentUser}) async {
+    final resolvedUser = currentUser ?? _currentUser ?? await _userPool.getCurrentUser();
+    if (resolvedUser != null) {
+      await resolvedUser.signOut();
     }
     _session = null;
     _currentUser = null;
