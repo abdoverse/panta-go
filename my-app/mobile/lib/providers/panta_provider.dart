@@ -92,10 +92,12 @@ List<RecyclingRequest> sortRequestsByDistance(
 
 class PantaProvider extends ChangeNotifier {
   static const _languagePreferenceKey = 'app_language_code';
+  static const _helperPreferenceKey = 'auth_is_helper';
 
   final AuthService _authService = AuthService();
   List<RecyclingRequest> _requests = [];
   bool _isLoading = false;
+  bool _isRestoringSession = true;
 
   String? _currentUserId;
   String? _currentUserDisplayName;
@@ -109,11 +111,13 @@ class PantaProvider extends ChangeNotifier {
   Locale _locale = AppLocalizations.supportedLocales.first;
 
   PantaProvider() {
-    _loadSavedLocale();
+    _initialize();
   }
 
   bool get isHelper => _isHelper;
+  bool get isAuthenticated => _currentUserId != null;
   bool get isLoading => _isLoading;
+  bool get isRestoringSession => _isRestoringSession;
   List<RecyclingRequest> get requests => _requests;
   String? get currentUserDisplayName => _currentUserDisplayName;
   Locale get locale => _locale;
@@ -147,6 +151,11 @@ class PantaProvider extends ChangeNotifier {
 
     _locale = savedLocale;
     notifyListeners();
+  }
+
+  Future<void> _initialize() async {
+    await _loadSavedLocale();
+    await restoreSession();
   }
 
   void _upsertRequest(RecyclingRequest request, {bool notify = true}) {
