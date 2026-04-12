@@ -1,6 +1,6 @@
 # Agent Backlog
 # Managed by langgraph_multi_agent.py.
-# Last heartbeat at: 2026-04-12T14:14:13.222985+00:00
+# Last heartbeat at: 2026-04-12T14:14:19.338160+00:00
 # Loop status: active | active_agents=2 | approved=1 | ready_approved=0 | pending=0 | in_progress=1 | done=5
 # Approve work by changing an item's status from pending to approved.
 # Active status values: pending, approved, in_progress
@@ -22,11 +22,11 @@ plan-4 | approved | medium | medium | plan-5 | Slim down mobile state management
 plan-5 | in_progress | high | medium | none | Finish auth hardening and runtime configuration cleanup
   Owner agent: backend_dev+frontend_dev
   Started at: 2026-04-12T14:14:12.595254+00:00
-  Last heartbeat at: 2026-04-12T14:14:13.181783+00:00
+  Last heartbeat at: 2026-04-12T14:14:19.202362+00:00
   Last progress at: 2026-04-12T14:14:13.181783+00:00
   Progress note: frontend_dev [frontend-alignment]: Checking whether the active task touches the mobile/web surface and keeping the web-first workflow aligned with the repo instructions.
-  Agent activity: frontend_dev | 2026-04-12T14:14:13.181783+00:00 | frontend-alignment | Checking whether the active task touches the mobile/web surface and keeping the web-first workflow aligned with the repo instructions. | cd my-app/mobile && flutter test
-  Agent activity: backend_dev | 2026-04-12T14:14:13.181783+00:00 | implementing | Applying backend code changes across the identified module boundaries. | edit my-app/backend/cmd/api/main.go and create backend package files
+  Agent activity: frontend_dev | 2026-04-12T14:14:19.202362+00:00 | frontend-alignment | Checking whether the active task touches the mobile/web surface and keeping the web-first workflow aligned with the repo instructions. | cd my-app/mobile && flutter test
+  Agent activity: backend_dev | 2026-04-12T14:14:19.202362+00:00 | scoping | No local backend implementation changes detected yet; code edits have not started. | edit my-app/backend/cmd/api/main.go and create backend package files
   Goal:
   Tighten session restore/logout behavior and remove remaining production-sensitive runtime assumptions.
   Why:

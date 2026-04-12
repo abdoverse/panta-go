@@ -9,6 +9,7 @@ class ApiConfig {
     return _configuredBaseUri(
       envName: 'API_BASE_URL',
       defaultValue: _defaultBaseUrl,
+      requireProductionOverride: true,
     );
   }
 
@@ -32,6 +33,7 @@ class ApiConfig {
     final baseUri = _configuredBaseUri(
       envName: 'WS_BASE_URL',
       defaultValue: baseUrl,
+      requireProductionOverride: false,
     );
     final wsScheme = baseUri.scheme == 'https' ? 'wss' : 'ws';
     return baseUri.replace(
@@ -79,10 +81,11 @@ class ApiConfig {
   static Uri _configuredBaseUri({
     required String envName,
     required String defaultValue,
+    required bool requireProductionOverride,
   }) {
     final configuredValue = _environmentValue(envName);
     final candidate = configuredValue.isEmpty ? defaultValue : configuredValue;
-    if (configuredValue.isEmpty && _isProduction) {
+    if (configuredValue.isEmpty && _isProduction && requireProductionOverride) {
       throw StateError('$envName must be provided for production builds.');
     }
 
@@ -108,6 +111,39 @@ class ApiConfig {
   }
 
   static String _environmentValue(String name) {
-    return const String.fromEnvironment(name, defaultValue: '').trim();
+    switch (name) {
+      case 'API_BASE_URL':
+        return const String.fromEnvironment(
+          'API_BASE_URL',
+          defaultValue: '',
+        ).trim();
+      case 'WS_BASE_URL':
+        return const String.fromEnvironment(
+          'WS_BASE_URL',
+          defaultValue: '',
+        ).trim();
+      case 'AWS_REGION':
+        return const String.fromEnvironment(
+          'AWS_REGION',
+          defaultValue: '',
+        ).trim();
+      case 'COGNITO_USER_POOL_ID':
+        return const String.fromEnvironment(
+          'COGNITO_USER_POOL_ID',
+          defaultValue: '',
+        ).trim();
+      case 'COGNITO_CLIENT_ID':
+        return const String.fromEnvironment(
+          'COGNITO_CLIENT_ID',
+          defaultValue: '',
+        ).trim();
+      case 'FIREBASE_WEB_VAPID_KEY':
+        return const String.fromEnvironment(
+          'FIREBASE_WEB_VAPID_KEY',
+          defaultValue: '',
+        ).trim();
+      default:
+        throw StateError('Unsupported environment variable lookup: $name');
+    }
   }
 }
