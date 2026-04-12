@@ -37,16 +37,7 @@ class _HelperHomePageState extends State<HelperHomePage> {
       return;
     }
 
-    // Parse the base URL to correctly switch scheme from http -> ws / https -> wss
-    final baseUri = Uri.parse(ApiConfig.baseUrl);
-    final wsScheme = baseUri.scheme == 'https' ? 'wss' : 'ws';
-
-    // Connect to /api/v1/ws with token param
-    final uri = baseUri.replace(
-      scheme: wsScheme,
-      path: '/api/v1/ws',
-      queryParameters: {'token': token},
-    );
+    final uri = ApiConfig.webSocketUri(queryParameters: {'token': token});
 
     try {
       _channel = WebSocketChannel.connect(uri);

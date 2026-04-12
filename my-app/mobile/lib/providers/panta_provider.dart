@@ -132,7 +132,7 @@ class PantaProvider extends ChangeNotifier {
 
     try {
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/api/v1/requests'),
+        ApiConfig.apiUri('/api/v1/requests'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -164,7 +164,7 @@ class PantaProvider extends ChangeNotifier {
 
     final request = http.MultipartRequest(
       'POST',
-      Uri.parse('${ApiConfig.baseUrl}/api/v1/uploads/request-image'),
+      ApiConfig.apiUri('/api/v1/uploads/request-image'),
     );
     request.headers['Authorization'] = 'Bearer $token';
     request.files.add(
@@ -268,7 +268,7 @@ class PantaProvider extends ChangeNotifier {
 
     try {
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/api/v1/requests'),
+        ApiConfig.apiUri('/api/v1/requests'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -298,7 +298,7 @@ class PantaProvider extends ChangeNotifier {
 
     try {
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/api/v1/requests/accept'),
+        ApiConfig.apiUri('/api/v1/requests/accept'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -319,7 +319,7 @@ class PantaProvider extends ChangeNotifier {
 
     try {
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/api/v1/requests/complete'),
+        ApiConfig.apiUri('/api/v1/requests/complete'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -340,7 +340,7 @@ class PantaProvider extends ChangeNotifier {
 
     try {
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/api/v1/requests/cancel'),
+        ApiConfig.apiUri('/api/v1/requests/cancel'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -361,7 +361,7 @@ class PantaProvider extends ChangeNotifier {
 
     try {
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/api/v1/requests/rate'),
+        ApiConfig.apiUri('/api/v1/requests/rate'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',

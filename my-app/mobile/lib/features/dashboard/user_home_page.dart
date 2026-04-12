@@ -35,19 +35,7 @@ class _UserHomePageState extends State<UserHomePage> {
     final token = await AuthService().getToken();
     if (token == null) return;
 
-    // Convert http(s) to ws(s)
-    String wsUrl = ApiConfig.baseUrl.replaceAll('http', 'ws');
-    // Ensure we handle https -> wss
-    if (ApiConfig.baseUrl.startsWith('https')) {
-      wsUrl = ApiConfig.baseUrl.replaceAll('https', 'wss');
-    }
-
-    // Connect to /api/v1/ws with token param as a fallback/simpler auth for WS
-    // Note: IOClient supports headers, but ensuring cross-platform compat with query params is safer
-    // unless standard library prevents headers cleanly.
-    // But our backend supports query param 'token' now.
-    final uri = Uri.parse('$wsUrl/api/v1/ws')
-        .replace(queryParameters: {'token': token});
+    final uri = ApiConfig.webSocketUri(queryParameters: {'token': token});
 
     try {
       _channel = WebSocketChannel.connect(uri);
