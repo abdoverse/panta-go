@@ -1,3 +1,6 @@
+import 'dart:math' as math;
+
+import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import '../../providers/panta_provider.dart';
 import '../../core/theme/app_theme.dart';
@@ -602,9 +605,21 @@ class _JobCard extends StatelessWidget {
                       Expanded(
                         child: OutlinedButton(
                           onPressed: () async {
-                            await context
+                            final completed = await context
                                 .read<PantaProvider>()
                                 .completeRequest(job.id);
+                            if (!context.mounted) return;
+                            if (!completed) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content:
+                                      Text("Could not complete this pickup."),
+                                ),
+                              );
+                              return;
+                            }
+                            await _showCompletionCelebration(
+                                context, job.title);
                             if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
@@ -620,6 +635,122 @@ class _JobCard extends StatelessWidget {
               ],
             ),
           )
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showCompletionCelebration(
+    BuildContext context,
+    String jobTitle,
+  ) async {
+    final controller = ConfettiController(
+      duration: const Duration(seconds: 2),
+    );
+    controller.play();
+
+    final dialogFuture = showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) => _CompletionCelebrationDialog(
+        controller: controller,
+        jobTitle: jobTitle,
+      ),
+    );
+
+    await Future.delayed(const Duration(seconds: 2));
+    if (context.mounted &&
+        Navigator.of(context, rootNavigator: true).canPop()) {
+      Navigator.of(context, rootNavigator: true).pop();
+    }
+    await dialogFuture;
+    controller.dispose();
+  }
+}
+
+class _CompletionCelebrationDialog extends StatelessWidget {
+  final ConfettiController controller;
+  final String jobTitle;
+
+  const _CompletionCelebrationDialog({
+    required this.controller,
+    required this.jobTitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      child: Stack(
+        alignment: Alignment.topCenter,
+        children: [
+          Container(
+            margin: const EdgeInsets.only(top: 40),
+            padding: const EdgeInsets.fromLTRB(24, 56, 24, 24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(28),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: const BoxDecoration(
+                    color: AppTheme.accentLeaf,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.celebration_rounded,
+                    color: AppTheme.primaryGreen,
+                    size: 38,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Pickup completed!',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  jobTitle,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: AppTheme.primaryGreen,
+                        fontWeight: FontWeight.w600,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Nice work. This pickup is now marked as completed.',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+          ConfettiWidget(
+            confettiController: controller,
+            blastDirectionality: BlastDirectionality.explosive,
+            shouldLoop: false,
+            emissionFrequency: 0.08,
+            numberOfParticles: 24,
+            gravity: 0.18,
+            minBlastForce: 8,
+            maxBlastForce: 18,
+            colors: const [
+              AppTheme.primaryGreen,
+              Color(0xFFF59E0B),
+              Color(0xFF60A5FA),
+              Color(0xFFFB7185),
+            ],
+            blastDirection: -math.pi / 2,
+          ),
         ],
       ),
     );

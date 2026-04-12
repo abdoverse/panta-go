@@ -444,9 +444,9 @@ class PantaProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> completeRequest(String id) async {
+  Future<bool> completeRequest(String id) async {
     final token = await _authService.getToken();
-    if (token == null) return;
+    if (token == null) return false;
 
     try {
       final response = await http.post(
@@ -459,10 +459,12 @@ class PantaProvider extends ChangeNotifier {
       );
       if (response.statusCode == 200) {
         await fetchRequests();
+        return true;
       }
     } catch (e) {
       debugPrint('Error completing request: $e');
     }
+    return false;
   }
 
   Future<void> cancelRequest(String id) async {
