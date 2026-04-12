@@ -56,7 +56,7 @@ test('requests table exposes ownership and access query indexes', () => {
   });
 });
 
-test('backend service uses safer deployment defaults and structured logging retention', () => {
+test('backend service stays on the minimum safe ECS Express footprint', () => {
   const app = new cdk.App();
   const stack = new InfraStack(app, 'MyTestStack');
   const template = Template.fromStack(stack);
@@ -96,7 +96,8 @@ test('backend service uses safer deployment defaults and structured logging rete
     logicalId.includes('TuneManagedTargetGroupDraining'),
   );
   expect(targetGroupResourceEntries).toHaveLength(1);
-  expect(JSON.stringify(targetGroupResourceEntries[0][1])).toContain(
+  const serializedDrainingConfig = JSON.stringify(targetGroupResourceEntries[0][1]);
+  expect(serializedDrainingConfig).toContain(
     '\\"deregistration_delay.timeout_seconds\\",\\"Value\\":\\"15\\"',
   );
 });

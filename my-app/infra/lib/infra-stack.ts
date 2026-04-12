@@ -26,6 +26,7 @@ export class InfraStack extends cdk.Stack {
     const logRetentionDays = logs.RetentionDays.ONE_DAY;
     const deploymentMaximumPercent = 100;
     const deploymentMinimumHealthyPercent = 0;
+    const targetGroupDeregistrationDelaySeconds = '15';
 
     const backendAsset = new assets.DockerImageAsset(this, 'BackendAsset', {
       directory: path.join(__dirname, '../../backend'),
@@ -239,7 +240,7 @@ export class InfraStack extends cdk.Stack {
             Attributes: [
               {
                 Key: 'deregistration_delay.timeout_seconds',
-                Value: '15',
+                Value: targetGroupDeregistrationDelaySeconds,
               },
             ],
           },
@@ -255,7 +256,7 @@ export class InfraStack extends cdk.Stack {
             Attributes: [
               {
                 Key: 'deregistration_delay.timeout_seconds',
-                Value: '15',
+                Value: targetGroupDeregistrationDelaySeconds,
               },
             ],
           },
