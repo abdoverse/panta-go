@@ -381,7 +381,10 @@ class PantaProvider extends ChangeNotifier {
 
   Future<void> fetchRequests({bool silent = false}) async {
     final token = await _authService.getToken();
-    if (token == null) return;
+    if (token == null) {
+      _clearAuthenticatedState();
+      return;
+    }
 
     if (!silent) {
       _isLoading = true;
