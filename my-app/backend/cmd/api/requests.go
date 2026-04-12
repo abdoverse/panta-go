@@ -208,6 +208,21 @@ func listHelperAccessibleRequests(ctx context.Context, helperID string) ([]Recyc
 		return nil, err
 	}
 
+	cancelledRequests, err := queryRequests(ctx, &dynamodb.QueryInput{
+		TableName:              aws.String(tableName),
+		IndexName:              aws.String(requestsByStatusIndexName),
+		KeyConditionExpression: aws.String("#status = :cancelled"),
+		ExpressionAttributeNames: map[string]string{
+			"#status": "status",
+		},
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":cancelled": &types.AttributeValueMemberS{Value: "cancelled"},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	assignedRequests, err := queryRequests(ctx, &dynamodb.QueryInput{
 		TableName:              aws.String(tableName),
 		IndexName:              aws.String(requestsByHelperIndexName),
@@ -221,7 +236,7 @@ func listHelperAccessibleRequests(ctx context.Context, helperID string) ([]Recyc
 	}
 
 	return mergeRequestsByID(
-		filterHelperVisiblePendingRequests(pendingRequests, helperID),
+		filterHelperVisiblePendingRequests(append(pendingRequests, cancelledRequests...), helperID),
 		filterHelperAssignedRequests(assignedRequests, helperID),
 	), nil
 }
@@ -229,7 +244,7 @@ func listHelperAccessibleRequests(ctx context.Context, helperID string) ([]Recyc
 func filterHelperVisiblePendingRequests(requests []RecyclingRequest, helperID string) []RecyclingRequest {
 	filtered := make([]RecyclingRequest, 0, len(requests))
 	for _, request := range requests {
-		if !strings.EqualFold(strings.TrimSpace(request.Status), "pending") {
+		if !requestReturnsToHelperPool(request) {
 			continue
 		}
 		if helperHasCancelledRequest(request.CanceledHelperIDs, helperID) {
@@ -239,6 +254,14 @@ func filterHelperVisiblePendingRequests(requests []RecyclingRequest, helperID st
 		filtered = append(filtered, request)
 	}
 	return filtered
+}
+
+func requestReturnsToHelperPool(request RecyclingRequest) bool {
+	status := strings.TrimSpace(request.Status)
+	if strings.EqualFold(status, "pending") {
+		return true
+	}
+	return strings.EqualFold(status, "cancelled") && strings.TrimSpace(request.HelperID) == ""
 }
 
 func helperHasCancelledRequest(cancelledHelperIDs []string, helperID string) bool {
