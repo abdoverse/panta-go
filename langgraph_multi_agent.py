@@ -849,6 +849,17 @@ def normalize_active_backlog_metadata(backlog: list[BacklogItem]) -> list[Backlo
     return backlog
 
 
+def reset_item_to_approved(item: BacklogItem, progress_note: str) -> None:
+    item["status"] = "approved"
+    item["owner_agent"] = ""
+    item["started_at"] = ""
+    item["last_heartbeat_at"] = ""
+    item["last_progress_at"] = now_iso()
+    item["blocked_reason"] = ""
+    item["agent_updates"] = []
+    item["progress_note"] = progress_note
+
+
 def recover_stalled_items(backlog: list[BacklogItem]) -> list[BacklogItem]:
     recovered_at = now_iso()
     for item in backlog:
@@ -857,16 +868,10 @@ def recover_stalled_items(backlog: list[BacklogItem]) -> list[BacklogItem]:
         if not should_recover_item(item):
             continue
         previous_owner = item["owner_agent"] or assigned_agent_for_item(item)
-        item["status"] = "approved"
-        item["owner_agent"] = ""
-        item["started_at"] = ""
-        item["last_heartbeat_at"] = ""
-        item["last_progress_at"] = ""
-        item["blocked_reason"] = ""
-        item["agent_updates"] = []
-        item["progress_note"] = (
+        reset_item_to_approved(
+            item,
             f"Recovered stale claim from {previous_owner} at {recovered_at}; "
-            "awaiting explicit re-approval or reassignment."
+            "awaiting explicit re-approval or reassignment.",
         )
     return backlog
 
@@ -1268,15 +1273,30 @@ def mark_no_change_stalls(
             continue
         if age < NO_LOCAL_CHANGE_BLOCK_MINUTES:
             continue
-        item["status"] = "approved"
-        item["owner_agent"] = ""
-        item["started_at"] = ""
-        item["last_heartbeat_at"] = ""
-        item["last_progress_at"] = now_iso()
-        item["blocked_reason"] = ""
-        item["agent_updates"] = []
-        item["progress_note"] = (
-            "Approved and ready, but returned from a synthetic claim because no real worker started task-relevant repository edits."
+        reset_item_to_approved(
+            item,
+            "Approved and ready, but returned from a synthetic claim because no real worker started task-relevant repository edits.",
+        )
+    return backlog
+
+
+def demote_inactive_in_progress_items(
+    backlog: list[BacklogItem], project_path: Path
+) -> list[BacklogItem]:
+    launches = refresh_worker_launches(project_path)
+    running_item_ids = {
+        item_id for item_id, launch in launches.items() if launch["status"] == "running"
+    }
+    for item in backlog:
+        if item["status"] != "in_progress":
+            continue
+        if relevant_changed_paths(project_path, item):
+            continue
+        if item["id"] in running_item_ids:
+            continue
+        reset_item_to_approved(
+            item,
+            "Previous real worker no longer has live task-relevant repository edits; relaunching automatically.",
         )
     return backlog
 
@@ -2409,6 +2429,7 @@ def run_once(
         result.get("reports", []),
         project_path,
     )
+    backlog = demote_inactive_in_progress_items(backlog, project_path)
     delivery_item = None
     if delivery_candidate_id is not None:
         delivery_item = next(
