@@ -145,39 +145,11 @@ export class InfraStack extends cdk.Stack {
     expressService.node.addDependency(backendAsset);
 
     const deploymentTuningVersion = backendAsset.imageUri;
-
-    const describeManagedService = new cr.AwsCustomResource(this, 'DescribeManagedEcsService', {
-      onCreate: {
-        service: 'ECS',
-        action: 'describeServices',
-        parameters: {
-          cluster: 'default',
-          services: [expressService.attrServiceArn],
-        },
-        physicalResourceId: cr.PhysicalResourceId.of(
-          `describe-managed-service-${deploymentTuningVersion}`,
-        ),
-      },
-      onUpdate: {
-        service: 'ECS',
-        action: 'describeServices',
-        parameters: {
-          cluster: 'default',
-          services: [expressService.attrServiceArn],
-        },
-        physicalResourceId: cr.PhysicalResourceId.of(
-          `describe-managed-service-${deploymentTuningVersion}`,
-        ),
-      },
-      policy: cr.AwsCustomResourcePolicy.fromSdkCalls({
-        resources: cr.AwsCustomResourcePolicy.ANY_RESOURCE,
-      }),
-      outputPaths: ['services.0.loadBalancers.0.targetGroupArn'],
-    });
-    describeManagedService.node.addDependency(expressService);
-
-    const managedTargetGroupArn = describeManagedService.getResponseField(
-      'services.0.loadBalancers.0.targetGroupArn',
+    const managedTargetGroupArn = cdk.Fn.select(
+      0,
+      cdk.Token.asList(
+        expressService.getAtt('ECSManagedResourceArns.IngressPath.TargetGroupArns'),
+      ),
     );
 
     const tuneManagedTargetGroupHealthCheck = new cr.AwsCustomResource(
@@ -308,9 +280,9 @@ export class InfraStack extends cdk.Stack {
       },
     );
 
-    tuneManagedTargetGroupHealthCheck.node.addDependency(describeManagedService);
-    tuneManagedTargetGroupDraining.node.addDependency(describeManagedService);
-    tuneManagedEcsDeployment.node.addDependency(describeManagedService);
+    tuneManagedTargetGroupHealthCheck.node.addDependency(expressService);
+    tuneManagedTargetGroupDraining.node.addDependency(expressService);
+    tuneManagedEcsDeployment.node.addDependency(expressService);
     tuneManagedEcsDeployment.node.addDependency(tuneManagedTargetGroupHealthCheck);
     tuneManagedEcsDeployment.node.addDependency(tuneManagedTargetGroupDraining);
 
