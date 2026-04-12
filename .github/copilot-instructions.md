@@ -18,3 +18,17 @@
 
 - Avoid Android emulators by default on this project because they are heavy on this machine.
 - Avoid the Linux desktop target unless the local linker/toolchain issue has been resolved.
+
+## Agent backlog workflow
+
+- The project backlog lives in `.copilot/agent-backlog.txt`.
+- Completed work moves to `.copilot/agent-done.txt`.
+- The current roadmap/plan lives in `.copilot/agent-plan.md`.
+- When another useful plan exists, copy it into `.copilot/agent-plan.md` and continue from there instead of flattening it into backlog text automatically.
+- Users approve work by editing `.copilot/agent-backlog.txt` and changing an item's status to `approved`.
+- The agent must read `.copilot/agent-plan.md` before continuing work and keep it updated as work progresses.
+- When approved work is completed, remove it from `.copilot/agent-backlog.txt`, append it to `.copilot/agent-done.txt`, and remove or mark it complete in `.copilot/agent-plan.md`.
+
+## Agent delivery workflow
+
+- After an approved feature is implemented and validated, the agent must create a git commit and push it to the remote `master` branch.

@@ -1,0 +1,13 @@
+# Agent Backlog
+# Managed by langgraph_multi_agent.py.
+# Approve work by changing an item's status from pending to approved.
+# Active status values: pending, approved, in_progress
+
+## backend
+(empty)
+
+## frontend
+(empty)
+
+## both
+(empty)

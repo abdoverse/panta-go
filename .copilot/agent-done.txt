@@ -1,0 +1,32 @@
+# Agent Done
+# Completed backlog items moved here automatically by langgraph_multi_agent.py.
+# Status values: done
+
+## backend
+1 | done | Refactor `lib/infra-stack.ts` to define IAM roles, log group, and ECS Express service.
+  Problem:
+  Migrate `panta-go/my-app/infra` from the current `ApplicationLoadBalancedFargateService` deployment to AWS-supported ECS Express Mode while preserving the backend container build, DynamoDB access, Cognito setup, and useful stack outputs.
+  Approach:
+  Replace the hand-managed ECS/ALB/VPC service with `AWS::ECS::ExpressGatewayService` via CDK's `ecs.CfnExpressGatewayService`. Keep the backend Docker image asset, create the required ECS task execution and infrastructure IAM roles, preserve a task role for DynamoDB access, retain Cognito and DynamoDB resources, and switch outputs to the Express service endpoint.
+  Status:
+  Already implemented in `my-app/infra/lib/infra-stack.ts` via the Express roles/log group/service block at lines 91-155.
+
+3 | done | Rebuild, test, and synthesize the infra project to confirm the new template is valid.
+  Problem:
+  Migrate `panta-go/my-app/infra` from the current `ApplicationLoadBalancedFargateService` deployment to AWS-supported ECS Express Mode while preserving the backend container build, DynamoDB access, Cognito setup, and useful stack outputs.
+  Approach:
+  Replace the hand-managed ECS/ALB/VPC service with `AWS::ECS::ExpressGatewayService` via CDK's `ecs.CfnExpressGatewayService`. Keep the backend Docker image asset, create the required ECS task execution and infrastructure IAM roles, preserve a task role for DynamoDB access, retain Cognito and DynamoDB resources, and switch outputs to the Express service endpoint.
+  Status:
+  Confirmed with the existing infra validation surface: `npm test -- --runInBand`, `npm run build`, and `npm run cdk -- synth` all succeed.
+
+## frontend
+(empty)
+
+## both
+2 | done | Preserve application environment variables and outputs used by the backend/mobile app.
+  Problem:
+  Migrate `panta-go/my-app/infra` from the current `ApplicationLoadBalancedFargateService` deployment to AWS-supported ECS Express Mode while preserving the backend container build, DynamoDB access, Cognito setup, and useful stack outputs.
+  Approach:
+  Replace the hand-managed ECS/ALB/VPC service with `AWS::ECS::ExpressGatewayService` via CDK's `ecs.CfnExpressGatewayService`. Keep the backend Docker image asset, create the required ECS task execution and infrastructure IAM roles, preserve a task role for DynamoDB access, retain Cognito and DynamoDB resources, and switch outputs to the Express service endpoint.
+  Status:
+  Already present in `my-app/infra/lib/infra-stack.ts`: backend env vars are wired at lines 132-139 and the preserved stack outputs are defined at lines 304-332.
