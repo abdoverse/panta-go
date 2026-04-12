@@ -1,13 +1,20 @@
 # Agent Backlog
 # Managed by langgraph_multi_agent.py.
-# Last heartbeat at: 2026-04-12T17:27:36.223502+00:00
-# Loop status: idle | active_agents=0 | approved=0 | ready_approved=0 | pending=0 | in_progress=0 | done=11
+# Last heartbeat at: 2026-04-12T17:52:06.083108+00:00
+# Loop status: ready | active_agents=0 | approved=1 | ready_approved=1 | pending=0 | in_progress=0 | done=12
 # Approve work by changing an item's status from pending to approved.
 # Active status values: pending, approved, in_progress
 # Fields: id | status | priority | complexity | dependencies | title
 
 ## backend
-(empty)
+plan-51 | approved | high | medium | none | Optimize ECS Express deployment to the minimum safe footprint to reduce cost
+  Progress note: Approved and ready, but still waiting for a real worker to begin task-relevant repository edits.
+  Goal:
+  Reduce always-on infrastructure cost by tuning ECS Express capacity, task sizing, and related infra defaults down to the minimum safe production footprint.
+  Why:
+  Cost control is a top-priority operational task; oversized default ECS Express settings can burn cash before growth justifies them.
+  Likely files:
+  `my-app/infra/lib/infra-stack.ts`, ECS service/task definitions, autoscaling settings, environment sizing config, deployment defaults.
 
 ## frontend
 (empty)
@@ -17,6 +24,10 @@
 
 # Recently completed (read-only summary; canonical archive is .copilot/agent-done.txt)
 # Fields: id | status | priority | complexity | dependencies | title
+#
+# plan-50 | done | high | medium | none | Fix cancelled pickups not returning to the available helper pool
+#   Progress note: tester [done]: Validation passed and the task was committed, pushed, and deployed.
+#   Last progress at: 2026-04-12T17:52:06.083016+00:00
 #
 # plan-3 | done | high | medium | none | Add backend tests and production safety rails
 #   Progress note: tester [done]: Validation passed and the task was delivered to git.
@@ -33,8 +44,4 @@
 # plan-7 | done | medium | medium | plan-1,plan-4 | Add saved addresses and reusable request templates
 #   Progress note: tester [done]: Validation passed and the task was delivered to git.
 #   Last progress at: 2026-04-12T16:07:16.804691+00:00
-#
-# plan-4 | done | medium | medium | plan-5 | Slim down mobile state management
-#   Progress note: tester [done]: Validation passed and the task was delivered to git.
-#   Last progress at: 2026-04-12T15:51:55.574647+00:00
 #

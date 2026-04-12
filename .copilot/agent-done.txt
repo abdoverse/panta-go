@@ -4,6 +4,31 @@
 # Fields: id | status | priority | complexity | dependencies | title
 
 ## backend
+plan-50 | done | high | medium | none | Fix cancelled pickups not returning to the available helper pool
+  Owner agent: backend_dev
+  Started at: 2026-04-12T17:51:19.753068+00:00
+  Last heartbeat at: 2026-04-12T17:52:06.083016+00:00
+  Last progress at: 2026-04-12T17:52:06.083016+00:00
+  Progress note: tester [done]: Validation passed and the task was committed, pushed, and deployed.
+  Agent activity: tester | 2026-04-12T17:52:06.069068+00:00 | validation | Running the existing validation commands after backend implementation handoff. | cd my-app/mobile && flutter test
+  Agent activity: backend_dev | 2026-04-12T17:51:41.834698+00:00 | working | Found cancellation flow and helper pool |
+  Agent activity: backend_dev | 2026-04-12T17:51:36.189637+00:00 | working | Found cancellation flow and helper pool |
+  Agent activity: backend_dev | 2026-04-12T17:51:29.913569+00:00 | working | Found cancellation flow and helper pool |
+  Agent activity: backend_dev | 2026-04-12T17:51:21.206473+00:00 | working | Found cancellation flow and helper pool |
+  Agent activity: backend_dev | 2026-04-12T17:51:17.094427+00:00 | working | Found cancellation flow and helper pool |
+  Agent activity: backend_dev | 2026-04-12T17:51:06.335306+00:00 | working | Found cancellation flow and helper pool |
+  Agent activity: backend_dev | 2026-04-12T17:51:06.335306+00:00 | working | Found cancellation flow and helper pool |
+  Agent activity: backend_dev | 2026-04-12T17:50:54.536170+00:00 | assigned | Investigating backend pickup cancellation |
+  Agent activity: backend_dev | 2026-04-12T17:50:54.536170+00:00 | assigned | Investigating backend pickup cancellation |
+  Agent activity: backend_dev | 2026-04-12T17:50:49.938116+00:00 | assigned | Investigating backend pickup cancellation |
+  Agent activity: backend_dev | 2026-04-12T17:50:46.648077+00:00 | assigned | Investigating backend pickup cancellation |
+  Goal:
+  Ensure that when a pickup is cancelled, it is correctly reclassified and becomes visible again in the available pool when business rules allow it.
+  Why:
+  This is a core marketplace correctness bug. If cancelled pickups disappear instead of returning to the pool, supply-demand flow breaks and it should be fixed before new feature work.
+  Likely files:
+  pickup/request status models, cancellation handlers, pool eligibility queries, request list APIs, helper marketplace/provider filtering logic.
+
 plan-3 | done | high | medium | none | Add backend tests and production safety rails
   Owner agent: backend_dev
   Started at: 2026-04-12T17:18:51.611842+00:00
