@@ -45,7 +45,7 @@
 - If a worker believes its assigned task is implemented or effectively complete, it must emit a final `ORCH_REPORT` with `state=ready_for_validation` or `state=done` instead of silently exiting.
 - Every worker session must end with a final structured report line: `ready_for_validation`, `done`, or `blocked`. Silent exits are always a worker failure.
 - The orchestrator must honor those final worker reports: `ready_for_validation` should advance the item to validation, and `done` should close the item when no additional task-relevant changes are pending.
-- If a worker exits repeatedly without any structured progress/completion report beyond the initial assignment checkpoint, the orchestrator must stop silent thrashing, record a clear worker-reporting failure, and pause automatic relaunches for that item until the failure is addressed.
+- If a worker exits repeatedly without any structured progress/completion report beyond the initial assignment checkpoint, the orchestrator must stop silent thrashing, record a clear worker-reporting failure that says no progress/completion checkpoint beyond `state=assigned` was seen, and pause automatic relaunches for that item until the failure is addressed.
 - The loop may work on up to **3 non-colliding in-progress items at a time**.
 - Use declared dependencies to prevent conflicting work, and mention relevant dependencies explicitly in the task instruction when they matter.
 - When one in-progress item finishes, the loop should pick the next ready **highest-priority** approved item whose dependencies are already satisfied.
@@ -58,6 +58,7 @@
 - An `in_progress` task with no task-relevant local code changes after a short grace period must be treated as a **synthetic claim**, returned to `approved`, and annotated as waiting for a real worker. The loop must never keep that state as healthy `in_progress`.
 - The "waiting for a real worker" note is a short-lived launch state, not an acceptable steady state. The loop must respond by launching a real worker and then either claim the task once edits appear or surface that the worker exited without producing task-relevant changes.
 - A freshly launched worker must get a real startup grace window before quiet-poll termination. Do not mark it stale or kill it just because the first model response takes a few polls to appear.
+- Quiet-poll liveness must advance once per watcher pass, not multiple times from repeated launch-state refreshes inside the same pass.
 - If a worker is still running but produces no new log activity across repeated watcher polls and no task-relevant edits appear, the loop should treat it as inactive and relaunch automatically.
 - Tester work must not start until task-relevant implementation changes exist for the item being validated.
 - Heartbeat-only watcher passes must not overwrite a real blocked/progress state with synthetic validation-prep or handoff text.
@@ -75,6 +76,8 @@
 
 ## Agent delivery workflow
 
-- After an approved feature is implemented and validated, the agent must create a git commit and push it to the remote `main` branch.
-- When tester validation approves the work, the agent must complete the delivery chain without pausing at a local-only state: commit, push to `main`, and deploy using the existing project deployment path.
+- After an approved feature is implemented and validated, the agent must create a git commit and push it to the remote `main` branch as part of that task's delivery.
+- Deployment is triggered by **task completion**, not by arbitrary or intermediate git commits. Do not deploy for partial checkpoints or unrelated manual commits.
+- When tester validation approves the work, the agent must complete the delivery chain for that completed task without pausing at a local-only state: commit, push to `main`, and deploy using the existing project deployment path.
+- The existing deployment path for this repo is `bash my-app/infra/deploy.sh` from the repo root. Treat deployment failure as delivery failure; do not mark the task done until that command succeeds.
 - A task is not complete just because it reached `.copilot/agent-done.txt`; the loop must not treat backlog archival as finished delivery unless git commit delivery also succeeded.

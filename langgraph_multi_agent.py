@@ -1182,7 +1182,7 @@ def apply_agent_reports_to_backlog(
         ):
             item["blocked_reason"] = ""
             item["progress_note"] = (
-                "tester [validated]: Validation passed; preparing git commit delivery."
+                "tester [validated]: Validation passed; preparing commit, push, and deploy."
             )
             item["last_progress_at"] = update_time
             delivery_candidate_id = item["id"]
@@ -1258,6 +1258,31 @@ def commit_completed_item(
     if commit_completed.returncode != 0:
         return False, (commit_completed.stderr or commit_completed.stdout).strip()
 
+    push_completed = subprocess.run(
+        ["git", "push", "origin", "HEAD:main"],
+        cwd=project_path,
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    if push_completed.returncode != 0:
+        return False, f"git push failed: {(push_completed.stderr or push_completed.stdout).strip()}"
+
+    deploy_script = project_path / "my-app/infra/deploy.sh"
+    if not deploy_script.exists():
+        return False, f"Deployment script not found: {deploy_script}"
+
+    deploy_completed = subprocess.run(
+        ["bash", str(deploy_script)],
+        cwd=project_path,
+        capture_output=True,
+        text=True,
+        timeout=1800,
+    )
+    if deploy_completed.returncode != 0:
+        deploy_output = (deploy_completed.stderr or deploy_completed.stdout).strip()
+        return False, f"deployment failed: {deploy_output}"
+
     sha_completed = subprocess.run(
         ["git", "rev-parse", "HEAD"],
         cwd=project_path,
@@ -1266,8 +1291,8 @@ def commit_completed_item(
         timeout=10,
     )
     if sha_completed.returncode != 0:
-        return True, "committed"
-    return True, sha_completed.stdout.strip()
+        return True, "committed, pushed, and deployed"
+    return True, f"{sha_completed.stdout.strip()} (pushed and deployed)"
 
 
 def ready_approved_items(backlog: list[BacklogItem]) -> list[BacklogItem]:
@@ -1881,7 +1906,9 @@ def worker_log_note(launch: WorkerLaunch) -> str:
     return "Worker exited without a usable log summary."
 
 
-def refresh_worker_launches(project_path: Path) -> dict[str, WorkerLaunch]:
+def refresh_worker_launches(
+    project_path: Path, increment_quiet_polls: bool = False
+) -> dict[str, WorkerLaunch]:
     launches = load_worker_launches(project_path)
     for launch in launches.values():
         launch["status"] = "running" if pid_is_running(launch["pid"]) else "finished"
@@ -1905,7 +1932,7 @@ def refresh_worker_launches(project_path: Path) -> dict[str, WorkerLaunch]:
             launch["last_step_action"] = last_step_action
             launch["last_step_detail"] = last_step_detail
             launch["quiet_polls"] = 0
-        elif launch["status"] == "running":
+        elif increment_quiet_polls and launch["status"] == "running":
             launch["quiet_polls"] = launch.get("quiet_polls", 0) + 1
     save_worker_launches(project_path, launches)
     return launches
@@ -1978,8 +2005,9 @@ def mark_worker_reporting_failure(
         "Worker failed to emit a structured completion/progress report; automatic relaunch paused.",
         (
             "Worker reporting failure: "
-            f"{launch['agent_key']} exited or stayed quiet without any `{WORKER_REPORT_PREFIX}` "
-            f"checkpoint after {launch['attempt_count']} launches. Inspect {log_path}."
+            f"{launch['agent_key']} exited or stayed quiet without any progress/completion "
+            f"checkpoint beyond `state=assigned` after {launch['attempt_count']} launches. "
+            f"Inspect {log_path}."
         ),
     )
 
@@ -1995,7 +2023,7 @@ def running_worker_count(project_path: Path, backlog: list[BacklogItem]) -> int:
 
 
 def reconcile_worker_launches(project_path: Path, backlog: list[BacklogItem]) -> dict[str, WorkerLaunch]:
-    launches = refresh_worker_launches(project_path)
+    launches = refresh_worker_launches(project_path, increment_quiet_polls=True)
     items_by_id = {item["id"]: item for item in backlog}
     changed = False
     for item_id, launch in list(launches.items()):
@@ -2914,7 +2942,7 @@ def run_once(
             delivery_item["status"] = "done"
             delivery_item["blocked_reason"] = ""
             delivery_item["progress_note"] = (
-                "tester [done]: Validation passed and the task was delivered to git."
+                "tester [done]: Validation passed and the task was committed, pushed, and deployed."
             )
             delivery_item["last_progress_at"] = now_iso()
             delivery_item["last_heartbeat_at"] = delivery_item["last_progress_at"]
@@ -2930,10 +2958,10 @@ def run_once(
         if not delivered and delivery_candidate_id is not None:
             delivery_item["status"] = "in_progress"
             delivery_item["blocked_reason"] = (
-                f"Validation passed, but git commit delivery failed: {delivery_message}"
+                f"Validation passed, but commit/push/deploy delivery failed: {delivery_message}"
             )
             delivery_item["progress_note"] = (
-                "tester [blocked]: Validation passed, but git commit delivery failed."
+                "tester [blocked]: Validation passed, but commit/push/deploy delivery failed."
             )
             delivery_item["last_progress_at"] = now_iso()
             delivery_item["last_heartbeat_at"] = delivery_item["last_progress_at"]
