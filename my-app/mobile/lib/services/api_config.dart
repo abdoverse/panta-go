@@ -31,7 +31,7 @@ class ApiConfig {
   }
 
   static String _requiredEnvironmentValue(String name) {
-    final value = const String.fromEnvironment(name, defaultValue: '').trim();
+    final value = String.fromEnvironment(name, defaultValue: '').trim();
     if (value.isEmpty) {
       throw StateError('$name must be provided at build time.');
     }
