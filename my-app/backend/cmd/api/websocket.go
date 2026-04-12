@@ -82,9 +82,9 @@ const (
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
-	// Determine if origin is allowed - allow all for now
 	CheckOrigin: func(r *http.Request) bool {
-		return true
+		origin := r.Header.Get("Origin")
+		return isAllowedOrigin(origin, r)
 	},
 }
 

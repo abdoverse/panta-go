@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/url"
+	"os"
+	"strings"
 )
 
 func jsonResponse(w http.ResponseWriter, status int, data interface{}) {
@@ -16,9 +19,15 @@ func errorIs(err error, target interface{}) bool {
 	return errors.As(err, target)
 }
 
+var configuredAllowedOrigins = loadConfiguredAllowedOrigins()
+
 func enableCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
+		if !applyCORSHeaders(w, r) {
+			http.Error(w, "Origin not allowed", http.StatusForbidden)
+			return
+		}
+
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
@@ -29,6 +38,50 @@ func enableCORS(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+func loadConfiguredAllowedOrigins() map[string]struct{} {
+	rawOrigins := strings.Split(os.Getenv("CORS_ALLOWED_ORIGINS"), ",")
+	allowed := make(map[string]struct{}, len(rawOrigins))
+
+	for _, rawOrigin := range rawOrigins {
+		origin := strings.TrimSpace(rawOrigin)
+		if origin == "" {
+			continue
+		}
+		allowed[origin] = struct{}{}
+	}
+
+	return allowed
+}
+
+func applyCORSHeaders(w http.ResponseWriter, r *http.Request) bool {
+	origin := strings.TrimSpace(r.Header.Get("Origin"))
+	if origin == "" {
+		return true
+	}
+
+	if !isAllowedOrigin(origin, r) {
+		return false
+	}
+
+	w.Header().Set("Access-Control-Allow-Origin", origin)
+	w.Header().Add("Vary", "Origin")
+	return true
+}
+
+func isAllowedOrigin(origin string, r *http.Request) bool {
+	parsedOrigin, err := url.Parse(origin)
+	if err != nil || parsedOrigin.Host == "" {
+		return false
+	}
+
+	if parsedOrigin.Host == r.Host && (parsedOrigin.Scheme == "http" || parsedOrigin.Scheme == "https") {
+		return true
+	}
+
+	_, ok := configuredAllowedOrigins[origin]
+	return ok
 }
 
 func registerRoutes(mux *http.ServeMux) {

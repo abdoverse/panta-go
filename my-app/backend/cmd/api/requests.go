@@ -40,8 +40,6 @@ func registerRequestRoutes(mux *http.ServeMux) {
 }
 
 func handleRequests(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-
 	switch r.Method {
 	case http.MethodGet:
 		handleListRequests(w, r)
