@@ -57,6 +57,7 @@
 - If an item is blocked, record the blocker explicitly so the watcher can surface it instead of looking passively healthy.
 - An `in_progress` task with no task-relevant local code changes after a short grace period must be treated as a **synthetic claim**, returned to `approved`, and annotated as waiting for a real worker. The loop must never keep that state as healthy `in_progress`.
 - The "waiting for a real worker" note is a short-lived launch state, not an acceptable steady state. The loop must respond by launching a real worker and then either claim the task once edits appear or surface that the worker exited without producing task-relevant changes.
+- A freshly launched worker must get a real startup grace window before quiet-poll termination. Do not mark it stale or kill it just because the first model response takes a few polls to appear.
 - If a worker is still running but produces no new log activity across repeated watcher polls and no task-relevant edits appear, the loop should treat it as inactive and relaunch automatically.
 - Tester work must not start until task-relevant implementation changes exist for the item being validated.
 - Heartbeat-only watcher passes must not overwrite a real blocked/progress state with synthetic validation-prep or handoff text.

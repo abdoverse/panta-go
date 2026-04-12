@@ -38,6 +38,7 @@ STALE_PROGRESS_MINUTES = 15
 CLAIM_TIMEOUT_MINUTES = 5
 NO_LOCAL_CHANGE_BLOCK_MINUTES = 2
 MAX_QUIET_LOG_POLLS = 3
+INITIAL_WORKER_STARTUP_QUIET_POLLS = 8
 WORKER_REPORT_PREFIX = "ORCH_REPORT|"
 WORKER_STEP_PREFIX = "ORCH_STEP|"
 MAX_UNREPORTED_WORKER_ATTEMPTS = 3
@@ -1633,8 +1634,27 @@ def normalize_worker_protocol_line(line: str) -> str:
     return re.sub(r"^[\s>*\-●]+", "", line.strip())
 
 
+def iter_worker_protocol_chunks(line: str) -> list[str]:
+    normalized = normalize_worker_protocol_line(line)
+    indexes: list[tuple[int, str]] = []
+    for prefix in (WORKER_REPORT_PREFIX, WORKER_STEP_PREFIX):
+        start = normalized.find(prefix)
+        while start != -1:
+            indexes.append((start, prefix))
+            start = normalized.find(prefix, start + len(prefix))
+    if not indexes:
+        return []
+    indexes.sort(key=lambda item: item[0])
+    chunks: list[str] = []
+    for idx, (start, _) in enumerate(indexes):
+        end = indexes[idx + 1][0] if idx + 1 < len(indexes) else len(normalized)
+        chunk = normalized[start:end].strip()
+        if chunk:
+            chunks.append(chunk)
+    return chunks
+
+
 def parse_worker_report_line(line: str) -> Optional[dict[str, str]]:
-    line = normalize_worker_protocol_line(line)
     if not line.startswith(WORKER_REPORT_PREFIX):
         return None
     payload: dict[str, str] = {}
@@ -1654,7 +1674,6 @@ def parse_worker_report_line(line: str) -> Optional[dict[str, str]]:
 
 
 def parse_worker_step_line(line: str) -> Optional[dict[str, str]]:
-    line = normalize_worker_protocol_line(line)
     if not line.startswith(WORKER_STEP_PREFIX):
         return None
     payload: dict[str, str] = {}
@@ -1810,17 +1829,21 @@ def read_worker_log_snapshot(
     last_step_action = launch["last_step_action"]
     last_step_detail = launch["last_step_detail"]
     for line in lines:
-        report = parse_worker_report_line(line)
-        if report is None:
-            step = parse_worker_step_line(line)
-            if step is None:
+        chunks = iter_worker_protocol_chunks(line)
+        if not chunks:
+            chunks = [normalize_worker_protocol_line(line)]
+        for chunk in chunks:
+            report = parse_worker_report_line(chunk)
+            if report is None:
+                step = parse_worker_step_line(chunk)
+                if step is None:
+                    continue
+                last_step_action = step["action"]
+                last_step_detail = step["detail"]
                 continue
-            last_step_action = step["action"]
-            last_step_detail = step["detail"]
-            continue
-        last_report_state = report["state"]
-        last_report_summary = report["summary"]
-        last_report_next = report["next"]
+            last_report_state = report["state"]
+            last_report_summary = report["summary"]
+            last_report_next = report["next"]
     if len(last_line) > 240:
         last_line = last_line[:237] + "..."
     return (
@@ -1907,6 +1930,12 @@ def worker_missing_structured_report(launch: WorkerLaunch) -> bool:
     return launch["last_report_state"].strip() in {"", "assigned"}
 
 
+def worker_in_startup_grace(launch: WorkerLaunch) -> bool:
+    return worker_missing_structured_report(launch) and not launch[
+        "last_step_action"
+    ].strip()
+
+
 def worker_reported_completion(launch: WorkerLaunch) -> bool:
     return launch["last_report_state"].strip() in {"ready_for_validation", "done"}
 
@@ -1985,7 +2014,12 @@ def reconcile_worker_launches(project_path: Path, backlog: list[BacklogItem]) ->
             sync_item_with_launch(project_path, item, launch)
             if relevant_changed_paths(project_path, item):
                 continue
-            if launch["quiet_polls"] < MAX_QUIET_LOG_POLLS:
+            quiet_poll_limit = (
+                INITIAL_WORKER_STARTUP_QUIET_POLLS
+                if worker_in_startup_grace(launch)
+                else MAX_QUIET_LOG_POLLS
+            )
+            if launch["quiet_polls"] < quiet_poll_limit:
                 continue
             stop_pid(launch["pid"])
             launch["status"] = "stalled"
@@ -2964,6 +2998,7 @@ def main() -> int:
             done_file=args.done_file,
         )
         has_active_backlog = any(item["status"] == "in_progress" for item in backlog)
+        has_running_workers = running_worker_count(project_path, backlog) > 0
         if signature != last_signature:
             run_once(args)
             last_signature = compute_workflow_signature(
@@ -2972,7 +3007,7 @@ def main() -> int:
                 plan_file=args.plan_file,
                 done_file=args.done_file,
             )
-        elif has_active_backlog:
+        elif has_active_backlog or has_running_workers:
             run_once(args, emit=False, heartbeat_only=True)
         time.sleep(max(args.poll_interval, 1))
 
