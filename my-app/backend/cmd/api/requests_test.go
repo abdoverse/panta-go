@@ -30,11 +30,12 @@ func TestFilterHelperVisiblePendingRequests(t *testing.T) {
 		{ID: "returned-but-blocked-for-current", Status: "pending", CanceledHelperIDs: []string{"helper-2"}},
 		{ID: "accepted", Status: "accepted", HelperID: helperID},
 		{ID: "cancelled-unassigned", Status: "cancelled"},
+		{ID: "cancelled-returned-from-helper", Status: "cancelled", HelperID: "helper-3", CanceledHelperIDs: []string{"helper-3"}},
 	}
 
 	filtered := filterHelperVisiblePendingRequests(requests, helperID)
-	if len(filtered) != 4 {
-		t.Fatalf("len(filterHelperVisiblePendingRequests()) = %d, want 4", len(filtered))
+	if len(filtered) != 5 {
+		t.Fatalf("len(filterHelperVisiblePendingRequests()) = %d, want 5", len(filtered))
 	}
 	if filtered[0].ID != "pool-pending" {
 		t.Fatalf("filtered[0].ID = %q, want %q", filtered[0].ID, "pool-pending")
@@ -47,6 +48,57 @@ func TestFilterHelperVisiblePendingRequests(t *testing.T) {
 	}
 	if filtered[3].ID != "cancelled-unassigned" {
 		t.Fatalf("filtered[3].ID = %q, want %q", filtered[3].ID, "cancelled-unassigned")
+	}
+	if filtered[4].ID != "cancelled-returned-from-helper" {
+		t.Fatalf("filtered[4].ID = %q, want %q", filtered[4].ID, "cancelled-returned-from-helper")
+	}
+}
+
+func TestRequestReturnsToHelperPool(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name    string
+		request RecyclingRequest
+		want    bool
+	}{
+		{
+			name:    "pending request",
+			request: RecyclingRequest{Status: "pending"},
+			want:    true,
+		},
+		{
+			name:    "cancelled unassigned request",
+			request: RecyclingRequest{Status: "cancelled"},
+			want:    true,
+		},
+		{
+			name:    "cancelled request returned by helper",
+			request: RecyclingRequest{Status: "cancelled", HelperID: "helper-1", CanceledHelperIDs: []string{"helper-1"}},
+			want:    true,
+		},
+		{
+			name:    "cancelled request with active helper",
+			request: RecyclingRequest{Status: "cancelled", HelperID: "helper-1"},
+			want:    false,
+		},
+		{
+			name:    "accepted request",
+			request: RecyclingRequest{Status: "accepted", HelperID: "helper-1"},
+			want:    false,
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := requestReturnsToHelperPool(tc.request)
+			if got != tc.want {
+				t.Fatalf("requestReturnsToHelperPool(%+v) = %t, want %t", tc.request, got, tc.want)
+			}
+		})
 	}
 }
 

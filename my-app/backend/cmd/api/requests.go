@@ -254,7 +254,18 @@ func requestReturnsToHelperPool(request RecyclingRequest) bool {
 	if strings.EqualFold(status, "pending") {
 		return true
 	}
-	return strings.EqualFold(status, "cancelled") && strings.TrimSpace(request.HelperID) == ""
+	if !strings.EqualFold(status, "cancelled") {
+		return false
+	}
+	return !requestHasActiveHelper(request)
+}
+
+func requestHasActiveHelper(request RecyclingRequest) bool {
+	helperID := strings.TrimSpace(request.HelperID)
+	if helperID == "" {
+		return false
+	}
+	return !helperHasCancelledRequest(request.CanceledHelperIDs, helperID)
 }
 
 func helperHasCancelledRequest(cancelledHelperIDs []string, helperID string) bool {
