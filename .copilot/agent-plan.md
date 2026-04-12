@@ -14,23 +14,9 @@ plan-3 | planned | high | medium | plan-2 | Add backend tests and production saf
   `my-app/backend/...`, `my-app/infra/lib/infra-stack.ts`, `my-app/infra/test/infra.test.ts`.
 
 ## frontend
-plan-4 | planned | medium | medium | plan-5 | Slim down mobile state management
-  Goal:
-  Reduce the responsibility of `PantaProvider` and separate auth, request, location, and realtime concerns.
-  Why:
-  The mobile state layer is still too central and will get harder to extend safely.
-  Likely files:
-  `my-app/mobile/lib/providers/panta_provider.dart`, `my-app/mobile/lib/services/*.dart`, feature screens.
+(empty)
 
 ## both
-plan-5 | planned | high | medium | none | Finish auth hardening and runtime configuration cleanup
-  Goal:
-  Tighten session restore/logout behavior and remove remaining production-sensitive runtime assumptions.
-  Why:
-  Some hardening work is done, but auth/session/runtime handling is still not fully closed out.
-  Likely files:
-  `my-app/mobile/lib/services/api_config.dart`, auth/session files, backend websocket/CORS surfaces.
-
 plan-6 | planned | medium | medium | plan-1,plan-4 | Add marketplace timeline and in-app activity visibility
   Goal:
   Show request lifecycle progress clearly and provide a stable in-app activity center.

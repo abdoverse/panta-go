@@ -1,7 +1,7 @@
 # Agent Backlog
 # Managed by langgraph_multi_agent.py.
-# Last heartbeat at: 2026-04-12T13:03:14.903171+00:00
-# Loop status: idle | active_agents=0 | approved=0 | ready_approved=0 | pending=0 | in_progress=0
+# Last heartbeat at: 2026-04-12T13:51:50.137586+00:00
+# Loop status: ready | active_agents=0 | approved=2 | ready_approved=1 | pending=0 | in_progress=0 | done=5
 # Approve work by changing an item's status from pending to approved.
 # Active status values: pending, approved, in_progress
 # Fields: id | status | priority | complexity | dependencies | title
@@ -10,7 +10,35 @@
 (empty)
 
 ## frontend
-(empty)
+plan-4 | approved | medium | medium | plan-5 | Slim down mobile state management
+  Goal:
+  Reduce the responsibility of `PantaProvider` and separate auth, request, location, and realtime concerns.
+  Why:
+  The mobile state layer is still too central and will get harder to extend safely.
+  Likely files:
+  `my-app/mobile/lib/providers/panta_provider.dart`, `my-app/mobile/lib/services/*.dart`, feature screens.
 
 ## both
-(empty)
+plan-5 | approved | high | medium | none | Finish auth hardening and runtime configuration cleanup
+  Last progress at: 2026-04-12T13:44:26.539387+00:00
+  Progress note: Approved and ready, but still waiting for a real worker to begin task-relevant repository edits.
+  Goal:
+  Tighten session restore/logout behavior and remove remaining production-sensitive runtime assumptions.
+  Why:
+  Some hardening work is done, but auth/session/runtime handling is still not fully closed out.
+  Likely files:
+  `my-app/mobile/lib/services/api_config.dart`, auth/session files, backend websocket/CORS surfaces.
+
+# Recently completed (read-only summary; canonical archive is .copilot/agent-done.txt)
+# Fields: id | status | priority | complexity | dependencies | title
+#
+# plan-2 | done | medium | large | none | Split the Go backend into maintainable modules
+#
+# plan-1 | done | high | large | none | Harden request ownership and query access
+#
+# 3 | done | medium | medium | none | Rebuild, test, and synthesize the infra project to confirm the new template is valid.
+#
+# 2 | done | medium | medium | none | Preserve application environment variables and outputs used by the backend/mobile app.
+#
+# 1 | done | medium | medium | none | Refactor `lib/infra-stack.ts` to define IAM roles, log group, and ECS Express service.
+#
