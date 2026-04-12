@@ -208,21 +208,6 @@ func listHelperAccessibleRequests(ctx context.Context, helperID string) ([]Recyc
 		return nil, err
 	}
 
-	cancelledRequests, err := queryRequests(ctx, &dynamodb.QueryInput{
-		TableName:              aws.String(tableName),
-		IndexName:              aws.String(requestsByStatusIndexName),
-		KeyConditionExpression: aws.String("#status = :cancelled"),
-		ExpressionAttributeNames: map[string]string{
-			"#status": "status",
-		},
-		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":cancelled": &types.AttributeValueMemberS{Value: "cancelled"},
-		},
-	})
-	if err != nil {
-		return nil, err
-	}
-
 	assignedRequests, err := queryRequests(ctx, &dynamodb.QueryInput{
 		TableName:              aws.String(tableName),
 		IndexName:              aws.String(requestsByHelperIndexName),
@@ -236,7 +221,7 @@ func listHelperAccessibleRequests(ctx context.Context, helperID string) ([]Recyc
 	}
 
 	return mergeRequestsByID(
-		filterHelperVisiblePendingRequests(append(pendingRequests, cancelledRequests...), helperID),
+		filterHelperVisiblePendingRequests(pendingRequests, helperID),
 		filterHelperAssignedRequests(assignedRequests, helperID),
 	), nil
 }
@@ -257,11 +242,7 @@ func filterHelperVisiblePendingRequests(requests []RecyclingRequest, helperID st
 }
 
 func requestReturnsToHelperPool(request RecyclingRequest) bool {
-	status := strings.TrimSpace(request.Status)
-	if strings.EqualFold(status, "pending") {
-		return true
-	}
-	return strings.EqualFold(status, "cancelled") && strings.TrimSpace(request.HelperID) == ""
+	return strings.EqualFold(strings.TrimSpace(request.Status), "pending")
 }
 
 func helperHasCancelledRequest(cancelledHelperIDs []string, helperID string) bool {

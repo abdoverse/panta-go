@@ -8,12 +8,13 @@ func TestFilterHelperVisiblePendingRequests(t *testing.T) {
 	helperID := "helper-2"
 	requests := []RecyclingRequest{
 		{ID: "pool-pending", Status: "pending"},
-		{ID: "returned-to-pool", Status: "cancelled"},
+		{ID: "returned-to-pool", Status: "pending"},
 		{ID: "cancelled-but-assigned", Status: "cancelled", HelperID: "helper-3"},
 		{ID: "cancelled-by-other", Status: "pending", CanceledHelperIDs: []string{"helper-1"}},
 		{ID: "cancelled-by-current", Status: "pending", CanceledHelperIDs: []string{"helper-2"}},
-		{ID: "returned-but-blocked-for-current", Status: "cancelled", CanceledHelperIDs: []string{"helper-2"}},
+		{ID: "returned-but-blocked-for-current", Status: "pending", CanceledHelperIDs: []string{"helper-2"}},
 		{ID: "accepted", Status: "accepted", HelperID: helperID},
+		{ID: "cancelled-unassigned", Status: "cancelled"},
 	}
 
 	filtered := filterHelperVisiblePendingRequests(requests, helperID)
