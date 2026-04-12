@@ -18,8 +18,8 @@ func TestFilterHelperVisiblePendingRequests(t *testing.T) {
 	}
 
 	filtered := filterHelperVisiblePendingRequests(requests, helperID)
-	if len(filtered) != 3 {
-		t.Fatalf("len(filterHelperVisiblePendingRequests()) = %d, want 3", len(filtered))
+	if len(filtered) != 4 {
+		t.Fatalf("len(filterHelperVisiblePendingRequests()) = %d, want 4", len(filtered))
 	}
 	if filtered[0].ID != "pool-pending" {
 		t.Fatalf("filtered[0].ID = %q, want %q", filtered[0].ID, "pool-pending")
@@ -29,6 +29,9 @@ func TestFilterHelperVisiblePendingRequests(t *testing.T) {
 	}
 	if filtered[2].ID != "cancelled-by-other" {
 		t.Fatalf("filtered[2].ID = %q, want %q", filtered[2].ID, "cancelled-by-other")
+	}
+	if filtered[3].ID != "cancelled-unassigned" {
+		t.Fatalf("filtered[3].ID = %q, want %q", filtered[3].ID, "cancelled-unassigned")
 	}
 }
 

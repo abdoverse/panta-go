@@ -242,7 +242,11 @@ func filterHelperVisiblePendingRequests(requests []RecyclingRequest, helperID st
 }
 
 func requestReturnsToHelperPool(request RecyclingRequest) bool {
-	return strings.EqualFold(strings.TrimSpace(request.Status), "pending")
+	status := strings.TrimSpace(request.Status)
+	if strings.EqualFold(status, "pending") {
+		return true
+	}
+	return strings.EqualFold(status, "cancelled") && strings.TrimSpace(request.HelperID) == ""
 }
 
 func helperHasCancelledRequest(cancelledHelperIDs []string, helperID string) bool {
