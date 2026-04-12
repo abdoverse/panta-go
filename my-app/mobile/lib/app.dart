@@ -4,6 +4,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
 import 'core/localization/app_localizations.dart';
+import 'features/dashboard/helper_home_page.dart';
+import 'features/dashboard/user_home_page.dart';
 import 'features/auth/login_page.dart';
 import 'providers/panta_provider.dart';
 
@@ -61,14 +63,14 @@ class _PantaAppState extends State<PantaApp> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<PantaProvider?>();
+    final provider = context.watch<PantaProvider>();
 
     return MaterialApp(
       scaffoldMessengerKey: snackbarKey,
       title: 'Panta',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: const LoginPage(),
+      home: const _AuthGate(),
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
@@ -76,7 +78,28 @@ class _PantaAppState extends State<PantaApp> {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
-      locale: provider?.locale ?? AppLocalizations.supportedLocales.first,
+      locale: provider.locale,
     );
+  }
+}
+
+class _AuthGate extends StatelessWidget {
+  const _AuthGate();
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<PantaProvider>();
+
+    if (provider.isRestoringSession) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (!provider.isAuthenticated) {
+      return const LoginPage();
+    }
+
+    return provider.isHelper ? const HelperHomePage() : const UserHomePage();
   }
 }
