@@ -26,7 +26,7 @@ export class InfraStack extends cdk.Stack {
     const logRetentionDays = logs.RetentionDays.ONE_DAY;
     const deploymentMaximumPercent = 100;
     const deploymentMinimumHealthyPercent = 0;
-    const targetGroupDeregistrationDelaySeconds = '15';
+    const targetGroupDeregistrationDelaySeconds = '5';
 
     const backendAsset = new assets.DockerImageAsset(this, 'BackendAsset', {
       directory: path.join(__dirname, '../../backend'),

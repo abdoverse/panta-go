@@ -100,6 +100,6 @@ test('backend service stays on the minimum safe ECS Express footprint', () => {
   expect(targetGroupResourceEntries).toHaveLength(1);
   const serializedDrainingConfig = JSON.stringify(targetGroupResourceEntries[0][1]);
   expect(serializedDrainingConfig).toContain(
-    '\\"deregistration_delay.timeout_seconds\\",\\"Value\\":\\"15\\"',
+    '\\"deregistration_delay.timeout_seconds\\",\\"Value\\":\\"5\\"',
   );
 });
