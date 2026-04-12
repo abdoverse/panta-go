@@ -263,8 +263,8 @@ class AuthService {
       return false;
     }
 
-    final idToken = session.getIdToken().getJwtToken().trim();
-    final accessToken = session.getAccessToken().getJwtToken().trim();
+    final idToken = session.getIdToken().getJwtToken()?.trim() ?? '';
+    final accessToken = session.getAccessToken().getJwtToken()?.trim() ?? '';
     return idToken.isNotEmpty && accessToken.isNotEmpty;
   }
 
