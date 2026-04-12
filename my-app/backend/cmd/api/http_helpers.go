@@ -45,8 +45,8 @@ func loadConfiguredAllowedOrigins() map[string]struct{} {
 	allowed := make(map[string]struct{}, len(rawOrigins))
 
 	for _, rawOrigin := range rawOrigins {
-		origin := strings.TrimSpace(rawOrigin)
-		if origin == "" {
+		origin, ok := normalizeAllowedOrigin(rawOrigin)
+		if !ok {
 			continue
 		}
 		allowed[origin] = struct{}{}
@@ -71,17 +71,52 @@ func applyCORSHeaders(w http.ResponseWriter, r *http.Request) bool {
 }
 
 func isAllowedOrigin(origin string, r *http.Request) bool {
-	parsedOrigin, err := url.Parse(origin)
-	if err != nil || parsedOrigin.Host == "" {
+	normalizedOrigin, ok := normalizeAllowedOrigin(origin)
+	if !ok {
 		return false
 	}
 
-	if parsedOrigin.Host == r.Host && (parsedOrigin.Scheme == "http" || parsedOrigin.Scheme == "https") {
+	parsedOrigin, _ := url.Parse(normalizedOrigin)
+	if sameOriginHost(parsedOrigin.Host, r.Host) {
 		return true
 	}
 
-	_, ok := configuredAllowedOrigins[origin]
-	return ok
+	_, isConfiguredOrigin := configuredAllowedOrigins[normalizedOrigin]
+	return isConfiguredOrigin
+}
+
+func normalizeAllowedOrigin(rawOrigin string) (string, bool) {
+	origin := strings.TrimSpace(rawOrigin)
+	if origin == "" {
+		return "", false
+	}
+
+	parsedOrigin, err := url.Parse(origin)
+	if err != nil || parsedOrigin.Host == "" {
+		return "", false
+	}
+
+	if parsedOrigin.Scheme != "http" && parsedOrigin.Scheme != "https" {
+		return "", false
+	}
+
+	if parsedOrigin.Path != "" && parsedOrigin.Path != "/" {
+		return "", false
+	}
+
+	if parsedOrigin.RawQuery != "" || parsedOrigin.Fragment != "" || parsedOrigin.User != nil {
+		return "", false
+	}
+
+	return parsedOrigin.Scheme + "://" + parsedOrigin.Host, true
+}
+
+func sameOriginHost(originHost string, requestHost string) bool {
+	parsedRequestHost, err := url.Parse("http://" + strings.TrimSpace(requestHost))
+	if err != nil || parsedRequestHost.Host == "" {
+		return false
+	}
+	return originHost == parsedRequestHost.Host
 }
 
 func registerRoutes(mux *http.ServeMux) {
