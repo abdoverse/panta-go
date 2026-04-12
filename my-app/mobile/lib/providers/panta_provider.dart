@@ -12,36 +12,16 @@ import '../core/localization/app_localizations.dart';
 import '../models/request_model.dart';
 import '../services/api_config.dart';
 import '../services/auth_service.dart';
+import '../services/panta_state_services.dart' as panta_state;
 
 double? calculateHelperReliabilityRating({
   required int completedJobs,
   required int canceledPickups,
 }) {
-  if (completedJobs == 0 && canceledPickups == 0) {
-    return null;
-  }
-  if (canceledPickups == 0) {
-    return 5;
-  }
-
-  final completionRatio = completedJobs / (completedJobs + canceledPickups);
-  final score = 1 + (completionRatio * 4);
-  return double.parse(score.clamp(1, 5).toStringAsFixed(1));
-}
-
-double? calculateDistanceInKilometers({
-  required double fromLatitude,
-  required double fromLongitude,
-  required double toLatitude,
-  required double toLongitude,
-}) {
-  final meters = Geolocator.distanceBetween(
-    fromLatitude,
-    fromLongitude,
-    toLatitude,
-    toLongitude,
+  return panta_state.calculateHelperReliabilityRating(
+    completedJobs: completedJobs,
+    canceledPickups: canceledPickups,
   );
-  return double.parse((meters / 1000).toStringAsFixed(1));
 }
 
 List<RecyclingRequest> sortRequestsByDistance(
@@ -49,76 +29,35 @@ List<RecyclingRequest> sortRequestsByDistance(
   double? helperLatitude,
   double? helperLongitude,
 }) {
-  final sorted = List<RecyclingRequest>.from(requests);
-  if (helperLatitude == null || helperLongitude == null) {
-    return sorted;
-  }
-
-  double? distanceFor(RecyclingRequest request) {
-    final latitude = request.locationLatitude;
-    final longitude = request.locationLongitude;
-    if (latitude == null || longitude == null) {
-      return null;
-    }
-    return calculateDistanceInKilometers(
-      fromLatitude: helperLatitude,
-      fromLongitude: helperLongitude,
-      toLatitude: latitude,
-      toLongitude: longitude,
-    );
-  }
-
-  sorted.sort((a, b) {
-    final distanceA = distanceFor(a);
-    final distanceB = distanceFor(b);
-    if (distanceA == null && distanceB == null) {
-      return a.scheduledFrom.compareTo(b.scheduledFrom);
-    }
-    if (distanceA == null) {
-      return 1;
-    }
-    if (distanceB == null) {
-      return -1;
-    }
-    final byDistance = distanceA.compareTo(distanceB);
-    if (byDistance != 0) {
-      return byDistance;
-    }
-    return a.scheduledFrom.compareTo(b.scheduledFrom);
-  });
-
-  return sorted;
+  return panta_state.sortRequestsByDistance(
+    requests,
+    helperLatitude: helperLatitude,
+    helperLongitude: helperLongitude,
+  );
 }
 
 class PantaProvider extends ChangeNotifier {
   static const _languagePreferenceKey = 'app_language_code';
 
   final AuthService _authService = AuthService();
-  List<RecyclingRequest> _requests = [];
-  bool _isLoading = false;
+  final panta_state.PantaAuthState _authState = panta_state.PantaAuthState();
+  final panta_state.PantaRequestState _requestState =
+      panta_state.PantaRequestState();
+  final panta_state.PantaHelperLocationState _locationState =
+      panta_state.PantaHelperLocationState();
   bool _isRestoringSession = true;
-
-  String? _currentUserId;
-  String? _currentUserDisplayName;
-  bool _isHelper = false;
-  double? _helperLatitude;
-  double? _helperLongitude;
-  bool _isResolvingHelperLocation = false;
-
-  String? _pendingSignupEmail;
-  String? _pendingSignupUsername;
   Locale _locale = AppLocalizations.supportedLocales.first;
 
   PantaProvider() {
     _initialize();
   }
 
-  bool get isHelper => _isHelper;
-  bool get isAuthenticated => _currentUserId != null;
-  bool get isLoading => _isLoading;
+  bool get isHelper => _authState.isHelper;
+  bool get isAuthenticated => _authState.isAuthenticated;
+  bool get isLoading => _requestState.isLoading;
   bool get isRestoringSession => _isRestoringSession;
-  List<RecyclingRequest> get requests => _requests;
-  String? get currentUserDisplayName => _currentUserDisplayName;
+  List<RecyclingRequest> get requests => _requestState.requests;
+  String? get currentUserDisplayName => _authState.currentUserDisplayName;
   Locale get locale => _locale;
 
   Future<void> setLocale(Locale locale) async {
@@ -157,116 +96,61 @@ class PantaProvider extends ChangeNotifier {
     await restoreSession();
   }
 
-  void _upsertRequest(RecyclingRequest request, {bool notify = true}) {
-    final existingIndex = _requests.indexWhere((item) => item.id == request.id);
-    if (existingIndex == -1) {
-      _requests = [..._requests, request];
-    } else {
-      final updated = List<RecyclingRequest>.from(_requests);
-      updated[existingIndex] = request;
-      _requests = updated;
-    }
-
-    if (notify) {
-      notifyListeners();
-    }
-  }
-
   void handleRealtimeMessage(String rawMessage) {
-    final chunks = rawMessage
-        .split('\n')
-        .map((chunk) => chunk.trim())
-        .where((chunk) => chunk.isNotEmpty);
-
-    for (final chunk in chunks) {
-      try {
-        final payload = json.decode(chunk);
-        if (payload is! Map<String, dynamic>) {
-          continue;
-        }
-
-        switch (payload['type']) {
-          case 'request-updated':
-            final requestPayload = payload['request'];
-            if (requestPayload is Map<String, dynamic>) {
-              _upsertRequest(_fromJson(requestPayload));
-            } else if (requestPayload is Map) {
-              _upsertRequest(
-                _fromJson(requestPayload.map(
-                  (key, value) => MapEntry(key.toString(), value),
-                )),
-              );
-            }
-            break;
-          case 'refresh':
-            fetchRequests(silent: true);
-            break;
-        }
-      } catch (e) {
-        debugPrint('Failed to handle realtime message: $e');
-      }
-    }
+    _requestState.handleRealtimeMessage(
+      rawMessage,
+      fromJson: _fromJson,
+      onRefreshRequested: () => fetchRequests(silent: true),
+    );
+    notifyListeners();
   }
 
   // For User Dashboard
   List<RecyclingRequest> get myRequests =>
-      _requests; // In real app, filter by userId
-  List<RecyclingRequest> get ongoingRequests =>
-      _requests.where((r) => r.status != RequestStatus.pickedUp).toList();
-  List<RecyclingRequest> get previousRequests =>
-      _requests.where((r) => r.status == RequestStatus.pickedUp).toList();
+      _requestState.requests; // In real app, filter by userId
+  List<RecyclingRequest> get ongoingRequests => _requestState.requests
+      .where((r) => r.status != RequestStatus.pickedUp)
+      .toList();
+  List<RecyclingRequest> get previousRequests => _requestState.requests
+      .where((r) => r.status == RequestStatus.pickedUp)
+      .toList();
 
   // For Helper Dashboard
-  List<RecyclingRequest> get availableJobs {
-    final jobs =
-        _requests.where((r) => r.status == RequestStatus.pending).toList();
-    return sortRequestsByDistance(
-      jobs,
-      helperLatitude: _helperLatitude,
-      helperLongitude: _helperLongitude,
-    );
-  }
+  List<RecyclingRequest> get availableJobs => _requestState.availableJobs(
+        helperLatitude: _locationState.helperLatitude,
+        helperLongitude: _locationState.helperLongitude,
+      );
 
-  List<RecyclingRequest> get acceptedJobs => _requests
-      .where((r) =>
-          r.status == RequestStatus.accepted && r.helperId == _currentUserId)
-      .toList();
+  List<RecyclingRequest> get acceptedJobs =>
+      _requestState.acceptedJobs(_authState.currentUserId);
 
-  List<RecyclingRequest> get completedJobs => _requests
-      .where((r) =>
-          r.status == RequestStatus.pickedUp && r.helperId == _currentUserId)
-      .toList();
-  bool get isResolvingHelperLocation => _isResolvingHelperLocation;
-  bool get isSortingJobsByDistance =>
-      _helperLatitude != null && _helperLongitude != null;
-  String get helperLocationSortingMessage => isSortingJobsByDistance
-      ? 'Closest jobs are shown first based on your current location.'
-      : 'Enable location access to sort available jobs by distance.';
+  List<RecyclingRequest> get completedJobs =>
+      _requestState.completedJobs(_authState.currentUserId);
+  bool get isResolvingHelperLocation => _locationState.isResolving;
+  bool get isSortingJobsByDistance => _locationState.isSortingJobsByDistance;
+  String get helperLocationSortingMessage =>
+      _locationState.helperLocationSortingMessage;
 
   int get helperCompletedCount => completedJobs.length;
-  int get helperCancellationCount => _requests
-      .where((r) =>
-          _currentUserId != null &&
-          r.canceledHelperIds.contains(_currentUserId))
-      .length;
+  int get helperCancellationCount =>
+      _requestState.helperCancellationCount(_authState.currentUserId);
   double? get helperReliabilityRating => calculateHelperReliabilityRating(
         completedJobs: helperCompletedCount,
         canceledPickups: helperCancellationCount,
       );
 
   Future<void> refreshHelperLocation() async {
-    if (_isResolvingHelperLocation) {
+    if (_locationState.isResolving) {
       return;
     }
 
-    _isResolvingHelperLocation = true;
+    _locationState.isResolving = true;
     notifyListeners();
 
     try {
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        _helperLatitude = null;
-        _helperLongitude = null;
+        _locationState.clear();
         return;
       }
 
@@ -277,8 +161,7 @@ class PantaProvider extends ChangeNotifier {
 
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
-        _helperLatitude = null;
-        _helperLongitude = null;
+        _locationState.clear();
         return;
       }
 
@@ -287,27 +170,27 @@ class PantaProvider extends ChangeNotifier {
           accuracy: LocationAccuracy.medium,
         ),
       );
-      _helperLatitude = position.latitude;
-      _helperLongitude = position.longitude;
+      _locationState.update(
+        latitude: position.latitude,
+        longitude: position.longitude,
+      );
     } catch (e) {
       debugPrint('Error fetching helper location: $e');
-      _helperLatitude = null;
-      _helperLongitude = null;
+      _locationState.clear();
     } finally {
-      _isResolvingHelperLocation = false;
+      _locationState.isResolving = false;
       notifyListeners();
     }
   }
 
   Future<String?> login(String email, String password, bool asHelper) async {
-    _isHelper = asHelper;
     final error = await _authService.login(email, password);
     if (error == null) {
-      _currentUserId = await _authService.getCurrentUsername();
-      _currentUserDisplayName = await _authService.getCurrentDisplayName(
+      await _refreshAuthState(
+        helperOverride: asHelper,
         fallbackEmail: email,
       );
-      debugPrint("Logged in as Helper/User ID: $_currentUserId");
+      debugPrint("Logged in as Helper/User ID: ${_authState.currentUserId}");
       notifyListeners();
       fetchRequests();
       return null;
@@ -326,11 +209,9 @@ class PantaProvider extends ChangeNotifier {
         return;
       }
 
-      _currentUserId = await _authService.getCurrentUsername();
-      _currentUserDisplayName = await _authService.getCurrentDisplayName();
-      _isHelper = await _authService.getCurrentUserIsHelper() ?? false;
+      await _refreshAuthState();
 
-      if (_currentUserId == null) {
+      if (_authState.currentUserId == null) {
         await _authService.logout();
         _clearAuthenticatedState(notify: false);
         return;
@@ -361,21 +242,23 @@ class PantaProvider extends ChangeNotifier {
       name: name,
     );
     if (result.success) {
-      _pendingSignupEmail = result.email;
-      _pendingSignupUsername = result.cognitoUsername;
+      _authState.cachePendingSignup(
+        email: result.email,
+        username: result.cognitoUsername,
+      );
       return null;
     }
     return result.error;
   }
 
   Future<String?> confirmUser(String email, String code) async {
-    final usernameToConfirm =
-        _pendingSignupUsername ?? _pendingSignupEmail ?? email;
+    final usernameToConfirm = _authState.pendingSignupUsername ??
+        _authState.pendingSignupEmail ??
+        email;
     final error = await _authService.confirmUser(usernameToConfirm, code);
 
     if (error == null) {
-      _pendingSignupEmail = null;
-      _pendingSignupUsername = null;
+      _authState.clearPendingSignup();
     }
 
     return error;
@@ -389,7 +272,7 @@ class PantaProvider extends ChangeNotifier {
     }
 
     if (!silent) {
-      _isLoading = true;
+      _setLoading(true);
       notifyListeners();
     }
 
@@ -403,7 +286,7 @@ class PantaProvider extends ChangeNotifier {
       );
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        _requests = data.map((json) => _fromJson(json)).toList();
+        _requestState.replaceAll(data.map((json) => _fromJson(json)).toList());
       } else {
         debugPrint('Failed to load requests: ${response.statusCode}');
       }
@@ -411,7 +294,7 @@ class PantaProvider extends ChangeNotifier {
       debugPrint('Error fetching requests: $e');
     } finally {
       if (!silent) {
-        _isLoading = false;
+        _setLoading(false);
       }
       notifyListeners();
     }
@@ -471,7 +354,7 @@ class PantaProvider extends ChangeNotifier {
     final token = await _authService.getToken();
     if (token == null) return false;
 
-    _isLoading = true;
+    _setLoading(true);
     notifyListeners();
 
     // Try to get FCM Token
@@ -516,7 +399,7 @@ class PantaProvider extends ChangeNotifier {
         mimeType: imageMimeType,
       );
       if (imageUploadKey == null) {
-        _isLoading = false;
+        _setLoading(false);
         notifyListeners();
         return false;
       }
@@ -558,7 +441,7 @@ class PantaProvider extends ChangeNotifier {
       debugPrint('Error creating request: $e');
       return false;
     } finally {
-      _isLoading = false;
+      _setLoading(false);
       notifyListeners();
     }
   }
@@ -578,7 +461,8 @@ class PantaProvider extends ChangeNotifier {
       );
       if (response.statusCode == 200) {
         final payload = json.decode(response.body) as Map<String, dynamic>;
-        _upsertRequest(_fromJson(payload));
+        _requestState.upsert(_fromJson(payload));
+        notifyListeners();
         return true;
       }
     } catch (e) {
@@ -602,7 +486,8 @@ class PantaProvider extends ChangeNotifier {
       );
       if (response.statusCode == 200) {
         final payload = json.decode(response.body) as Map<String, dynamic>;
-        _upsertRequest(_fromJson(payload));
+        _requestState.upsert(_fromJson(payload));
+        notifyListeners();
         return true;
       }
     } catch (e) {
@@ -626,7 +511,8 @@ class PantaProvider extends ChangeNotifier {
       );
       if (response.statusCode == 200) {
         final payload = json.decode(response.body) as Map<String, dynamic>;
-        _upsertRequest(_fromJson(payload));
+        _requestState.upsert(_fromJson(payload));
+        notifyListeners();
         return true;
       }
     } catch (e) {
@@ -715,15 +601,29 @@ class PantaProvider extends ChangeNotifier {
     return imageUrl;
   }
 
+  Future<void> _refreshAuthState({
+    bool? helperOverride,
+    String? fallbackEmail,
+  }) async {
+    _authState.updateSession(
+      userId: await _authService.getCurrentUsername(),
+      displayName: await _authService.getCurrentDisplayName(
+        fallbackEmail: fallbackEmail,
+      ),
+      helper: helperOverride ??
+          await _authService.getCurrentUserIsHelper() ??
+          false,
+    );
+  }
+
+  void _setLoading(bool value) {
+    _requestState.isLoading = value;
+  }
+
   void _clearAuthenticatedState({bool notify = true}) {
-    _currentUserId = null;
-    _currentUserDisplayName = null;
-    _isHelper = false;
-    _requests = [];
-    _helperLatitude = null;
-    _helperLongitude = null;
-    _pendingSignupEmail = null;
-    _pendingSignupUsername = null;
+    _authState.clearSession();
+    _requestState.clear();
+    _locationState.clear();
 
     if (notify) {
       notifyListeners();

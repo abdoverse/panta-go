@@ -48,7 +48,38 @@ plan-2 | done | medium | large | none | Split the Go backend into maintainable m
   Confirmed with the existing infra validation surface: `npm test -- --runInBand`, `npm run build`, and `npm run cdk -- synth` all succeed.
 
 ## frontend
-(empty)
+plan-4 | done | medium | medium | plan-5 | Slim down mobile state management
+  Owner agent: frontend_dev
+  Started at: 2026-04-12T15:49:45.304969+00:00
+  Last heartbeat at: 2026-04-12T15:51:55.574647+00:00
+  Last progress at: 2026-04-12T15:51:55.574647+00:00
+  Progress note: tester [done]: Validation passed and the task was delivered to git.
+  Agent activity: tester | 2026-04-12T15:51:55.560950+00:00 | validation | Running the existing validation commands after backend implementation handoff. | cd my-app/mobile && flutter test
+  Agent activity: frontend_dev | 2026-04-12T15:51:24.368397+00:00 | working | Refactor compiled but tests still depend |
+  Agent activity: frontend_dev | 2026-04-12T15:51:15.077375+00:00 | working | Refactor compiled but tests still depend |
+  Agent activity: frontend_dev | 2026-04-12T15:50:58.999336+00:00 | working | Refactor compiled but tests still depend |
+  Agent activity: frontend_dev | 2026-04-12T15:50:58.999336+00:00 | working | Refactor compiled but tests still depend |
+  Agent activity: frontend_dev | 2026-04-12T15:50:58.999336+00:00 | working | Refactor compiled but tests still depend |
+  Agent activity: frontend_dev | 2026-04-12T15:50:50.867316+00:00 | working | Found auth, request, location, and |
+  Agent activity: frontend_dev | 2026-04-12T15:50:50.867316+00:00 | working | Found auth, request, location, and |
+  Agent activity: frontend_dev | 2026-04-12T15:50:41.423294+00:00 | working | Found auth, request, location, and |
+  Agent activity: frontend_dev | 2026-04-12T15:50:36.731282+00:00 | working | Found auth, request, location, and |
+  Agent activity: frontend_dev | 2026-04-12T15:50:30.828268+00:00 | working | Found auth, request, location, and |
+  Agent activity: frontend_dev | 2026-04-12T15:50:22.348248+00:00 | working | Found auth, request, location, and |
+  Agent activity: frontend_dev | 2026-04-12T15:50:22.348248+00:00 | working | Found auth, request, location, and |
+  Agent activity: frontend_dev | 2026-04-12T15:49:42.617152+00:00 | working | Found auth, request, location, and |
+  Agent activity: frontend_dev | 2026-04-12T15:49:42.617152+00:00 | working | Found auth, request, location, and |
+  Agent activity: frontend_dev | 2026-04-12T15:49:42.617152+00:00 | working | Found auth, request, location, and |
+  Agent activity: frontend_dev | 2026-04-12T15:49:42.617152+00:00 | working | Found auth, request, location, and |
+  Agent activity: frontend_dev | 2026-04-12T15:49:42.617152+00:00 | working | Found auth, request, location, and |
+  Agent activity: frontend_dev | 2026-04-12T15:49:42.617152+00:00 | working | Found auth, request, location, and |
+  Agent activity: frontend_dev | 2026-04-12T15:49:42.617152+00:00 | working | Found auth, request, location, and |
+  Goal:
+  Reduce the responsibility of `PantaProvider` and separate auth, request, location, and realtime concerns.
+  Why:
+  The mobile state layer is still too central and will get harder to extend safely.
+  Likely files:
+  `my-app/mobile/lib/providers/panta_provider.dart`, `my-app/mobile/lib/services/*.dart`, feature screens.
 
 ## both
 plan-5 | done | high | medium | none | Finish auth hardening and runtime configuration cleanup
