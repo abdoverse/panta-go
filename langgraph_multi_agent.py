@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import time
 from datetime import datetime, timezone
@@ -25,6 +26,8 @@ DEFAULT_MODEL = "gpt-5.4"
 DEFAULT_BACKLOG_FILE = ".copilot/agent-backlog.txt"
 DEFAULT_PLAN_FILE = ".copilot/agent-plan.md"
 DEFAULT_DONE_FILE = ".copilot/agent-done.txt"
+DEFAULT_WORKER_STATE_FILE = ".copilot/worker-state.json"
+DEFAULT_WORKER_LOG_DIR = ".copilot/worker-logs"
 VALID_CATEGORIES = ("backend", "frontend", "both")
 VALID_PLAN_STATUSES = ("planned", "approved")
 VALID_BACKLOG_STATUSES = ("pending", "approved", "in_progress", "done")
@@ -86,6 +89,15 @@ class BacklogItem(TypedDict):
     progress_note: str
     blocked_reason: str
     agent_updates: list[AgentUpdate]
+
+
+class WorkerLaunch(TypedDict):
+    item_id: str
+    pid: int
+    started_at: str
+    status: str
+    log_path: str
+    attempt_count: int
 
 
 class PlanItem(TypedDict):
@@ -1533,6 +1545,184 @@ def changed_repo_paths(project_path: Path) -> list[str]:
     return paths
 
 
+def worker_state_path(project_path: Path) -> Path:
+    return (project_path / DEFAULT_WORKER_STATE_FILE).resolve()
+
+
+def worker_log_dir(project_path: Path) -> Path:
+    return (project_path / DEFAULT_WORKER_LOG_DIR).resolve()
+
+
+def load_worker_launches(project_path: Path) -> dict[str, WorkerLaunch]:
+    path = worker_state_path(project_path)
+    if not path.exists():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    launches: dict[str, WorkerLaunch] = {}
+    if not isinstance(data, dict):
+        return launches
+    for item_id, payload in data.items():
+        if not isinstance(payload, dict):
+            continue
+        try:
+            launches[str(item_id)] = {
+                "item_id": str(payload["item_id"]),
+                "pid": int(payload["pid"]),
+                "started_at": str(payload["started_at"]),
+                "status": str(payload["status"]),
+                "log_path": str(payload["log_path"]),
+                "attempt_count": int(payload.get("attempt_count", 1)),
+            }
+        except Exception:
+            continue
+    return launches
+
+
+def save_worker_launches(project_path: Path, launches: dict[str, WorkerLaunch]) -> None:
+    path = worker_state_path(project_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(launches, indent=2) + "\n", encoding="utf-8")
+
+
+def pid_is_running(pid: int) -> bool:
+    if pid <= 0:
+        return False
+    try:
+        os.kill(pid, 0)
+    except OSError:
+        return False
+    return True
+
+
+def refresh_worker_launches(project_path: Path) -> dict[str, WorkerLaunch]:
+    launches = load_worker_launches(project_path)
+    for launch in launches.values():
+        launch["status"] = "running" if pid_is_running(launch["pid"]) else "finished"
+    save_worker_launches(project_path, launches)
+    return launches
+
+
+def build_worker_prompt(item: BacklogItem, instructions_text: str) -> str:
+    dependency_text = format_dependencies(item["dependencies"])
+    return (
+        f"You are the autonomous coding worker for backlog item {item['id']} "
+        f"({item['category']}): {item['title']}.\n\n"
+        f"Priority: {item['priority']}\n"
+        f"Complexity: {item['complexity']}\n"
+        f"Dependencies: {dependency_text}\n\n"
+        f"{item['details']}\n\n"
+        "Requirements:\n"
+        "- Make real repository edits for this backlog item.\n"
+        "- Run only existing relevant validation commands.\n"
+        "- Do not ask the user questions.\n"
+        "- Do not commit or push; leave validated edits in the working tree for the orchestrator.\n"
+        "- Prefer task-relevant paths only.\n\n"
+        "Repository instructions:\n"
+        f"{instructions_text or '(none)'}\n"
+    ).strip()
+
+
+def launch_copilot_worker(
+    project_path: Path,
+    item: BacklogItem,
+    instructions_text: str,
+    attempt_count: int,
+) -> Optional[WorkerLaunch]:
+    copilot_path = shutil.which("copilot")
+    if not copilot_path:
+        return None
+    log_dir = worker_log_dir(project_path)
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_path = log_dir / f"{item['id']}.log"
+    log_handle = open(log_path, "a", encoding="utf-8")
+    process = subprocess.Popen(
+        [
+            copilot_path,
+            "-p",
+            build_worker_prompt(item, instructions_text),
+            "--allow-all",
+            "--no-ask-user",
+            "--silent",
+            "--model",
+            DEFAULT_MODEL,
+            "--add-dir",
+            str(project_path),
+        ],
+        cwd=project_path,
+        stdout=log_handle,
+        stderr=subprocess.STDOUT,
+        stdin=subprocess.DEVNULL,
+        start_new_session=True,
+        text=True,
+    )
+    return {
+        "item_id": item["id"],
+        "pid": process.pid,
+        "started_at": now_iso(),
+        "status": "running",
+        "log_path": str(log_path),
+        "attempt_count": attempt_count,
+    }
+
+
+def launch_ready_workers(
+    backlog: list[BacklogItem], project_path: Path, instructions_text: str
+) -> list[BacklogItem]:
+    launches = refresh_worker_launches(project_path)
+    active_items = [item for item in backlog if item["status"] == "in_progress"]
+    launched_items = {
+        item_id: launch
+        for item_id, launch in launches.items()
+        if launch["status"] == "running"
+    }
+    occupied_items = list(active_items) + [
+        item for item in backlog if item["id"] in launched_items
+    ]
+    available_slots = max(0, 3 - len(occupied_items))
+    if available_slots == 0:
+        return backlog
+
+    ready_items = ready_approved_items(backlog)
+    ready_items.sort(
+        key=lambda item: (
+            priority_rank(item["priority"]),
+            complexity_rank(item["complexity"]),
+            item["id"],
+        )
+    )
+
+    for item in ready_items:
+        launch = launches.get(item["id"])
+        if launch and launch["status"] == "running":
+            item["progress_note"] = (
+                f"Real worker running (pid {launch['pid']}); waiting for task-relevant repository edits."
+            )
+            item["last_progress_at"] = launch["started_at"]
+            continue
+        if collides_with_active(item, occupied_items):
+            continue
+        if relevant_changed_paths(project_path, item):
+            continue
+        attempts = 1 if launch is None else launch["attempt_count"] + 1
+        new_launch = launch_copilot_worker(project_path, item, instructions_text, attempts)
+        if new_launch is None:
+            continue
+        launches[item["id"]] = new_launch
+        save_worker_launches(project_path, launches)
+        item["progress_note"] = (
+            f"Real worker launched (pid {new_launch['pid']}); waiting for first task-relevant repository edits."
+        )
+        item["last_progress_at"] = new_launch["started_at"]
+        occupied_items.append(item)
+        available_slots -= 1
+        if available_slots == 0:
+            break
+    return backlog
+
+
 def relevant_change_prefixes(item: Optional[BacklogItem]) -> tuple[str, ...]:
     if item is None:
         return ()
@@ -2093,6 +2283,8 @@ def run_once(
         backlog_seed=args.backlog_seed,
         recover_stalled=args.recover_stalled,
     )
+    backlog = launch_ready_workers(backlog, project_path, instructions_text)
+    sync_project_workflow_files(backlog, backlog_path, done_path, plan_items, plan_path)
     approval_status = derive_approval_status(backlog)
     graph = build_graph()
 

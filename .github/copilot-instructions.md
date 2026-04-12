@@ -29,7 +29,9 @@
 - When a plan item is marked `approved`, the agent must move it into `.copilot/agent-backlog.txt` as `pending` and remove it from `.copilot/agent-plan.md`.
 - The backlog is the **second gate**. Users approve actual execution by marking a backlog item `approved`.
 - For automatic pickup, run `python langgraph_multi_agent.py --project-path . --watch --poll-interval 10 --run-tests` from the repo root.
-- In watch mode, approved plan items are moved to backlog automatically. Approved backlog items must **not** be switched to `in_progress` unless there is real execution evidence for the item, such as task-relevant repository edits from a real worker.
+- In watch mode, approved plan items are moved to backlog automatically. The orchestrator must also launch real coding workers for ready approved backlog items by invoking the local `copilot` CLI non-interactively.
+- Approved backlog items must **not** be switched to `in_progress` unless there is real execution evidence for the item, such as task-relevant repository edits from a launched worker.
+- If `ready_approved > 0` and `active_agents = 0`, the loop itself must immediately launch a real coding worker for the highest-priority ready approved item. A ready item must not be left waiting indefinitely.
 - Watcher invariant: if the workflow depends on automatic plan/backlog movement, the agent must leave **exactly one** `langgraph_multi_agent.py --watch` process running before it concludes.
 - Watcher verification is mandatory after any loop change, recovery action, or process restart: check the live process list, confirm there is one watcher for this repo, and confirm the backlog heartbeat is moving.
 - If no watcher is running, the agent must start one immediately. If multiple watchers are running, the agent must stop the extras and leave one current watcher.
@@ -43,6 +45,7 @@
 - Agent activity entries should say the current phase and the next command or action, for example analysis, editing, validating, deploying, or blocked.
 - If an item is blocked, record the blocker explicitly so the watcher can surface it instead of looking passively healthy.
 - An `in_progress` task with no task-relevant local code changes after a short grace period must be treated as a **synthetic claim**, returned to `approved`, and annotated as waiting for a real worker. The loop must never keep that state as healthy `in_progress`.
+- The "waiting for a real worker" note is a short-lived launch state, not an acceptable steady state. The loop must respond by launching a real worker and then either claim the task once edits appear or surface that the worker exited without producing task-relevant changes.
 - Tester work must not start until task-relevant implementation changes exist for the item being validated.
 - The live status snapshot must classify each active item as `claimed_no_checkpoint`, `progressing`, `blocked`, or `stale`.
 - The live status snapshot must show stale tasks when the watcher heartbeat is current but task progress has not moved for too long.
