@@ -51,6 +51,20 @@ plan-2 | done | medium | large | none | Split the Go backend into maintainable m
 (empty)
 
 ## both
+plan-5 | done | high | medium | none | Finish auth hardening and runtime configuration cleanup
+  Owner agent: backend_dev+frontend_dev
+  Started at: 2026-04-12T14:35:51.274744+00:00
+  Last heartbeat at: 2026-04-12T14:47:24.505765+00:00
+  Last progress at: 2026-04-12T14:47:24.505765+00:00
+  Progress note: tester [done]: Validation passed and the task was delivered to git.
+  Agent activity: tester | 2026-04-12T14:47:24.483803+00:00 | validation | Running the existing validation commands after backend implementation handoff. | cd my-app/mobile && flutter test
+  Goal:
+  Tighten session restore/logout behavior and remove remaining production-sensitive runtime assumptions.
+  Why:
+  Some hardening work is done, but auth/session/runtime handling is still not fully closed out.
+  Likely files:
+  `my-app/mobile/lib/services/api_config.dart`, auth/session files, backend websocket/CORS surfaces.
+
 2 | done | medium | medium | none | Preserve application environment variables and outputs used by the backend/mobile app.
   Problem:
   Migrate `panta-go/my-app/infra` from the current `ApplicationLoadBalancedFargateService` deployment to AWS-supported ECS Express Mode while preserving the backend container build, DynamoDB access, Cognito setup, and useful stack outputs.

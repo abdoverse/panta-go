@@ -76,8 +76,7 @@ func isAllowedOrigin(origin string, r *http.Request) bool {
 		return false
 	}
 
-	parsedOrigin, _ := url.Parse(normalizedOrigin)
-	if sameOriginHost(parsedOrigin.Host, r.Host) {
+	if sameOriginRequest(normalizedOrigin, r) {
 		return true
 	}
 
@@ -111,12 +110,40 @@ func normalizeAllowedOrigin(rawOrigin string) (string, bool) {
 	return parsedOrigin.Scheme + "://" + parsedOrigin.Host, true
 }
 
-func sameOriginHost(originHost string, requestHost string) bool {
-	parsedRequestHost, err := url.Parse("http://" + strings.TrimSpace(requestHost))
-	if err != nil || parsedRequestHost.Host == "" {
+func sameOriginRequest(origin string, r *http.Request) bool {
+	requestOrigin, ok := normalizedRequestOrigin(r)
+	if !ok {
 		return false
 	}
-	return originHost == parsedRequestHost.Host
+	return origin == requestOrigin
+}
+
+func normalizedRequestOrigin(r *http.Request) (string, bool) {
+	host := strings.TrimSpace(r.Host)
+	if host == "" {
+		return "", false
+	}
+
+	scheme := strings.TrimSpace(r.Header.Get("X-Forwarded-Proto"))
+	if scheme == "" {
+		if r.TLS != nil {
+			scheme = "https"
+		} else {
+			scheme = "http"
+		}
+	}
+
+	scheme = strings.ToLower(scheme)
+	if scheme != "http" && scheme != "https" {
+		return "", false
+	}
+
+	parsedRequestHost, err := url.Parse(scheme + "://" + host)
+	if err != nil || parsedRequestHost.Host == "" {
+		return "", false
+	}
+
+	return parsedRequestHost.Scheme + "://" + parsedRequestHost.Host, true
 }
 
 func registerRoutes(mux *http.ServeMux) {

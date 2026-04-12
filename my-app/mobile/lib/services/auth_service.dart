@@ -26,10 +26,14 @@ class AuthService {
 
   AuthService._internal();
 
-  final CognitoUserPool _userPool = CognitoUserPool(
-    ApiConfig.userPoolId,
-    ApiConfig.clientId,
-  );
+  CognitoUserPool? _userPoolInstance;
+
+  CognitoUserPool get _userPool {
+    return _userPoolInstance ??= CognitoUserPool(
+      ApiConfig.userPoolId,
+      ApiConfig.clientId,
+    );
+  }
 
   CognitoUser? _currentUser;
   CognitoUserSession? _session;
@@ -89,8 +93,11 @@ class AuthService {
 
   // Confirm Registration
   Future<String?> confirmUser(String email, String code) async {
-    final normalizedEmail = email.trim().toLowerCase();
-    final cognitoUser = CognitoUser(normalizedEmail, _userPool);
+    final normalizedIdentifier = email.trim().toLowerCase();
+    final username = normalizedIdentifier.contains('@')
+        ? _buildCognitoUsername(normalizedIdentifier)
+        : normalizedIdentifier;
+    final cognitoUser = CognitoUser(username, _userPool);
     try {
       final success = await cognitoUser.confirmRegistration(code);
       if (success) {
@@ -174,14 +181,22 @@ class AuthService {
   }
 
   // Get Current Sub/Username
-  String? getCurrentUsername() {
+  Future<String?> getCurrentUsername() async {
+    final session = await _loadSession();
+    if (session == null) {
+      return null;
+    }
     // Backend uses ID Token claims (cognito:username)
-    final payload = _session?.getIdToken().payload;
+    final payload = session.getIdToken().payload;
     return payload?['cognito:username'] ?? payload?['sub'];
   }
 
-  String? getCurrentDisplayName({String? fallbackEmail}) {
-    final payload = _session?.getIdToken().payload;
+  Future<String?> getCurrentDisplayName({String? fallbackEmail}) async {
+    final session = await _loadSession();
+    if (session == null) {
+      return null;
+    }
+    final payload = session.getIdToken().payload;
     final name = payload?['name']?.toString().trim();
     if (name != null && name.isNotEmpty) {
       return name;
@@ -200,8 +215,12 @@ class AuthService {
     return null;
   }
 
-  bool? getCurrentUserIsHelper() {
-    final role = _session?.getIdToken().payload?['nickname']?.toString().trim();
+  Future<bool?> getCurrentUserIsHelper() async {
+    final session = await _loadSession();
+    if (session == null) {
+      return null;
+    }
+    final role = session.getIdToken().payload?['nickname']?.toString().trim();
     if (role == null || role.isEmpty) {
       return null;
     }
@@ -234,6 +253,11 @@ class AuthService {
   Future<CognitoUserSession?> _loadSession() async {
     if (_session != null && _isUsableSession(_session!)) {
       return _session;
+    }
+    if (!ApiConfig.hasCognitoConfig) {
+      _session = null;
+      _currentUser = null;
+      return null;
     }
 
     _currentUser ??= await _userPool.getCurrentUser();
@@ -269,8 +293,9 @@ class AuthService {
   }
 
   Future<void> _clearLocalSession({CognitoUser? currentUser}) async {
-    final resolvedUser =
-        currentUser ?? _currentUser ?? await _userPool.getCurrentUser();
+    final resolvedUser = currentUser ??
+        _currentUser ??
+        (ApiConfig.hasCognitoConfig ? await _userPool.getCurrentUser() : null);
     if (resolvedUser != null) {
       await resolvedUser.signOut();
     }

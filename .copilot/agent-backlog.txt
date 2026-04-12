@@ -1,7 +1,7 @@
 # Agent Backlog
 # Managed by langgraph_multi_agent.py.
-# Last heartbeat at: 2026-04-12T14:15:22.435689+00:00
-# Loop status: active | active_agents=2 | approved=1 | ready_approved=0 | pending=0 | in_progress=1 | done=5
+# Last heartbeat at: 2026-04-12T14:47:24.505893+00:00
+# Loop status: ready | active_agents=0 | approved=1 | ready_approved=1 | pending=0 | in_progress=0 | done=6
 # Approve work by changing an item's status from pending to approved.
 # Active status values: pending, approved, in_progress
 # Fields: id | status | priority | complexity | dependencies | title
@@ -19,23 +19,14 @@ plan-4 | approved | medium | medium | plan-5 | Slim down mobile state management
   `my-app/mobile/lib/providers/panta_provider.dart`, `my-app/mobile/lib/services/*.dart`, feature screens.
 
 ## both
-plan-5 | in_progress | high | medium | none | Finish auth hardening and runtime configuration cleanup
-  Owner agent: backend_dev+frontend_dev
-  Started at: 2026-04-12T14:15:21.405326+00:00
-  Last heartbeat at: 2026-04-12T14:15:22.369616+00:00
-  Last progress at: 2026-04-12T14:15:22.369616+00:00
-  Progress note: frontend_dev [frontend-alignment]: Checking whether the active task touches the mobile/web surface and keeping the web-first workflow aligned with the repo instructions.
-  Agent activity: frontend_dev | 2026-04-12T14:15:22.369616+00:00 | frontend-alignment | Checking whether the active task touches the mobile/web surface and keeping the web-first workflow aligned with the repo instructions. | cd my-app/mobile && flutter test
-  Agent activity: backend_dev | 2026-04-12T14:15:22.369616+00:00 | implementing | Applying backend code changes across the identified module boundaries. | edit my-app/backend/cmd/api/main.go and create backend package files
-  Goal:
-  Tighten session restore/logout behavior and remove remaining production-sensitive runtime assumptions.
-  Why:
-  Some hardening work is done, but auth/session/runtime handling is still not fully closed out.
-  Likely files:
-  `my-app/mobile/lib/services/api_config.dart`, auth/session files, backend websocket/CORS surfaces.
+(empty)
 
 # Recently completed (read-only summary; canonical archive is .copilot/agent-done.txt)
 # Fields: id | status | priority | complexity | dependencies | title
+#
+# plan-5 | done | high | medium | none | Finish auth hardening and runtime configuration cleanup
+#   Progress note: tester [done]: Validation passed and the task was delivered to git.
+#   Last progress at: 2026-04-12T14:47:24.505765+00:00
 #
 # plan-2 | done | medium | large | none | Split the Go backend into maintainable modules
 #
@@ -44,6 +35,4 @@ plan-5 | in_progress | high | medium | none | Finish auth hardening and runtime 
 # 3 | done | medium | medium | none | Rebuild, test, and synthesize the infra project to confirm the new template is valid.
 #
 # 2 | done | medium | medium | none | Preserve application environment variables and outputs used by the backend/mobile app.
-#
-# 1 | done | medium | medium | none | Refactor `lib/infra-stack.ts` to define IAM roles, log group, and ECS Express service.
 #

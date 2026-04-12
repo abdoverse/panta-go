@@ -303,9 +303,10 @@ class PantaProvider extends ChangeNotifier {
     _isHelper = asHelper;
     final error = await _authService.login(email, password);
     if (error == null) {
-      _currentUserId = _authService.getCurrentUsername();
-      _currentUserDisplayName =
-          _authService.getCurrentDisplayName(fallbackEmail: email);
+      _currentUserId = await _authService.getCurrentUsername();
+      _currentUserDisplayName = await _authService.getCurrentDisplayName(
+        fallbackEmail: email,
+      );
       debugPrint("Logged in as Helper/User ID: $_currentUserId");
       notifyListeners();
       fetchRequests();
@@ -325,9 +326,9 @@ class PantaProvider extends ChangeNotifier {
         return;
       }
 
-      _currentUserId = _authService.getCurrentUsername();
-      _currentUserDisplayName = _authService.getCurrentDisplayName();
-      _isHelper = _authService.getCurrentUserIsHelper() ?? false;
+      _currentUserId = await _authService.getCurrentUsername();
+      _currentUserDisplayName = await _authService.getCurrentDisplayName();
+      _isHelper = await _authService.getCurrentUserIsHelper() ?? false;
 
       if (_currentUserId == null) {
         await _authService.logout();

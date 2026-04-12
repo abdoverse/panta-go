@@ -33,7 +33,7 @@ class ApiConfig {
     final baseUri = _configuredBaseUri(
       envName: 'WS_BASE_URL',
       defaultValue: baseUrl,
-      requireProductionOverride: false,
+      requireProductionOverride: _isProduction,
     );
     final wsScheme = baseUri.scheme == 'https' ? 'wss' : 'ws';
     return baseUri.replace(
@@ -50,6 +50,10 @@ class ApiConfig {
   static String get clientId => _requiredEnvironmentValue(
         'COGNITO_CLIENT_ID',
       );
+
+  static bool get hasCognitoConfig =>
+      _environmentValue('COGNITO_USER_POOL_ID').isNotEmpty &&
+      _environmentValue('COGNITO_CLIENT_ID').isNotEmpty;
 
   static String get region {
     final configuredRegion = _environmentValue('AWS_REGION');
@@ -87,6 +91,15 @@ class ApiConfig {
     final allowedSchemes = {'https', 'http'};
     if (!allowedSchemes.contains(uri.scheme) || uri.host.isEmpty) {
       throw StateError('$envName must be a valid http or https URL.');
+    }
+
+    if (uri.userInfo.isNotEmpty ||
+        (uri.path.isNotEmpty && uri.path != '/') ||
+        uri.query.isNotEmpty ||
+        uri.fragment.isNotEmpty) {
+      throw StateError(
+        '$envName must include only scheme, host, and optional port.',
+      );
     }
 
     final isLocalHost = uri.host == 'localhost' ||
