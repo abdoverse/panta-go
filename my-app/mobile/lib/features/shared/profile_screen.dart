@@ -22,7 +22,7 @@ class ProfileScreen extends StatelessWidget {
         isHelper ? Icons.local_shipping_rounded : Icons.person_rounded;
     final completedJobs = provider.helperCompletedCount;
     final canceledPickups = provider.helperCancellationCount;
-    final averageRating = provider.helperAverageRating;
+    final reliabilityRating = provider.helperReliabilityRating;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Profile')),
@@ -106,12 +106,10 @@ class ProfileScreen extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    _HelperSummaryRow(
-                      icon: Icons.star_rounded,
-                      title: 'Recycler rating',
-                      value: averageRating == null
-                          ? 'No ratings yet'
-                          : '${averageRating.toStringAsFixed(1)} / 5',
+                    _HelperRatingCard(
+                      rating: reliabilityRating,
+                      completedJobs: completedJobs,
+                      canceledPickups: canceledPickups,
                     ),
                     const SizedBox(height: 8),
                     _HelperSummaryRow(
@@ -175,6 +173,93 @@ class ProfileScreen extends StatelessWidget {
                 );
               },
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HelperRatingCard extends StatelessWidget {
+  final double? rating;
+  final int completedJobs;
+  final int canceledPickups;
+
+  const _HelperRatingCard({
+    required this.rating,
+    required this.completedJobs,
+    required this.canceledPickups,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final roundedRating = rating?.round() ?? 0;
+    final ratingLabel = switch (roundedRating) {
+      5 => 'Excellent',
+      4 => 'Strong',
+      3 => 'Fair',
+      2 => 'Needs improvement',
+      1 => 'At risk',
+      _ => 'No history yet',
+    };
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceMuted,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.star_rounded, color: AppTheme.primaryGreen, size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Recycler rating',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              Text(
+                rating == null
+                    ? 'No history yet'
+                    : '${rating!.toStringAsFixed(1)} / 5',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppTheme.textPrimary,
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: List.generate(5, (index) {
+              return Padding(
+                padding: EdgeInsets.only(right: index == 4 ? 0 : 4),
+                child: Icon(
+                  index < roundedRating
+                      ? Icons.star_rounded
+                      : Icons.star_outline_rounded,
+                  color: const Color(0xFFF59E0B),
+                  size: 22,
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            ratingLabel,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: AppTheme.textPrimary,
+                ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Based on $completedJobs completed jobs and $canceledPickups cancelled pickups.',
+            style: Theme.of(context).textTheme.bodyMedium,
           ),
         ],
       ),

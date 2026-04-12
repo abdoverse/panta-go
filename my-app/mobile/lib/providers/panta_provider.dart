@@ -9,6 +9,22 @@ import '../models/request_model.dart';
 import '../services/api_config.dart';
 import '../services/auth_service.dart';
 
+double? calculateHelperReliabilityRating({
+  required int completedJobs,
+  required int canceledPickups,
+}) {
+  if (completedJobs == 0 && canceledPickups == 0) {
+    return null;
+  }
+  if (canceledPickups == 0) {
+    return 5;
+  }
+
+  final completionRatio = completedJobs / (completedJobs + canceledPickups);
+  final score = 1 + (completionRatio * 4);
+  return double.parse(score.clamp(1, 5).toStringAsFixed(1));
+}
+
 class PantaProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
   List<RecyclingRequest> _requests = [];
@@ -58,20 +74,10 @@ class PantaProvider extends ChangeNotifier {
           _currentUserId != null &&
           r.canceledHelperIds.contains(_currentUserId))
       .length;
-  double? get helperAverageRating {
-    final ratedJobs = completedJobs
-        .where((job) => job.rating != null)
-        .toList(growable: false);
-    if (ratedJobs.isEmpty) {
-      return null;
-    }
-
-    final total = ratedJobs.fold<double>(
-      0,
-      (sum, job) => sum + (job.rating ?? 0),
-    );
-    return total / ratedJobs.length;
-  }
+  double? get helperReliabilityRating => calculateHelperReliabilityRating(
+        completedJobs: helperCompletedCount,
+        canceledPickups: helperCancellationCount,
+      );
 
   Future<String?> login(String email, String password, bool asHelper) async {
     _isHelper = asHelper;
