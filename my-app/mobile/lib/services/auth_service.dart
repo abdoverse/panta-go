@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 
 import 'package:amazon_cognito_identity_dart_2/cognito.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'api_config.dart';
 
 class SignUpResult {
@@ -46,7 +45,6 @@ class AuthService {
     try {
       _session = await cognitoUser.authenticateUser(authDetails);
       _currentUser = cognitoUser;
-      await _cacheSession(_session!);
       return null;
     } on CognitoClientException catch (e) {
       return _friendlyAuthError(e.message);
@@ -144,27 +142,20 @@ class AuthService {
     return 'user_${trimmedLocalPart}_${checksum.toRadixString(36)}';
   }
 
+  Future<bool> restoreSession() async {
+    final session = await _loadSession();
+    return session != null;
+  }
+
   // Get Token
   Future<String?> getToken() async {
-    if (_session == null) {
-      await _loadSession();
+    try {
+      final session = await _loadSession();
+      return session?.getIdToken().getJwtToken();
+    } catch (_) {
+      await _clearLocalSession();
+      return null;
     }
-
-    if (_session != null) {
-      if (!_session!.isValid()) {
-        // Refresh token if needed
-        _currentUser = CognitoUser(_currentUser?.username, _userPool);
-        try {
-          _session =
-              await _currentUser?.refreshSession(_session!.getRefreshToken()!);
-          await _cacheSession(_session!);
-        } catch (e) {
-          return null;
-        }
-      }
-      return _session!.getIdToken().getJwtToken();
-    }
-    return null;
   }
 
   // Get Current Sub/Username
@@ -194,27 +185,52 @@ class AuthService {
     return null;
   }
 
+  bool? getCurrentUserIsHelper() {
+    final role = _session?.getIdToken().payload?['nickname']?.toString().trim();
+    if (role == null || role.isEmpty) {
+      return null;
+    }
+    if (role.toLowerCase() == 'helper') {
+      return true;
+    }
+    if (role.toLowerCase() == 'user') {
+      return false;
+    }
+    return null;
+  }
+
   // Logout
   Future<void> logout() async {
-    if (_currentUser != null) {
-      await _currentUser!.signOut();
+    await _clearLocalSession();
+  }
+
+  Future<CognitoUserSession?> _loadSession() async {
+    if (_session != null && _session!.isValid()) {
+      return _session;
+    }
+
+    _currentUser ??= await _userPool.getCurrentUser();
+    if (_currentUser == null) {
+      _session = null;
+      return null;
+    }
+
+    final restoredSession = await _currentUser!.getSession();
+    if (restoredSession == null || !restoredSession.isValid()) {
+      await _clearLocalSession();
+      return null;
+    }
+
+    _session = restoredSession;
+    return _session;
+  }
+
+  Future<void> _clearLocalSession() async {
+    final currentUser = _currentUser ?? await _userPool.getCurrentUser();
+    if (currentUser != null) {
+      await currentUser.signOut();
     }
     _session = null;
     _currentUser = null;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('auth_session');
-  }
-
-  // Session Management
-  Future<void> _cacheSession(CognitoUserSession session) async {
-    // In a real app, use SecureStorage data encryption
-    // Here we serialize the session manually or just rely on re-login for simplicity if complexity is high
-    // The library doesn't have a built-in "toJson" for session easily,
-    // so for this MVP we will rely on active memory or just basic refresh token storage.
-    // For now, simpler: do nothing and require login on restart or store refresh token.
-  }
-
-  Future<void> _loadSession() async {
-    // secure storage retrieval logic would go here
   }
 }

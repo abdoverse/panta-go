@@ -1,6 +1,9 @@
 class ApiConfig {
   static const String _defaultBaseUrl =
       'https://pa-aca8ea7c8969414ca91da0ae5bb650e6.ecs.eu-north-1.on.aws';
+  static const String _defaultUserPoolId = 'eu-north-1_sdkTYJTjU';
+  static const String _defaultClientId = '3loh3skschrk2vt8mq6d7sa0pd';
+  static const String _defaultRegion = 'eu-north-1';
 
   static String get baseUrl => _normalizedBaseUri.toString();
 
@@ -48,7 +51,29 @@ class ApiConfig {
     );
   }
 
-  static const String userPoolId = 'eu-north-1_sdkTYJTjU';
-  static const String clientId = '3loh3skschrk2vt8mq6d7sa0pd';
-  static const String region = 'eu-north-1';
+  static String get userPoolId =>
+      const String.fromEnvironment(
+        'COGNITO_USER_POOL_ID',
+        defaultValue: _defaultUserPoolId,
+      ).trim();
+
+  static String get clientId =>
+      const String.fromEnvironment(
+        'COGNITO_CLIENT_ID',
+        defaultValue: _defaultClientId,
+      ).trim();
+
+  static String get region =>
+      const String.fromEnvironment(
+        'AWS_REGION',
+        defaultValue: _defaultRegion,
+      ).trim();
+
+  static String? get firebaseWebVapidKey {
+    final value = const String.fromEnvironment(
+      'FIREBASE_WEB_VAPID_KEY',
+      defaultValue: '',
+    ).trim();
+    return value.isEmpty ? null : value;
+  }
 }
