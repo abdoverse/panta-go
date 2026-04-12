@@ -231,7 +231,7 @@ func listHelperAccessibleRequests(ctx context.Context, helperID string) ([]Recyc
 }
 
 func helperPoolCandidateStatuses() []string {
-	return []string{"pending", "cancelled"}
+	return []string{"pending", "cancelled", "canceled"}
 }
 
 func filterHelperVisiblePendingRequests(requests []RecyclingRequest, helperID string) []RecyclingRequest {
@@ -254,10 +254,14 @@ func requestReturnsToHelperPool(request RecyclingRequest) bool {
 	if strings.EqualFold(status, "pending") {
 		return true
 	}
-	if !strings.EqualFold(status, "cancelled") {
+	if !isCancelledRequestStatus(status) {
 		return false
 	}
 	return cancelledRequestCanReturnToHelperPool(request)
+}
+
+func isCancelledRequestStatus(status string) bool {
+	return strings.EqualFold(status, "cancelled") || strings.EqualFold(status, "canceled")
 }
 
 func cancelledRequestCanReturnToHelperPool(request RecyclingRequest) bool {

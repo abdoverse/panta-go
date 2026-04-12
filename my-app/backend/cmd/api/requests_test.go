@@ -6,14 +6,17 @@ func TestHelperPoolCandidateStatuses(t *testing.T) {
 	t.Parallel()
 
 	statuses := helperPoolCandidateStatuses()
-	if len(statuses) != 2 {
-		t.Fatalf("len(helperPoolCandidateStatuses()) = %d, want 2", len(statuses))
+	if len(statuses) != 3 {
+		t.Fatalf("len(helperPoolCandidateStatuses()) = %d, want 3", len(statuses))
 	}
 	if statuses[0] != "pending" {
 		t.Fatalf("helperPoolCandidateStatuses()[0] = %q, want %q", statuses[0], "pending")
 	}
 	if statuses[1] != "cancelled" {
 		t.Fatalf("helperPoolCandidateStatuses()[1] = %q, want %q", statuses[1], "cancelled")
+	}
+	if statuses[2] != "canceled" {
+		t.Fatalf("helperPoolCandidateStatuses()[2] = %q, want %q", statuses[2], "canceled")
 	}
 }
 
@@ -85,6 +88,16 @@ func TestRequestReturnsToHelperPool(t *testing.T) {
 		{
 			name:    "cancelled request with active helper",
 			request: RecyclingRequest{Status: "cancelled", HelperID: "helper-1"},
+			want:    false,
+		},
+		{
+			name:    "canceled request returned by helper",
+			request: RecyclingRequest{Status: "canceled", HelperID: "helper-1", CanceledHelperIDs: []string{"helper-1"}},
+			want:    true,
+		},
+		{
+			name:    "canceled request with active helper",
+			request: RecyclingRequest{Status: "canceled", HelperID: "helper-1"},
 			want:    false,
 		},
 		{
