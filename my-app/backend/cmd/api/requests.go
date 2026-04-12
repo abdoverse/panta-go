@@ -321,8 +321,12 @@ func helperHasCancelledRequest(cancelledHelperIDs []string, helperID string) boo
 
 func filterHelperAssignedRequests(requests []RecyclingRequest, helperID string) []RecyclingRequest {
 	filtered := make([]RecyclingRequest, 0, len(requests))
+	normalizedHelperID := strings.TrimSpace(helperID)
 	for _, request := range requests {
-		if strings.TrimSpace(request.HelperID) != helperID {
+		if strings.TrimSpace(request.HelperID) != normalizedHelperID {
+			continue
+		}
+		if requestReturnsToHelperPool(request) {
 			continue
 		}
 		filtered = append(filtered, request)

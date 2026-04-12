@@ -165,17 +165,15 @@ func TestFilterHelperAssignedRequests(t *testing.T) {
 	requests := []RecyclingRequest{
 		{ID: "accepted-self", Status: "accepted", HelperID: helperID},
 		{ID: "accepted-other", Status: "accepted", HelperID: "helper-1"},
-		{ID: "pending", Status: "pending", HelperID: helperID},
+		{ID: "pending-returned-to-pool", Status: "pending", HelperID: helperID},
+		{ID: "cancelled-returned-to-pool", Status: "cancelled", HelperID: helperID, CanceledHelperIDs: []string{helperID}},
 	}
 
 	filtered := filterHelperAssignedRequests(requests, helperID)
-	if len(filtered) != 2 {
-		t.Fatalf("len(filterHelperAssignedRequests()) = %d, want 2", len(filtered))
+	if len(filtered) != 1 {
+		t.Fatalf("len(filterHelperAssignedRequests()) = %d, want 1", len(filtered))
 	}
 	if filtered[0].ID != "accepted-self" {
 		t.Fatalf("filtered[0].ID = %q, want %q", filtered[0].ID, "accepted-self")
-	}
-	if filtered[1].ID != "pending" {
-		t.Fatalf("filtered[1].ID = %q, want %q", filtered[1].ID, "pending")
 	}
 }
