@@ -243,6 +243,9 @@ func filterHelperVisiblePendingRequests(requests []RecyclingRequest, helperID st
 		if helperHasCancelledRequest(request.CanceledHelperIDs, helperID) {
 			continue
 		}
+		if isCancelledRequestStatus(request.Status) {
+			request.Status = "pending"
+		}
 		request.HelperID = ""
 		filtered = append(filtered, request)
 	}

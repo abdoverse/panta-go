@@ -52,8 +52,14 @@ func TestFilterHelperVisiblePendingRequests(t *testing.T) {
 	if filtered[3].ID != "cancelled-unassigned" {
 		t.Fatalf("filtered[3].ID = %q, want %q", filtered[3].ID, "cancelled-unassigned")
 	}
+	if filtered[3].Status != "pending" {
+		t.Fatalf("filtered[3].Status = %q, want %q", filtered[3].Status, "pending")
+	}
 	if filtered[4].ID != "cancelled-returned-from-helper" {
 		t.Fatalf("filtered[4].ID = %q, want %q", filtered[4].ID, "cancelled-returned-from-helper")
+	}
+	if filtered[4].Status != "pending" {
+		t.Fatalf("filtered[4].Status = %q, want %q", filtered[4].Status, "pending")
 	}
 }
 
