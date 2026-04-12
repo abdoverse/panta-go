@@ -23,7 +23,7 @@ export class InfraStack extends cdk.Stack {
     const backendMemory = '512';
     const steadyStateTaskCount = 1;
     const maxTaskCount = 2;
-    const logRetentionDays = 3;
+    const logRetentionDays = logs.RetentionDays.ONE_DAY;
     const deploymentMaximumPercent = 100;
     const deploymentMinimumHealthyPercent = 0;
 

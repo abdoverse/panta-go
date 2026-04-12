@@ -62,7 +62,7 @@ test('backend service uses safer deployment defaults and structured logging rete
   const template = Template.fromStack(stack);
 
   template.hasResourceProperties('AWS::Logs::LogGroup', {
-    RetentionInDays: 3,
+    RetentionInDays: 1,
   });
 
   template.hasResourceProperties('AWS::ECS::ExpressGatewayService', {
