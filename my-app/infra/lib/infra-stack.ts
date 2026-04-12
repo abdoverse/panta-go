@@ -9,21 +9,43 @@ import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
+import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as cr from 'aws-cdk-lib/custom-resources';
 import * as path from 'path';
 
 export class InfraStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
+    const requestsTableName = 'panta-go-requests';
+    const requestImagesBucketName = 'panta-go-request-images';
+
     const backendAsset = new assets.DockerImageAsset(this, 'BackendAsset', {
       directory: path.join(__dirname, '../../backend'),
       platform: assets.Platform.LINUX_AMD64,
     });
 
-    const table = new dynamodb.Table(this, 'PantaRequestsTable', {
+    const table = new dynamodb.Table(this, 'StaticPantaRequestsTable', {
+      tableName: requestsTableName,
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+
+    const requestImagesBucket = new s3.Bucket(this, 'StaticPantaRequestImagesBucket', {
+      bucketName: requestImagesBucketName,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      enforceSSL: true,
+      objectOwnership: s3.ObjectOwnership.BUCKET_OWNER_ENFORCED,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
+      versioned: true,
+      lifecycleRules: [
+        {
+          abortIncompleteMultipartUploadAfter: cdk.Duration.days(7),
+        },
+      ],
     });
 
     const userPool = new cognito.UserPool(this, 'PantaUserPool', {
@@ -78,6 +100,7 @@ export class InfraStack extends cdk.Stack {
       assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
     });
     table.grantReadWriteData(taskRole);
+    requestImagesBucket.grantReadWrite(taskRole);
     firebaseServiceAccountSecret.grantRead(taskExecutionRole);
 
     const logGroup = new logs.LogGroup(this, 'PantaExpressLogGroup', {
@@ -98,6 +121,7 @@ export class InfraStack extends cdk.Stack {
         environment: [
           { name: 'PORT', value: '8080' },
           { name: 'TABLE_NAME', value: table.tableName },
+          { name: 'IMAGE_BUCKET_NAME', value: requestImagesBucket.bucketName },
           { name: 'AWS_REGION', value: this.region },
           { name: 'COGNITO_USER_POOL_ID', value: userPool.userPoolId },
           { name: 'COGNITO_CLIENT_ID', value: userPoolClient.userPoolClientId },
@@ -120,6 +144,176 @@ export class InfraStack extends cdk.Stack {
     });
     expressService.node.addDependency(backendAsset);
 
+    const deploymentTuningVersion = backendAsset.imageUri;
+
+    const describeManagedService = new cr.AwsCustomResource(this, 'DescribeManagedEcsService', {
+      onCreate: {
+        service: 'ECS',
+        action: 'describeServices',
+        parameters: {
+          cluster: 'default',
+          services: [expressService.attrServiceArn],
+        },
+        physicalResourceId: cr.PhysicalResourceId.of(
+          `describe-managed-service-${deploymentTuningVersion}`,
+        ),
+      },
+      onUpdate: {
+        service: 'ECS',
+        action: 'describeServices',
+        parameters: {
+          cluster: 'default',
+          services: [expressService.attrServiceArn],
+        },
+        physicalResourceId: cr.PhysicalResourceId.of(
+          `describe-managed-service-${deploymentTuningVersion}`,
+        ),
+      },
+      policy: cr.AwsCustomResourcePolicy.fromSdkCalls({
+        resources: cr.AwsCustomResourcePolicy.ANY_RESOURCE,
+      }),
+      outputPaths: ['services.0.loadBalancers.0.targetGroupArn'],
+    });
+    describeManagedService.node.addDependency(expressService);
+
+    const managedTargetGroupArn = describeManagedService.getResponseField(
+      'services.0.loadBalancers.0.targetGroupArn',
+    );
+
+    const tuneManagedTargetGroupHealthCheck = new cr.AwsCustomResource(
+      this,
+      'TuneManagedTargetGroupHealthCheck',
+      {
+        onCreate: {
+          service: 'ElasticLoadBalancingV2',
+          action: 'modifyTargetGroup',
+          parameters: {
+            TargetGroupArn: managedTargetGroupArn,
+            HealthCheckPath: '/health',
+            HealthCheckIntervalSeconds: 5,
+            HealthyThresholdCount: 2,
+            UnhealthyThresholdCount: 2,
+          },
+          physicalResourceId: cr.PhysicalResourceId.of(
+            `target-group-health-${deploymentTuningVersion}`,
+          ),
+        },
+        onUpdate: {
+          service: 'ElasticLoadBalancingV2',
+          action: 'modifyTargetGroup',
+          parameters: {
+            TargetGroupArn: managedTargetGroupArn,
+            HealthCheckPath: '/health',
+            HealthCheckIntervalSeconds: 5,
+            HealthyThresholdCount: 2,
+            UnhealthyThresholdCount: 2,
+          },
+          physicalResourceId: cr.PhysicalResourceId.of(
+            `target-group-health-${deploymentTuningVersion}`,
+          ),
+        },
+        policy: cr.AwsCustomResourcePolicy.fromSdkCalls({
+          resources: cr.AwsCustomResourcePolicy.ANY_RESOURCE,
+        }),
+      },
+    );
+
+    const tuneManagedTargetGroupDraining = new cr.AwsCustomResource(
+      this,
+      'TuneManagedTargetGroupDraining',
+      {
+        onCreate: {
+          service: 'ElasticLoadBalancingV2',
+          action: 'modifyTargetGroupAttributes',
+          parameters: {
+            TargetGroupArn: managedTargetGroupArn,
+            Attributes: [
+              {
+                Key: 'deregistration_delay.timeout_seconds',
+                Value: '0',
+              },
+            ],
+          },
+          physicalResourceId: cr.PhysicalResourceId.of(
+            `target-group-drain-${deploymentTuningVersion}`,
+          ),
+        },
+        onUpdate: {
+          service: 'ElasticLoadBalancingV2',
+          action: 'modifyTargetGroupAttributes',
+          parameters: {
+            TargetGroupArn: managedTargetGroupArn,
+            Attributes: [
+              {
+                Key: 'deregistration_delay.timeout_seconds',
+                Value: '0',
+              },
+            ],
+          },
+          physicalResourceId: cr.PhysicalResourceId.of(
+            `target-group-drain-${deploymentTuningVersion}`,
+          ),
+        },
+        policy: cr.AwsCustomResourcePolicy.fromSdkCalls({
+          resources: cr.AwsCustomResourcePolicy.ANY_RESOURCE,
+        }),
+      },
+    );
+
+    const tuneManagedEcsDeployment = new cr.AwsCustomResource(
+      this,
+      'TuneManagedEcsDeployment',
+      {
+        onCreate: {
+          service: 'ECS',
+          action: 'updateService',
+          parameters: {
+            cluster: 'default',
+            service: expressService.attrServiceArn,
+            deploymentConfiguration: {
+              deploymentCircuitBreaker: {
+                enable: true,
+                rollback: true,
+              },
+              maximumPercent: 200,
+              minimumHealthyPercent: 0,
+            },
+          },
+          physicalResourceId: cr.PhysicalResourceId.of(
+            `ecs-deployment-${deploymentTuningVersion}`,
+          ),
+        },
+        onUpdate: {
+          service: 'ECS',
+          action: 'updateService',
+          parameters: {
+            cluster: 'default',
+            service: expressService.attrServiceArn,
+            deploymentConfiguration: {
+              deploymentCircuitBreaker: {
+                enable: true,
+                rollback: true,
+              },
+              maximumPercent: 200,
+              minimumHealthyPercent: 0,
+            },
+          },
+          physicalResourceId: cr.PhysicalResourceId.of(
+            `ecs-deployment-${deploymentTuningVersion}`,
+          ),
+        },
+        policy: cr.AwsCustomResourcePolicy.fromSdkCalls({
+          resources: cr.AwsCustomResourcePolicy.ANY_RESOURCE,
+        }),
+      },
+    );
+
+    tuneManagedTargetGroupHealthCheck.node.addDependency(describeManagedService);
+    tuneManagedTargetGroupDraining.node.addDependency(describeManagedService);
+    tuneManagedEcsDeployment.node.addDependency(describeManagedService);
+    tuneManagedEcsDeployment.node.addDependency(tuneManagedTargetGroupHealthCheck);
+    tuneManagedEcsDeployment.node.addDependency(tuneManagedTargetGroupDraining);
+
     new cdk.CfnOutput(this, 'UserPoolId', {
       value: userPool.userPoolId,
       description: 'Cognito User Pool ID',
@@ -134,6 +328,16 @@ export class InfraStack extends cdk.Stack {
       value: expressService.attrEndpoint,
       description: 'The URL of the ECS Express service',
       exportName: 'PantaGoBackendServiceUrl',
+    });
+
+    new cdk.CfnOutput(this, 'RequestImagesBucketName', {
+      value: requestImagesBucket.bucketName,
+      description: 'The private S3 bucket that stores request images',
+    });
+
+    new cdk.CfnOutput(this, 'RequestsTableName', {
+      value: table.tableName,
+      description: 'The DynamoDB table that stores recycling requests',
     });
 
     new cdk.CfnOutput(this, 'ExpressServiceArn', {
