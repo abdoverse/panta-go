@@ -141,6 +141,26 @@ export class InfraStack extends cdk.Stack {
       retention: logRetentionDays,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
+    const targetGroupHealthCheckLogGroup = new logs.LogGroup(
+      this,
+      'TuneManagedTargetGroupHealthCheckLogGroup',
+      {
+        retention: logRetentionDays,
+        removalPolicy: cdk.RemovalPolicy.DESTROY,
+      },
+    );
+    const targetGroupDrainingLogGroup = new logs.LogGroup(
+      this,
+      'TuneManagedTargetGroupDrainingLogGroup',
+      {
+        retention: logRetentionDays,
+        removalPolicy: cdk.RemovalPolicy.DESTROY,
+      },
+    );
+    const ecsDeploymentLogGroup = new logs.LogGroup(this, 'TuneManagedEcsDeploymentLogGroup', {
+      retention: logRetentionDays,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
 
     const expressService = new ecs.CfnExpressGatewayService(this, 'PantaGoBackendService', {
       serviceName: 'panta-go-backend',
@@ -192,6 +212,7 @@ export class InfraStack extends cdk.Stack {
       this,
       'TuneManagedTargetGroupHealthCheck',
       {
+        logGroup: targetGroupHealthCheckLogGroup,
         onCreate: {
           service: 'ELBv2',
           action: 'modifyTargetGroup',
@@ -232,6 +253,7 @@ export class InfraStack extends cdk.Stack {
       this,
       'TuneManagedTargetGroupDraining',
       {
+        logGroup: targetGroupDrainingLogGroup,
         onCreate: {
           service: 'ELBv2',
           action: 'modifyTargetGroupAttributes',
@@ -274,6 +296,7 @@ export class InfraStack extends cdk.Stack {
       this,
       'TuneManagedEcsDeployment',
       {
+        logGroup: ecsDeploymentLogGroup,
         onCreate: {
           service: 'ECS',
           action: 'updateService',

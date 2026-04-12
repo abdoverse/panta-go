@@ -61,9 +61,11 @@ test('backend service stays on the minimum safe ECS Express footprint', () => {
   const stack = new InfraStack(app, 'MyTestStack');
   const template = Template.fromStack(stack);
 
-  template.hasResourceProperties('AWS::Logs::LogGroup', {
-    RetentionInDays: 1,
-  });
+  const logGroups = template.findResources('AWS::Logs::LogGroup');
+  expect(Object.values(logGroups)).not.toHaveLength(0);
+  for (const logGroup of Object.values(logGroups)) {
+    expect(logGroup.Properties?.RetentionInDays).toBe(1);
+  }
 
   template.hasResourceProperties('AWS::ECS::ExpressGatewayService', {
     Cpu: '256',
