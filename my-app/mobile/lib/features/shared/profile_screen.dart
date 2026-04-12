@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/panta_provider.dart';
-import '../auth/login_page.dart';
 
 String _formatRating(double value) {
   return value == value.roundToDouble()
@@ -184,12 +183,8 @@ class ProfileScreen extends StatelessWidget {
               title: l10n.logOut,
               subtitle: l10n.returnToSignInScreen,
               textColor: Theme.of(context).colorScheme.error,
-              onTap: () {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (_) => const LoginPage()),
-                  (route) => false,
-                );
+              onTap: () async {
+                await context.read<PantaProvider>().logout();
               },
             ),
           ),
