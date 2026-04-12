@@ -147,9 +147,13 @@ class AuthService {
   Future<bool> restoreSession() async {
     try {
       final session = await _loadSession();
-      return session != null;
+      if (session == null) {
+        await _invalidateSession();
+        return false;
+      }
+      return true;
     } catch (_) {
-      await _clearLocalSession();
+      await _invalidateSession();
       return false;
     }
   }
@@ -160,7 +164,7 @@ class AuthService {
       final session = await _loadSession();
       return session?.getIdToken().getJwtToken();
     } catch (_) {
-      await _clearLocalSession();
+      await _invalidateSession();
       return null;
     }
   }
@@ -209,12 +213,12 @@ class AuthService {
   // Logout
   Future<void> logout() async {
     final currentUser = _currentUser ?? await _userPool.getCurrentUser();
+    final activeSession = await _loadSession();
+    _session = null;
+    _currentUser = null;
     try {
-      if (currentUser != null) {
-        final session = await _loadSession();
-        if (session != null && session.isValid()) {
-          await currentUser.globalSignOut();
-        }
+      if (currentUser != null && activeSession != null && activeSession.isValid()) {
+        await currentUser.globalSignOut();
       }
     } finally {
       await _clearLocalSession(currentUser: currentUser);
@@ -228,7 +232,7 @@ class AuthService {
 
     _currentUser ??= await _userPool.getCurrentUser();
     if (_currentUser == null) {
-      _session = null;
+      await _invalidateSession();
       return null;
     }
 
@@ -236,11 +240,11 @@ class AuthService {
     try {
       restoredSession = await _currentUser!.getSession();
     } catch (_) {
-      await _clearLocalSession();
+      await _invalidateSession();
       return null;
     }
     if (restoredSession == null || !restoredSession.isValid()) {
-      await _clearLocalSession();
+      await _invalidateSession();
       return null;
     }
 
@@ -255,5 +259,11 @@ class AuthService {
     }
     _session = null;
     _currentUser = null;
+  }
+
+  Future<void> _invalidateSession() async {
+    _session = null;
+    _currentUser = null;
+    await _clearLocalSession();
   }
 }

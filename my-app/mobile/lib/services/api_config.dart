@@ -1,13 +1,21 @@
 class ApiConfig {
   static const String _defaultBaseUrl = 'http://127.0.0.1:8080';
   static const String _defaultRegion = 'eu-north-1';
+  static const bool _isProduction = bool.fromEnvironment('dart.vm.product');
 
   static String get baseUrl => _normalizedBaseUri.toString();
 
   static Uri get _normalizedBaseUri {
-    final configuredValue = const String.fromEnvironment('API_BASE_URL',
-            defaultValue: _defaultBaseUrl)
-        .trim();
+    final configuredValue = const String.fromEnvironment(
+      'API_BASE_URL',
+      defaultValue: '',
+    ).trim();
+    if (configuredValue.isEmpty) {
+      if (_isProduction) {
+        throw StateError('API_BASE_URL must be provided for production builds.');
+      }
+      return Uri.parse(_defaultBaseUrl);
+    }
     final withScheme = configuredValue.contains('://')
         ? configuredValue
         : 'https://$configuredValue';
@@ -66,8 +74,20 @@ class ApiConfig {
 
   static String get region => const String.fromEnvironment(
         'AWS_REGION',
-        defaultValue: _defaultRegion,
-      ).trim();
+        defaultValue: '',
+      ).trim().isNotEmpty
+      ? const String.fromEnvironment(
+          'AWS_REGION',
+          defaultValue: '',
+        ).trim()
+      : _fallbackRegion;
+
+  static String get _fallbackRegion {
+    if (_isProduction) {
+      throw StateError('AWS_REGION must be provided for production builds.');
+    }
+    return _defaultRegion;
+  }
 
   static String? get firebaseWebVapidKey {
     final value = const String.fromEnvironment(
