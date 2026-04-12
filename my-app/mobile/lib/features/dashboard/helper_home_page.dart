@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
+import '../../core/localization/app_localizations.dart';
 import '../../providers/panta_provider.dart';
 import '../../core/theme/app_theme.dart';
 import 'package:provider/provider.dart';
@@ -90,6 +91,7 @@ class _HelperHomePageState extends State<HelperHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       body: IndexedStack(
@@ -104,23 +106,23 @@ class _HelperHomePageState extends State<HelperHomePage> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (i) => setState(() => _currentIndex = i),
-        destinations: const [
+        destinations: [
           NavigationDestination(
               icon: Icon(Icons.explore_outlined),
               selectedIcon: Icon(Icons.explore),
-              label: 'Available'),
+              label: l10n.available),
           NavigationDestination(
               icon: Icon(Icons.check_circle_outline),
               selectedIcon: Icon(Icons.check_circle),
-              label: 'My Jobs'),
+              label: l10n.myJobs),
           NavigationDestination(
               icon: Icon(Icons.history_outlined),
               selectedIcon: Icon(Icons.history),
-              label: 'History'),
+              label: l10n.history),
           NavigationDestination(
               icon: Icon(Icons.person_outline),
               selectedIcon: Icon(Icons.person),
-              label: 'Profile'),
+              label: l10n.profileTitle),
         ],
       ),
     );
@@ -135,6 +137,7 @@ class _MarketplaceView extends StatelessWidget {
     final provider = context.watch<PantaProvider>();
     final jobs = provider.availableJobs;
     final displayName = provider.currentUserDisplayName;
+    final l10n = context.l10n;
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -150,9 +153,7 @@ class _MarketplaceView extends StatelessWidget {
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
               title: Text(
-                displayName == null || displayName.isEmpty
-                    ? 'Welcome Back!'
-                    : 'Welcome Back, $displayName!',
+                l10n.welcomeBack(displayName),
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               background: Align(
@@ -199,7 +200,9 @@ class _MarketplaceView extends StatelessWidget {
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              provider.helperLocationSortingMessage,
+                              provider.isSortingJobsByDistance
+                                  ? l10n.closestJobsMessage
+                                  : l10n.enableLocationMessage,
                               style: Theme.of(context).textTheme.bodyMedium,
                             ),
                           ),
@@ -214,10 +217,10 @@ class _MarketplaceView extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     if (jobs.isEmpty)
-                      const Center(
+                      Center(
                               child: Padding(
-                                  padding: EdgeInsets.all(40),
-                                  child: Text("No jobs available right now.")))
+                                  padding: const EdgeInsets.all(40),
+                                  child: Text(l10n.noJobsAvailable)))
                           .animate()
                           .fadeIn(),
                     ...jobs.asMap().entries.map((e) =>
@@ -242,9 +245,10 @@ class _MyJobsView extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.watch<PantaProvider>();
     final jobs = provider.acceptedJobs;
+    final l10n = context.l10n;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("My Active Jobs")),
+      appBar: AppBar(title: Text(l10n.myActiveJobs)),
       body: RefreshIndicator(
         onRefresh: () async {
           await context.read<PantaProvider>().fetchRequests();
@@ -263,7 +267,7 @@ class _MyJobsView extends StatelessWidget {
                           Icon(Icons.assignment_outlined,
                               size: 80, color: Colors.grey[300]),
                           const SizedBox(height: 16),
-                          Text("No Active Jobs",
+                          Text(l10n.noActiveJobs,
                               style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w600,
@@ -272,7 +276,7 @@ class _MyJobsView extends StatelessWidget {
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 40),
                             child: Text(
-                              "Go to the 'Available' tab to find recycling requests nearby.",
+                              l10n.availableTabPrompt,
                               textAlign: TextAlign.center,
                               style: TextStyle(color: Colors.grey[500]),
                             ),
@@ -304,9 +308,10 @@ class _HistoryView extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.watch<PantaProvider>();
     final jobs = provider.completedJobs;
+    final l10n = context.l10n;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Pickup History")),
+      appBar: AppBar(title: Text(l10n.pickupHistory)),
       body: RefreshIndicator(
         onRefresh: () async {
           await context.read<PantaProvider>().fetchRequests();
@@ -318,7 +323,7 @@ class _HistoryView extends StatelessWidget {
                   child: ConstrainedBox(
                     constraints:
                         BoxConstraints(minHeight: constraints.maxHeight),
-                    child: const Center(child: Text("No completed jobs yet.")),
+                    child: Center(child: Text(l10n.noCompletedJobsYet)),
                   ),
                 ),
               )
@@ -354,6 +359,7 @@ class _JobCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       clipBehavior: Clip.antiAlias,
@@ -450,7 +456,7 @@ class _JobCard extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(top: 8.0),
                     child: Text(
-                      'Distance-aware sorting is enabled for this pickup.',
+                      l10n.distanceAwareSortingEnabled,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: Colors.grey[600],
                           ),
@@ -468,7 +474,7 @@ class _JobCard extends StatelessWidget {
                             size: 18, color: AppTheme.primaryGreen)),
                     const SizedBox(width: 12),
                     Text(
-                      "${DateFormat('d MMM, HH:mm', AppConstants.defaultLocaleId).format(job.scheduledFrom)} - ${DateFormat('HH:mm', AppConstants.defaultLocaleId).format(job.scheduledTo)}",
+                      "${DateFormat('d MMM, HH:mm', l10n.localeName).format(job.scheduledFrom)} - ${DateFormat('HH:mm', l10n.localeName).format(job.scheduledTo)}",
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ],
@@ -490,10 +496,10 @@ class _JobCard extends StatelessWidget {
                             color: Colors.grey[100],
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(color: Colors.grey[300]!)),
-                        child: const Center(
+                        child: Center(
                           child: Text(
-                            "Completed",
-                            style: TextStyle(
+                            l10n.completed,
+                            style: const TextStyle(
                                 color: Colors.grey,
                                 fontWeight: FontWeight.bold),
                           ),
@@ -520,7 +526,11 @@ class _JobCard extends StatelessWidget {
                                         size: 16, color: Colors.amber),
                                     const SizedBox(width: 4),
                                     Text(
-                                      "Rated ${job.rating == null ? 'N/A' : _formatRatingValue(job.rating!)}",
+                                      l10n.ratedValue(
+                                        job.rating == null
+                                            ? l10n.naLabel
+                                            : _formatRatingValue(job.rating!),
+                                      ),
                                       style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                           color: Colors.amber),
@@ -556,19 +566,20 @@ class _JobCard extends StatelessWidget {
                           if (!context.mounted) return;
                           if (!accepted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("Could not accept this pickup."),
+                              SnackBar(
+                                content: Text(l10n.couldNotAcceptPickup),
                               ),
                             );
                             return;
                           }
                           ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content:
-                                      Text("Job Accepted! Head to My Jobs.")));
+                            SnackBar(
+                              content: Text(l10n.jobAcceptedHeadToMyJobs),
+                            ),
+                          );
                         });
                       },
-                      child: const Text("Accept Pickup"),
+                      child: Text(l10n.acceptPickup),
                     ),
                   )
                 else
@@ -580,20 +591,18 @@ class _JobCard extends StatelessWidget {
                             final confirmed = await showDialog<bool>(
                               context: context,
                               builder: (dialogContext) => AlertDialog(
-                                title: const Text("Cancel pickup?"),
-                                content: const Text(
-                                  "This job will become available again for another helper, and the recycler will be notified.",
-                                ),
+                                title: Text(l10n.cancelPickupQuestion),
+                                content: Text(l10n.cancelPickupDescription),
                                 actions: [
                                   TextButton(
                                     onPressed: () =>
                                         Navigator.of(dialogContext).pop(false),
-                                    child: const Text("Keep Job"),
+                                    child: Text(l10n.keepJob),
                                   ),
                                   TextButton(
                                     onPressed: () =>
                                         Navigator.of(dialogContext).pop(true),
-                                    child: const Text("Cancel Pickup"),
+                                    child: Text(l10n.cancelPickup),
                                   ),
                                 ],
                               ),
@@ -609,17 +618,16 @@ class _JobCard extends StatelessWidget {
                             if (!context.mounted) return;
                             if (!cancelled) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content:
-                                      Text("Could not cancel this pickup."),
+                                SnackBar(
+                                  content: Text(l10n.couldNotCancelPickup),
                                 ),
                               );
                               return;
                             }
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
+                              SnackBar(
                                 content: Text(
-                                  "Pickup cancelled. The request is available to other helpers again.",
+                                  l10n.pickupCancelledAvailableAgain,
                                 ),
                               ),
                             );
@@ -628,7 +636,7 @@ class _JobCard extends StatelessWidget {
                             foregroundColor:
                                 Theme.of(context).colorScheme.error,
                           ),
-                          child: const Text("Cancel Pickup"),
+                          child: Text(l10n.cancelPickup),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -641,9 +649,8 @@ class _JobCard extends StatelessWidget {
                             if (!context.mounted) return;
                             if (!completed) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content:
-                                      Text("Could not complete this pickup."),
+                                SnackBar(
+                                  content: Text(l10n.couldNotCompletePickup),
                                 ),
                               );
                               return;
@@ -652,12 +659,12 @@ class _JobCard extends StatelessWidget {
                                 context, job.title);
                             if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("Marked as Picked Up!"),
+                              SnackBar(
+                                content: Text(l10n.markedAsPickedUp),
                               ),
                             );
                           },
-                          child: const Text("Mark Complete"),
+                          child: Text(l10n.markComplete),
                         ),
                       ),
                     ],
@@ -709,6 +716,7 @@ class _CompletionCelebrationDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Dialog(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -740,7 +748,7 @@ class _CompletionCelebrationDialog extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Pickup completed!',
+                  l10n.pickupCompletedTitle,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -757,7 +765,7 @@ class _CompletionCelebrationDialog extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Nice work. This pickup is now marked as completed.',
+                  l10n.pickupCompletedMessage,
                   style: Theme.of(context).textTheme.bodyMedium,
                   textAlign: TextAlign.center,
                 ),
@@ -822,13 +830,13 @@ class _TimeRemainingDisplay extends StatelessWidget {
 
   const _TimeRemainingDisplay({required this.deadline});
 
-  String _formatDuration(Duration d) {
-    if (d.inDays > 0) return "${d.inDays} day${d.inDays > 1 ? 's' : ''}";
-    if (d.inHours > 0) return "${d.inHours} hr${d.inHours > 1 ? 's' : ''}";
+  String _formatDuration(BuildContext context, Duration d) {
+    if (d.inDays > 0) return context.l10n.dayCount(d.inDays);
+    if (d.inHours > 0) return context.l10n.hourCount(d.inHours);
     if (d.inMinutes > 0) {
-      return "${d.inMinutes} min${d.inMinutes > 1 ? 's' : ''}";
+      return context.l10n.minuteCount(d.inMinutes);
     }
-    return "moments";
+    return context.l10n.moments;
   }
 
   @override
@@ -842,8 +850,8 @@ class _TimeRemainingDisplay extends StatelessWidget {
         ? AppTheme.lightTheme.colorScheme.error
         : AppTheme.primaryGreen;
     final label = isOverdue
-        ? "OVERDUE: ${_formatDuration(duration)}"
-        : "${_formatDuration(duration)} LEFT";
+        ? context.l10n.overdueLabel(_formatDuration(context, duration))
+        : context.l10n.leftLabel(_formatDuration(context, duration));
 
     return Container(
       width: double.infinity,

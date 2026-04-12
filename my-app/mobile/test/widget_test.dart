@@ -12,6 +12,7 @@ import 'package:panta/app.dart';
 void main() {
   testWidgets('renders login screen shell', (WidgetTester tester) async {
     await tester.pumpWidget(const PantaApp());
+    await tester.pumpAndSettle();
 
     expect(find.text('Panta'), findsWidgets);
   });

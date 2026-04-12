@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/panta_provider.dart';
 import '../dashboard/helper_home_page.dart';
@@ -43,6 +44,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final isWideLayout = MediaQuery.sizeOf(context).width >= 700;
+    final l10n = context.l10n;
 
     return Scaffold(
       body: Container(
@@ -90,7 +92,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Schedule pickups, manage requests, and keep recycling simple.',
+                      l10n.appTagline,
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
@@ -103,15 +105,15 @@ class _LoginPageState extends State<LoginPage> {
                           children: [
                             SegmentedButton<_AuthMode>(
                               showSelectedIcon: false,
-                              segments: const [
+                              segments: [
                                 ButtonSegment(
                                   value: _AuthMode.login,
-                                  label: Text('Log in'),
+                                  label: Text(l10n.logIn),
                                   icon: Icon(Icons.login_rounded),
                                 ),
                                 ButtonSegment(
                                   value: _AuthMode.signUp,
-                                  label: Text('Create account'),
+                                  label: Text(l10n.createAccount),
                                   icon: Icon(Icons.person_add_alt_1_rounded),
                                 ),
                               ],
@@ -131,15 +133,15 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                               child: SegmentedButton<String>(
                                 showSelectedIcon: false,
-                                segments: const [
+                                segments: [
                                   ButtonSegment(
                                     value: 'Recycler',
-                                    label: Text('Recycler'),
+                                    label: Text(l10n.recyclerRole),
                                     icon: Icon(Icons.eco_outlined),
                                   ),
                                   ButtonSegment(
                                     value: 'Helper',
-                                    label: Text('Helper'),
+                                    label: Text(l10n.helperRole),
                                     icon: Icon(Icons.local_shipping_outlined),
                                   ),
                                 ],
@@ -154,15 +156,15 @@ class _LoginPageState extends State<LoginPage> {
                             const SizedBox(height: 24),
                             Text(
                               _isSignUpMode
-                                  ? 'Create your $_selectedRole account'
-                                  : 'Continue as $_selectedRole',
+                                  ? l10n.createRoleAccount(_selectedRole)
+                                  : l10n.continueAsRole(_selectedRole),
                               style: Theme.of(context).textTheme.titleLarge,
                             ),
                             const SizedBox(height: 6),
                             Text(
                               _isSignUpMode
-                                  ? 'Use your email to create an account and we will store your name for a personal experience.'
-                                  : 'Sign in with the email address connected to your account.',
+                                  ? l10n.signUpDescription
+                                  : l10n.signInDescription,
                               style: Theme.of(context).textTheme.bodyMedium,
                             ),
                             const SizedBox(height: 24),
@@ -180,17 +182,18 @@ class _LoginPageState extends State<LoginPage> {
                                         autofillHints: const [
                                           AutofillHints.name
                                         ],
-                                        decoration: const InputDecoration(
-                                          labelText: 'Full name',
-                                          hintText: 'Enter your full name',
-                                          prefixIcon: Icon(
-                                              Icons.person_outline_rounded),
+                                        decoration: InputDecoration(
+                                          labelText: l10n.fullName,
+                                          hintText: l10n.enterFullName,
+                                          prefixIcon: const Icon(
+                                            Icons.person_outline_rounded,
+                                          ),
                                         ),
                                         validator: (value) {
                                           if (!_isSignUpMode) return null;
                                           if (value == null ||
                                               value.trim().isEmpty) {
-                                            return 'Please enter your name';
+                                            return l10n.pleaseEnterName;
                                           }
                                           return null;
                                         },
@@ -207,22 +210,24 @@ class _LoginPageState extends State<LoginPage> {
                                       autofillHints: const [
                                         AutofillHints.email
                                       ],
-                                      decoration: const InputDecoration(
-                                        labelText: 'Email',
+                                      decoration: InputDecoration(
+                                        labelText: l10n.email,
                                         hintText: 'name@example.com',
-                                        prefixIcon: Icon(Icons.email_outlined),
+                                        prefixIcon: const Icon(
+                                          Icons.email_outlined,
+                                        ),
                                       ),
                                       validator: (value) {
                                         final email = value?.trim() ?? '';
                                         if (email.isEmpty) {
-                                          return 'Please enter your email';
+                                          return l10n.pleaseEnterEmail;
                                         }
                                         if (!_looksLikeEmail(email) &&
                                             !(_isSignUpMode &&
                                                 _looksLikeEmail(_nameController
                                                     .text
                                                     .trim()))) {
-                                          return 'Please enter a valid email';
+                                          return l10n.pleaseEnterValidEmail;
                                         }
                                         return null;
                                       },
@@ -239,10 +244,10 @@ class _LoginPageState extends State<LoginPage> {
                                             : AutofillHints.password,
                                       ],
                                       decoration: InputDecoration(
-                                        labelText: 'Password',
+                                        labelText: l10n.password,
                                         hintText: _isSignUpMode
-                                            ? 'Create a strong password'
-                                            : 'Enter your password',
+                                            ? l10n.createStrongPassword
+                                            : l10n.enterPassword,
                                         prefixIcon: const Icon(
                                             Icons.lock_outline_rounded),
                                         suffixIcon: IconButton(
@@ -258,31 +263,31 @@ class _LoginPageState extends State<LoginPage> {
                                                 : Icons.visibility_outlined,
                                           ),
                                           tooltip: _isPasswordVisible
-                                              ? 'Hide password'
-                                              : 'Show password',
+                                              ? l10n.hidePassword
+                                              : l10n.showPassword,
                                         ),
                                       ),
                                       validator: (value) {
                                         if (value == null || value.isEmpty) {
-                                          return 'Please enter your password';
+                                          return l10n.pleaseEnterPassword;
                                         }
                                         if (_isSignUpMode && value.length < 8) {
-                                          return 'Password must be at least 8 characters';
+                                          return l10n.passwordMinLength;
                                         }
                                         if (_isSignUpMode &&
                                             !RegExp(r'(?=.*[a-z])')
                                                 .hasMatch(value)) {
-                                          return 'Must contain at least one lowercase letter';
+                                          return l10n.passwordLowercase;
                                         }
                                         if (_isSignUpMode &&
                                             !RegExp(r'(?=.*[A-Z])')
                                                 .hasMatch(value)) {
-                                          return 'Must contain at least one uppercase letter';
+                                          return l10n.passwordUppercase;
                                         }
                                         if (_isSignUpMode &&
                                             !RegExp(r'(?=.*[0-9])')
                                                 .hasMatch(value)) {
-                                          return 'Must contain at least one number';
+                                          return l10n.passwordNumber;
                                         }
                                         return null;
                                       },
@@ -303,7 +308,7 @@ class _LoginPageState extends State<LoginPage> {
                                       : Icons.login_rounded,
                                 ),
                                 label: Text(
-                                  _isSignUpMode ? 'Create account' : 'Log in',
+                                  _isSignUpMode ? l10n.createAccount : l10n.logIn,
                                 ),
                               ),
                               const SizedBox(height: 12),
@@ -317,7 +322,11 @@ class _LoginPageState extends State<LoginPage> {
                                 },
                                 icon: const Icon(Icons.swap_horiz_rounded),
                                 label: Text(
-                                  'Switch to ${_selectedRole == 'Recycler' ? 'Helper' : 'Recycler'}',
+                                  l10n.switchToRole(
+                                    _selectedRole == 'Recycler'
+                                        ? 'Helper'
+                                        : 'Recycler',
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -331,8 +340,8 @@ class _LoginPageState extends State<LoginPage> {
                                 },
                                 child: Text(
                                   _isSignUpMode
-                                      ? 'Already have an account? Log in'
-                                      : 'New to Panta? Create an account',
+                                      ? l10n.alreadyHaveAccount
+                                      : l10n.newToPanta,
                                 ),
                               ),
                             ],
@@ -343,7 +352,7 @@ class _LoginPageState extends State<LoginPage> {
                     const SizedBox(height: 20),
                     if (isWideLayout)
                       Text(
-                        'Built for clean, reliable pickup scheduling across iOS, Android, and web.',
+                        l10n.platformTagline,
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: AppTheme.textSecondary,
@@ -389,10 +398,10 @@ class _LoginPageState extends State<LoginPage> {
         ),
       );
     } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Login failed: $error')),
-      );
-    }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.loginFailed(error ?? ''))),
+        );
+      }
   }
 
   Future<void> _signUp() async {
@@ -412,10 +421,10 @@ class _LoginPageState extends State<LoginPage> {
     if (error == null && mounted) {
       _showConfirmationDialog();
     } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Sign up failed: $error')),
-      );
-    }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.signUpFailed(error ?? ''))),
+        );
+      }
   }
 
   void _showConfirmationDialog() {
@@ -423,19 +432,17 @@ class _LoginPageState extends State<LoginPage> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('Confirm your email'),
+        title: Text(context.l10n.confirmYourEmail),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'Enter the verification code that was sent to your email address.',
-            ),
+            Text(context.l10n.verificationCodeDescription),
             const SizedBox(height: 16),
             TextField(
               controller: _confirmationCodeController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Confirmation code',
+              decoration: InputDecoration(
+                labelText: context.l10n.confirmationCode,
               ),
             ),
           ],
@@ -443,14 +450,14 @@ class _LoginPageState extends State<LoginPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(context);
               await _confirmAndLogin();
             },
-            child: const Text('Confirm'),
+            child: Text(context.l10n.confirm),
           ),
         ],
       ),
@@ -469,7 +476,7 @@ class _LoginPageState extends State<LoginPage> {
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Confirmation failed: $confirmError')),
+          SnackBar(content: Text(context.l10n.confirmationFailed(confirmError))),
         );
       }
       return;
@@ -493,10 +500,14 @@ class _LoginPageState extends State<LoginPage> {
         ),
       );
     } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Login failed after confirmation: $loginError')),
-      );
-    }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              context.l10n.loginFailedAfterConfirmation(loginError ?? ''),
+            ),
+          ),
+        );
+      }
   }
 
   ({String name, String email}) _normalizeSignupIdentity() {

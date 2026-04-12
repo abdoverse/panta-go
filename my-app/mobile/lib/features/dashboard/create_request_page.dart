@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+import '../../core/localization/app_localizations.dart';
 import '../../providers/panta_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../services/location_service.dart';
@@ -68,9 +69,10 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
       appBar: AppBar(
-        title: const Text("New Pickup Request"),
+        title: Text(l10n.newPickupRequest),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -101,23 +103,23 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                           ? Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.add_a_photo_outlined,
-                                    size: 48,
-                                    color:
-                                        AppTheme.primaryGreen.withOpacity(0.5)),
-                                const SizedBox(height: 12),
-                                Text(
-                                  "Add a photo",
-                                  style: TextStyle(
-                                    color: AppTheme.textSecondary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  "Tap to choose an image",
-                                  style: TextStyle(color: Colors.grey[600]),
-                                ),
+                                 Icon(Icons.add_a_photo_outlined,
+                                     size: 48,
+                                     color:
+                                         AppTheme.primaryGreen.withOpacity(0.5)),
+                                 const SizedBox(height: 12),
+                                 Text(
+                                   l10n.addPhoto,
+                                   style: TextStyle(
+                                     color: AppTheme.textSecondary,
+                                     fontWeight: FontWeight.bold,
+                                   ),
+                                 ),
+                                 const SizedBox(height: 8),
+                                 Text(
+                                   l10n.tapToChooseImage,
+                                   style: TextStyle(color: Colors.grey[600]),
+                                 ),
                               ],
                             )
                           : ClipRRect(
@@ -146,11 +148,11 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                                             _selectedPhotoFileName = null;
                                           });
                                         },
-                                        icon: const Icon(Icons.close,
-                                            color: Colors.white),
-                                        tooltip: 'Remove photo',
-                                      ),
-                                    ),
+                                         icon: const Icon(Icons.close,
+                                             color: Colors.white),
+                                         tooltip: l10n.removePhoto,
+                                       ),
+                                     ),
                                   ),
                                 ],
                               ),
@@ -165,40 +167,40 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                   onPressed: _pickPhoto,
                   icon: const Icon(Icons.photo_library_outlined),
                   label: Text(_selectedPhotoBytes == null
-                      ? 'Choose Photo'
-                      : 'Change Photo'),
+                      ? l10n.choosePhoto
+                      : l10n.changePhoto),
                 ),
               ),
               const SizedBox(height: 32),
 
-              Text("What are you getting rid of?",
+              Text(l10n.whatAreYouGettingRidOf,
                   style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _titleController,
                 style: const TextStyle(fontWeight: FontWeight.w600),
-                decoration: const InputDecoration(
-                  hintText: 'e.g. Old Sofa, Garden Waste',
-                  prefixIcon: Icon(Icons.inventory_2_outlined),
+                decoration: InputDecoration(
+                  hintText: l10n.requestTitleHint,
+                  prefixIcon: const Icon(Icons.inventory_2_outlined),
                 ),
-                validator: (v) => v!.isEmpty ? 'Please enter a title' : null,
+                validator: (v) => v!.isEmpty ? l10n.pleaseEnterTitle : null,
               ),
 
               const SizedBox(height: 24),
-              Text("Description",
+              Text(l10n.description,
                   style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _descriptionController,
                 maxLines: 3,
-                decoration: const InputDecoration(
-                  hintText: 'Any details? (e.g. heavy, 3rd floor, dismantled)',
+                decoration: InputDecoration(
+                  hintText: l10n.descriptionHint,
                   alignLabelWithHint: true,
                 ),
               ),
 
               const SizedBox(height: 24),
-              Text("Location", style: Theme.of(context).textTheme.titleLarge),
+              Text(l10n.location, style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 12),
               TypeAheadField<LocationSuggestion>(
                 controller: _locationController,
@@ -209,12 +211,12 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                   return TextFormField(
                     controller: controller,
                     focusNode: focusNode,
-                    decoration: const InputDecoration(
-                      hintText: 'Enter pickup address',
-                      prefixIcon: Icon(Icons.location_on_outlined),
+                    decoration: InputDecoration(
+                      hintText: l10n.enterPickupAddress,
+                      prefixIcon: const Icon(Icons.location_on_outlined),
                     ),
                     validator: (v) =>
-                        v!.isEmpty ? 'Please enter location' : null,
+                        v!.isEmpty ? l10n.pleaseEnterLocation : null,
                   );
                 },
                 itemBuilder: (context, suggestion) {
@@ -254,15 +256,15 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
               ),
 
               const SizedBox(height: 24),
-              Text("When?", style: Theme.of(context).textTheme.titleLarge),
+              Text(l10n.when, style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 12),
 
               Row(
                 children: [
                   Expanded(
-                    child: _DateSelector(
-                      label: "From",
-                      date: _fromDate,
+                     child: _DateSelector(
+                        label: l10n.from,
+                        date: _fromDate,
                       onTap: () async {
                         final date = await showDatePicker(
                           context: context,
@@ -299,7 +301,7 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                   const SizedBox(width: 16),
                   Expanded(
                     child: _DateSelector(
-                      label: "To",
+                      label: l10n.to,
                       date: _toDate,
                       onTap: () async {
                         final date = await showDatePicker(
@@ -338,7 +340,7 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
               ),
 
               const SizedBox(height: 24),
-              Text("Your Price (Reward)",
+              Text(l10n.yourPriceReward,
                   style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 12),
               TextFormField(
@@ -366,8 +368,8 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                       borderSide: BorderSide.none),
                 ),
                 validator: (v) {
-                  if (v == null || v.isEmpty) return 'Please set a price';
-                  if (double.tryParse(v) == null) return 'Invalid number';
+                  if (v == null || v.isEmpty) return l10n.pleaseSetPrice;
+                  if (double.tryParse(v) == null) return l10n.invalidNumber;
                   return null;
                 },
               ),
@@ -399,12 +401,12 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                                   imageFileName: _selectedPhotoFileName,
                                 );
                                 if (success && context.mounted) {
-                                  Navigator.pop(context);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                          content: Text("Request Created!")));
-                                }
-                              }
+                                   Navigator.pop(context);
+                                   ScaffoldMessenger.of(context).showSnackBar(
+                                       SnackBar(
+                                           content: Text(l10n.requestCreated)));
+                                 }
+                               }
                             },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primaryGreen,
@@ -413,11 +415,11 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                             borderRadius: BorderRadius.circular(16)),
                         elevation: 0,
                       ),
-                      child: provider.isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text("Post Request",
-                              style: TextStyle(
-                                  fontSize: 18, fontWeight: FontWeight.bold)),
+                       child: provider.isLoading
+                           ? const CircularProgressIndicator(color: Colors.white)
+                           : Text(l10n.postRequest,
+                               style: TextStyle(
+                                   fontSize: 18, fontWeight: FontWeight.bold)),
                     );
                   },
                 ),
@@ -451,7 +453,7 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not pick the photo.')),
+        SnackBar(content: Text(context.l10n.couldNotPickPhoto)),
       );
     }
   }
@@ -505,6 +507,7 @@ class _DateSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -527,7 +530,7 @@ class _DateSelector extends StatelessWidget {
                 const SizedBox(width: 8),
                 // Force strict patterns like 24:00 usage in display
                 Text(
-                    DateFormat('d MMM, HH:mm', AppConstants.defaultLocaleId)
+                    DateFormat('d MMM, HH:mm', l10n.localeName)
                         .format(date),
                     style: const TextStyle(fontWeight: FontWeight.bold)),
               ],

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/panta_provider.dart';
 import '../auth/login_page.dart';
@@ -19,11 +20,12 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<PantaProvider>();
+    final l10n = context.l10n;
     final displayName = provider.currentUserDisplayName?.trim();
     final resolvedName = (displayName == null || displayName.isEmpty)
-        ? (isHelper ? 'Helper' : 'Recycler')
+        ? (isHelper ? l10n.helperRole : l10n.recyclerRole)
         : displayName;
-    final subtitle = isHelper ? 'Helper' : 'Recycler';
+    final subtitle = isHelper ? l10n.helperRole : l10n.recyclerRole;
     final avatarIcon =
         isHelper ? Icons.local_shipping_rounded : Icons.person_rounded;
     final completedJobs = provider.helperCompletedCount;
@@ -31,7 +33,7 @@ class ProfileScreen extends StatelessWidget {
     final reliabilityRating = provider.helperReliabilityRating;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
+      appBar: AppBar(title: Text(l10n.profileTitle)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
         children: [
@@ -79,7 +81,7 @@ class ProfileScreen extends StatelessWidget {
           const SizedBox(height: 20),
           if (isHelper) ...[
             Text(
-              'Helper stats',
+              l10n.helperStats,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 12),
@@ -93,7 +95,7 @@ class ProfileScreen extends StatelessWidget {
                         Expanded(
                           child: _HelperStatTile(
                             icon: Icons.task_alt_rounded,
-                            label: 'Completed jobs',
+                            label: l10n.completedJobs,
                             value: '$completedJobs',
                             iconColor: AppTheme.primaryGreen,
                             backgroundColor: AppTheme.accentLeaf,
@@ -103,7 +105,7 @@ class ProfileScreen extends StatelessWidget {
                         Expanded(
                           child: _HelperStatTile(
                             icon: Icons.cancel_outlined,
-                            label: 'Cancelled pickups',
+                            label: l10n.cancelledPickups,
                             value: '$canceledPickups',
                             iconColor: Theme.of(context).colorScheme.error,
                             backgroundColor: const Color(0xFFFEE2E2),
@@ -119,11 +121,13 @@ class ProfileScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     _HelperSummaryRow(
-                      icon: Icons.insights_rounded,
-                      title: 'Reliability context',
-                      value:
-                          '$completedJobs completed · $canceledPickups cancelled',
-                    ),
+                        icon: Icons.insights_rounded,
+                        title: l10n.reliabilityContext,
+                        value: l10n.reliabilitySummary(
+                          completedJobs,
+                          canceledPickups,
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -131,35 +135,44 @@ class ProfileScreen extends StatelessWidget {
             const SizedBox(height: 20),
           ],
           Text(
-            'Account',
+            l10n.account,
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 12),
-          const Card(
+          Card(
             child: Column(
               children: [
                 _ProfileItem(
                   icon: Icons.settings_outlined,
-                  title: 'Settings',
-                  subtitle: 'Manage app preferences',
+                  title: l10n.settings,
+                  subtitle: l10n.manageAppPreferences,
                 ),
-                Divider(height: 1),
+                const Divider(height: 1),
+                _ProfileItem(
+                  icon: Icons.language_rounded,
+                  title: l10n.language,
+                  subtitle: provider.locale.languageCode == 'sv'
+                      ? l10n.swedish
+                      : l10n.english,
+                  onTap: () => _showLanguagePicker(context, provider),
+                ),
+                const Divider(height: 1),
                 _ProfileItem(
                   icon: Icons.notifications_none_rounded,
-                  title: 'Notifications',
-                  subtitle: 'Stay updated on activity',
+                  title: l10n.notifications,
+                  subtitle: l10n.stayUpdatedOnActivity,
                 ),
-                Divider(height: 1),
+                const Divider(height: 1),
                 _ProfileItem(
                   icon: Icons.eco_outlined,
-                  title: 'Impact stats',
-                  subtitle: 'Track your recycling contribution',
+                  title: l10n.impactStats,
+                  subtitle: l10n.trackRecyclingContribution,
                 ),
-                Divider(height: 1),
+                const Divider(height: 1),
                 _ProfileItem(
                   icon: Icons.help_outline_rounded,
-                  title: 'Help & support',
-                  subtitle: 'Get help when you need it',
+                  title: l10n.helpSupport,
+                  subtitle: l10n.getHelpWhenYouNeedIt,
                 ),
               ],
             ),
@@ -168,8 +181,8 @@ class ProfileScreen extends StatelessWidget {
           Card(
             child: _ProfileItem(
               icon: Icons.logout_rounded,
-              title: 'Log out',
-              subtitle: 'Return to the sign in screen',
+              title: l10n.logOut,
+              subtitle: l10n.returnToSignInScreen,
               textColor: Theme.of(context).colorScheme.error,
               onTap: () {
                 Navigator.pushAndRemoveUntil(
@@ -182,6 +195,49 @@ class ProfileScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _showLanguagePicker(
+    BuildContext context,
+    PantaProvider provider,
+  ) async {
+    final l10n = context.l10n;
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: Text(l10n.chooseLanguage),
+                subtitle: Text(l10n.appLanguageDescription),
+              ),
+              ListTile(
+                leading: const Icon(Icons.language),
+                title: Text(l10n.swedish),
+                onTap: () async {
+                  await provider.setLocale(const Locale('sv', 'SE'));
+                  if (sheetContext.mounted) {
+                    Navigator.of(sheetContext).pop();
+                  }
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.language_outlined),
+                title: Text(l10n.english),
+                onTap: () async {
+                  await provider.setLocale(const Locale('en', 'US'));
+                  if (sheetContext.mounted) {
+                    Navigator.of(sheetContext).pop();
+                  }
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -200,13 +256,14 @@ class _HelperRatingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final roundedRating = rating?.round() ?? 0;
+    final l10n = context.l10n;
     final ratingLabel = switch (roundedRating) {
-      5 => 'Excellent',
-      4 => 'Strong',
-      3 => 'Fair',
-      2 => 'Needs improvement',
-      1 => 'At risk',
-      _ => 'No history yet',
+      5 => l10n.excellent,
+      4 => l10n.strong,
+      3 => l10n.fair,
+      2 => l10n.needsImprovement,
+      1 => l10n.atRisk,
+      _ => l10n.noHistoryYet,
     };
 
     return Container(
@@ -225,13 +282,13 @@ class _HelperRatingCard extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Recycler rating',
+                  l10n.recyclerRating,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ),
               Text(
                 rating == null
-                    ? 'No history yet'
+                    ? l10n.noHistoryYet
                     : '${_formatRating(rating!)} / 5',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: AppTheme.textPrimary,
@@ -264,7 +321,10 @@ class _HelperRatingCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Based on $completedJobs completed jobs and $canceledPickups cancelled pickups.',
+            l10n.basedOnCompletedAndCancelled(
+              completedJobs,
+              canceledPickups,
+            ),
             style: Theme.of(context).textTheme.bodyMedium,
           ),
         ],

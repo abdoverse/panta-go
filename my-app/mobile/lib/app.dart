@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
+import 'core/localization/app_localizations.dart';
 import 'features/auth/login_page.dart';
-import 'core/constants/app_constants.dart';
+import 'providers/panta_provider.dart';
 
 class PantaApp extends StatefulWidget {
   const PantaApp({super.key});
@@ -30,6 +32,7 @@ class _PantaAppState extends State<PantaApp> {
       RemoteNotification? notification = message.notification;
 
       if (notification != null) {
+        final l10n = context.l10n;
         debugPrint(
             'Message also contained a notification: ${notification.title}');
         // Show SnackBar for any notification payload in foreground
@@ -38,12 +41,12 @@ class _PantaAppState extends State<PantaApp> {
           snackbarKey.currentState!.showSnackBar(
             SnackBar(
               content: Text(
-                  '${notification.title ?? "Notification"}: ${notification.body ?? ""}'),
+                  '${notification.title ?? l10n.notificationFallbackTitle}: ${notification.body ?? ""}'),
               behavior: SnackBarBehavior.floating,
               backgroundColor: Colors.green,
               duration: const Duration(seconds: 5),
               action: SnackBarAction(
-                label: 'VIEW',
+                label: l10n.viewAction,
                 textColor: Colors.white,
                 onPressed: () {},
               ),
@@ -58,6 +61,8 @@ class _PantaAppState extends State<PantaApp> {
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<PantaProvider?>();
+
     return MaterialApp(
       scaffoldMessengerKey: snackbarKey,
       title: 'Panta',
@@ -65,15 +70,13 @@ class _PantaAppState extends State<PantaApp> {
       theme: AppTheme.lightTheme,
       home: const LoginPage(),
       localizationsDelegates: const [
+        AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: [
-        AppConstants.defaultLocale,
-        const Locale('en', 'US'),
-      ],
-      locale: AppConstants.defaultLocale,
+      supportedLocales: AppLocalizations.supportedLocales,
+      locale: provider?.locale ?? AppLocalizations.supportedLocales.first,
     );
   }
 }

@@ -2,10 +2,13 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart'; // Add this for kIsWeb
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../core/localization/app_localizations.dart';
 import '../models/request_model.dart';
 import '../services/api_config.dart';
 import '../services/auth_service.dart';
@@ -88,6 +91,8 @@ List<RecyclingRequest> sortRequestsByDistance(
 }
 
 class PantaProvider extends ChangeNotifier {
+  static const _languagePreferenceKey = 'app_language_code';
+
   final AuthService _authService = AuthService();
   List<RecyclingRequest> _requests = [];
   bool _isLoading = false;
@@ -101,11 +106,48 @@ class PantaProvider extends ChangeNotifier {
 
   String? _pendingSignupEmail;
   String? _pendingSignupUsername;
+  Locale _locale = AppLocalizations.supportedLocales.first;
+
+  PantaProvider() {
+    _loadSavedLocale();
+  }
 
   bool get isHelper => _isHelper;
   bool get isLoading => _isLoading;
   List<RecyclingRequest> get requests => _requests;
   String? get currentUserDisplayName => _currentUserDisplayName;
+  Locale get locale => _locale;
+
+  Future<void> setLocale(Locale locale) async {
+    if (_locale == locale) {
+      return;
+    }
+
+    _locale = locale;
+    notifyListeners();
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_languagePreferenceKey, locale.languageCode);
+  }
+
+  Future<void> _loadSavedLocale() async {
+    final prefs = await SharedPreferences.getInstance();
+    final languageCode = prefs.getString(_languagePreferenceKey);
+    if (languageCode == null) {
+      return;
+    }
+
+    final savedLocale = AppLocalizations.supportedLocales.firstWhere(
+      (locale) => locale.languageCode == languageCode,
+      orElse: () => AppLocalizations.supportedLocales.first,
+    );
+    if (_locale == savedLocale) {
+      return;
+    }
+
+    _locale = savedLocale;
+    notifyListeners();
+  }
 
   void _upsertRequest(RecyclingRequest request, {bool notify = true}) {
     final existingIndex = _requests.indexWhere((item) => item.id == request.id);

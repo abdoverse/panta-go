@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 
 class LocationActions extends StatelessWidget {
@@ -15,6 +16,7 @@ class LocationActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -59,10 +61,10 @@ class LocationActions extends StatelessWidget {
           children: [
             if (showDirections)
               OutlinedButton.icon(
-                onPressed: () => _showMapChooser(context, directions: true),
-                icon: const Icon(Icons.directions_outlined),
-                label: const Text('Get directions'),
-              ),
+                 onPressed: () => _showMapChooser(context, directions: true),
+                 icon: const Icon(Icons.directions_outlined),
+                 label: Text(l10n.getDirections),
+               ),
           ],
         ),
       ],
@@ -82,30 +84,30 @@ class LocationActions extends StatelessWidget {
             children: [
               ListTile(
                 title: Text(directions
-                    ? 'Choose map for directions'
-                    : 'Choose map app'),
+                    ? context.l10n.chooseMapForDirections
+                    : context.l10n.chooseMapApp),
                 subtitle: Text(address),
               ),
               ListTile(
                 leading: const Icon(Icons.map_rounded),
-                title: const Text('Google Maps'),
+                title: Text(context.l10n.googleMaps),
                 onTap: () async {
                   Navigator.of(sheetContext).pop();
                   await _launchMapOption(
                     context,
-                    label: 'Google Maps',
+                    label: context.l10n.googleMaps,
                     uri: _googleMapsUri(directions: directions),
                   );
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.map_outlined),
-                title: const Text('Apple Maps'),
+                title: Text(context.l10n.appleMaps),
                 onTap: () async {
                   Navigator.of(sheetContext).pop();
                   await _launchMapOption(
                     context,
-                    label: 'Apple Maps',
+                    label: context.l10n.appleMaps,
                     uri: _appleMapsUri(directions: directions),
                   );
                 },
@@ -128,7 +130,7 @@ class LocationActions extends StatelessWidget {
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Could not open $label for this address.')),
+      SnackBar(content: Text(context.l10n.couldNotOpenMap(label))),
     );
   }
 

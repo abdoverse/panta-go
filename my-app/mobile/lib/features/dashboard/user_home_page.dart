@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/panta_provider.dart';
+import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/request_model.dart';
 import 'create_request_page.dart';
@@ -76,6 +77,8 @@ class _UserHomePageState extends State<UserHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       body: IndexedStack(
@@ -89,19 +92,19 @@ class _UserHomePageState extends State<UserHomePage> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (i) => setState(() => _currentIndex = i),
-        destinations: const [
+        destinations: [
           NavigationDestination(
               icon: Icon(Icons.dashboard_outlined),
               selectedIcon: Icon(Icons.dashboard),
-              label: 'Home'),
+               label: l10n.home),
           NavigationDestination(
               icon: Icon(Icons.history_outlined),
               selectedIcon: Icon(Icons.history),
-              label: 'History'),
+               label: l10n.history),
           NavigationDestination(
               icon: Icon(Icons.person_outline),
               selectedIcon: Icon(Icons.person),
-              label: 'Profile'),
+               label: l10n.profileTitle),
         ],
       ),
       floatingActionButton: _currentIndex == 0
@@ -112,11 +115,11 @@ class _UserHomePageState extends State<UserHomePage> {
                     MaterialPageRoute(
                         builder: (_) => const CreateRequestPage()));
               },
-              backgroundColor: AppTheme.primaryGreen,
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text("Recycle Now",
-                  style: TextStyle(color: Colors.white)),
-            )
+               backgroundColor: AppTheme.primaryGreen,
+               icon: const Icon(Icons.add, color: Colors.white),
+               label: Text(l10n.recycleNow,
+                   style: TextStyle(color: Colors.white)),
+             )
           : null,
     );
   }
@@ -130,6 +133,7 @@ class _DashboardView extends StatelessWidget {
     final provider = context.watch<PantaProvider>();
     final ongoing = provider.ongoingRequests;
     final displayName = provider.currentUserDisplayName;
+    final l10n = context.l10n;
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -143,12 +147,10 @@ class _DashboardView extends StatelessWidget {
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
-              title: Text(
-                displayName == null || displayName.isEmpty
-                    ? 'Welcome Back!'
-                    : 'Welcome Back, $displayName!',
-                style:
-                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
+                title: Text(
+                 l10n.welcomeBack(displayName),
+                 style:
+                     const TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
               ),
               background: Container(
                 decoration: BoxDecoration(
@@ -188,14 +190,12 @@ class _DashboardView extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("Ongoing Requests",
+                    Text(l10n.ongoingRequests,
                         style: TextStyle(
                             fontSize: 18, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 16),
                     if (ongoing.isEmpty)
-                      const _EmptyState(
-                              message:
-                                  "No ongoing recycling requests.\nStart recycling today!")
+                      _EmptyState(message: l10n.noOngoingRequests)
                           .animate()
                           .fadeIn()
                           .scale(),
@@ -223,9 +223,10 @@ class _HistoryView extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.watch<PantaProvider>();
     final history = provider.previousRequests;
+    final l10n = context.l10n;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("History")),
+      appBar: AppBar(title: Text(l10n.userHistoryTitle)),
       body: RefreshIndicator(
         onRefresh: () async {
           await context.read<PantaProvider>().fetchRequests();
@@ -283,21 +284,22 @@ class _RequestCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     Color statusColor;
     String statusText;
 
     switch (request.status) {
       case RequestStatus.pending:
         statusColor = Colors.orange;
-        statusText = "Waiting for Helper";
+        statusText = l10n.waitingForHelper;
         break;
       case RequestStatus.accepted:
         statusColor = Colors.blue;
-        statusText = "Helper on the way";
+        statusText = l10n.helperOnTheWay;
         break;
       case RequestStatus.pickedUp:
         statusColor = Colors.green;
-        statusText = "Picked Up";
+        statusText = l10n.pickedUp;
         break;
     }
 
@@ -381,7 +383,7 @@ class _RequestCard extends StatelessWidget {
                               size: 14, color: Colors.grey[500]),
                           const SizedBox(width: 4),
                           Text(
-                            "${DateFormat('d MMM, HH:mm', AppConstants.defaultLocaleId).format(request.scheduledFrom)} - ${DateFormat('HH:mm', AppConstants.defaultLocaleId).format(request.scheduledTo)}",
+                            "${DateFormat('d MMM, HH:mm', l10n.localeName).format(request.scheduledFrom)} - ${DateFormat('HH:mm', l10n.localeName).format(request.scheduledTo)}",
                             style: Theme.of(context)
                                 .textTheme
                                 .bodySmall
@@ -404,7 +406,7 @@ class _RequestCard extends StatelessWidget {
                 onPressed: () {
                   _showRatingDialog(context, request);
                 },
-                child: const Text("Rate Helper"),
+                child: Text(l10n.rateHelper),
               ),
           ],
         ),
@@ -413,6 +415,7 @@ class _RequestCard extends StatelessWidget {
   }
 
   void _showRatingDialog(BuildContext context, RecyclingRequest request) {
+    final l10n = context.l10n;
     // We need a stateful widget inside the dialog to manage the text controller or selection state
     // But since we just click a star to submit, we can just add a text field and a submit button.
     // Or keep the star-click-to-submit flow but make it weirder with comment.
@@ -425,11 +428,11 @@ class _RequestCard extends StatelessWidget {
       context: context,
       builder: (ctx) => StatefulBuilder(builder: (context, setState) {
         return AlertDialog(
-          title: const Text("Rate your Helper"),
+          title: Text(l10n.rateYourHelper),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text("How was the pickup service?"),
+              Text(l10n.howWasPickupService),
               const SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -454,11 +457,11 @@ class _RequestCard extends StatelessWidget {
               const SizedBox(height: 16),
               TextField(
                 controller: commentController,
-                decoration: const InputDecoration(
-                  hintText: "Optional comment (e.g. Great job!)",
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  hintText: l10n.optionalCommentHint,
+                  border: const OutlineInputBorder(),
                   contentPadding:
-                      EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
                 maxLines: 2,
               ),
@@ -467,7 +470,7 @@ class _RequestCard extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text("Cancel"),
+              child: Text(l10n.cancel),
             ),
             ElevatedButton(
               onPressed: currentRating > 0
@@ -478,13 +481,14 @@ class _RequestCard extends StatelessWidget {
                             comment: commentController.text.isNotEmpty
                                 ? commentController.text
                                 : null,
-                          );
-                      Navigator.pop(ctx);
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                          content: Text("Thank you for your rating!")));
-                    }
-                  : null,
-              child: const Text("Submit"),
+                           );
+                       Navigator.pop(ctx);
+                       ScaffoldMessenger.of(context).showSnackBar(
+                         SnackBar(content: Text(l10n.thankYouForRating)),
+                       );
+                     }
+                   : null,
+               child: Text(l10n.submit),
             ),
           ],
         );
