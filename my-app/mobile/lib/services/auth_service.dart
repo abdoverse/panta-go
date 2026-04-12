@@ -36,9 +36,10 @@ class AuthService {
 
   // Login
   Future<String?> login(String email, String password) async {
-    final cognitoUser = CognitoUser(email, _userPool);
+    final normalizedEmail = email.trim().toLowerCase();
+    final cognitoUser = CognitoUser(normalizedEmail, _userPool);
     final authDetails = AuthenticationDetails(
-      username: email,
+      username: normalizedEmail,
       password: password,
     );
 
@@ -143,8 +144,13 @@ class AuthService {
   }
 
   Future<bool> restoreSession() async {
-    final session = await _loadSession();
-    return session != null;
+    try {
+      final session = await _loadSession();
+      return session != null;
+    } catch (_) {
+      await _clearLocalSession();
+      return false;
+    }
   }
 
   // Get Token
@@ -215,7 +221,13 @@ class AuthService {
       return null;
     }
 
-    final restoredSession = await _currentUser!.getSession();
+    CognitoUserSession? restoredSession;
+    try {
+      restoredSession = await _currentUser!.getSession();
+    } catch (_) {
+      await _clearLocalSession();
+      return null;
+    }
     if (restoredSession == null || !restoredSession.isValid()) {
       await _clearLocalSession();
       return null;

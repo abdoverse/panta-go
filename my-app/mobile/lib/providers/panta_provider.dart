@@ -313,6 +313,39 @@ class PantaProvider extends ChangeNotifier {
     return error;
   }
 
+  Future<void> restoreSession() async {
+    _isRestoringSession = true;
+    notifyListeners();
+
+    try {
+      final restored = await _authService.restoreSession();
+      if (!restored) {
+        _clearAuthenticatedState(notify: false);
+        return;
+      }
+
+      _currentUserId = _authService.getCurrentUsername();
+      _currentUserDisplayName = _authService.getCurrentDisplayName();
+      _isHelper = _authService.getCurrentUserIsHelper() ?? false;
+
+      if (_currentUserId == null) {
+        await _authService.logout();
+        _clearAuthenticatedState(notify: false);
+        return;
+      }
+
+      await fetchRequests(silent: true);
+    } finally {
+      _isRestoringSession = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> logout() async {
+    await _authService.logout();
+    _clearAuthenticatedState();
+  }
+
   Future<String?> signUp({
     required String email,
     required String password,
@@ -448,11 +481,15 @@ class PantaProvider extends ChangeNotifier {
       );
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-        // On Web, you need a VAPID key. Get this from Firebase Console -> Cloud Messaging -> Web Configuration
+        final vapidKey = kIsWeb ? ApiConfig.firebaseWebVapidKey : null;
+        if (kIsWeb && vapidKey == null) {
+          debugPrint(
+            'Skipping web push token because FIREBASE_WEB_VAPID_KEY is not configured.',
+          );
+        }
+
         fcmToken = await FirebaseMessaging.instance.getToken(
-          vapidKey: kIsWeb
-              ? "BL4573IrUlN0kK8MKBbLMFCSM-TPVjleJcgAKciiCO32VEEpVuugg4iXA6G341Kp2ZQE1SqqFZokA0ADSnGXUiI"
-              : null,
+          vapidKey: vapidKey,
         );
         debugPrint("FCM Token: $fcmToken");
       } else {
@@ -671,5 +708,20 @@ class PantaProvider extends ChangeNotifier {
       return null;
     }
     return imageUrl;
+  }
+
+  void _clearAuthenticatedState({bool notify = true}) {
+    _currentUserId = null;
+    _currentUserDisplayName = null;
+    _isHelper = false;
+    _requests = [];
+    _helperLatitude = null;
+    _helperLongitude = null;
+    _pendingSignupEmail = null;
+    _pendingSignupUsername = null;
+
+    if (notify) {
+      notifyListeners();
+    }
   }
 }

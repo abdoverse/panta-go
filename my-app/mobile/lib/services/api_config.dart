@@ -76,4 +76,6 @@ class ApiConfig {
     ).trim();
     return value.isEmpty ? null : value;
   }
+
+  static bool get hasFirebaseWebVapidKey => firebaseWebVapidKey != null;
 }
