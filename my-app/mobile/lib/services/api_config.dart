@@ -6,37 +6,10 @@ class ApiConfig {
   static String get baseUrl => _normalizedBaseUri.toString();
 
   static Uri get _normalizedBaseUri {
-    final configuredValue = const String.fromEnvironment(
-      'API_BASE_URL',
-      defaultValue: '',
-    ).trim();
-    if (configuredValue.isEmpty) {
-      if (_isProduction) {
-        throw StateError(
-            'API_BASE_URL must be provided for production builds.');
-      }
-      return Uri.parse(_defaultBaseUrl);
-    }
-    final withScheme = configuredValue.contains('://')
-        ? configuredValue
-        : 'https://$configuredValue';
-    final uri = Uri.parse(withScheme);
-    final allowedSchemes = {'https', 'http'};
-    if (!allowedSchemes.contains(uri.scheme) || uri.host.isEmpty) {
-      throw StateError('API_BASE_URL must be a valid http or https URL.');
-    }
-
-    final isLocalHost = uri.host == 'localhost' ||
-        uri.host == '127.0.0.1' ||
-        uri.host == '10.0.2.2';
-    if (uri.scheme != 'https' && !isLocalHost) {
-      throw StateError(
-        'Panta requires HTTPS for remote API traffic. '
-        'Use a secure API_BASE_URL or a local emulator host.',
-      );
-    }
-
-    return uri.replace(path: '', query: null, fragment: null);
+    return _configuredBaseUri(
+      envName: 'API_BASE_URL',
+      defaultValue: _defaultBaseUrl,
+    );
   }
 
   static String _requiredEnvironmentValue(String name) {
@@ -56,7 +29,10 @@ class ApiConfig {
   }
 
   static Uri webSocketUri({Map<String, String>? queryParameters}) {
-    final baseUri = _normalizedBaseUri;
+    final baseUri = _configuredBaseUri(
+      envName: 'WS_BASE_URL',
+      defaultValue: baseUrl,
+    );
     final wsScheme = baseUri.scheme == 'https' ? 'wss' : 'ws';
     return baseUri.replace(
       scheme: wsScheme,
@@ -99,4 +75,39 @@ class ApiConfig {
   }
 
   static bool get hasFirebaseWebVapidKey => firebaseWebVapidKey != null;
+
+  static Uri _configuredBaseUri({
+    required String envName,
+    required String defaultValue,
+  }) {
+    final configuredValue = _environmentValue(envName);
+    final candidate = configuredValue.isEmpty ? defaultValue : configuredValue;
+    if (configuredValue.isEmpty && _isProduction) {
+      throw StateError('$envName must be provided for production builds.');
+    }
+
+    final withScheme =
+        candidate.contains('://') ? candidate : 'https://$candidate';
+    final uri = Uri.parse(withScheme);
+    final allowedSchemes = {'https', 'http'};
+    if (!allowedSchemes.contains(uri.scheme) || uri.host.isEmpty) {
+      throw StateError('$envName must be a valid http or https URL.');
+    }
+
+    final isLocalHost = uri.host == 'localhost' ||
+        uri.host == '127.0.0.1' ||
+        uri.host == '10.0.2.2';
+    if (uri.scheme != 'https' && !isLocalHost) {
+      throw StateError(
+        'Panta requires HTTPS for remote runtime traffic. '
+        'Use a secure $envName or a local emulator host.',
+      );
+    }
+
+    return uri.replace(path: '', query: null, fragment: null);
+  }
+
+  static String _environmentValue(String name) {
+    return const String.fromEnvironment(name, defaultValue: '').trim();
+  }
 }
