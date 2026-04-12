@@ -92,7 +92,6 @@ List<RecyclingRequest> sortRequestsByDistance(
 
 class PantaProvider extends ChangeNotifier {
   static const _languagePreferenceKey = 'app_language_code';
-  static const _helperPreferenceKey = 'auth_is_helper';
 
   final AuthService _authService = AuthService();
   List<RecyclingRequest> _requests = [];
