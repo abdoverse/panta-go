@@ -24,8 +24,11 @@
 - The project backlog lives in `.copilot/agent-backlog.txt`.
 - Completed work moves to `.copilot/agent-done.txt`.
 - The current roadmap/plan lives in `.copilot/agent-plan.md`.
-- When another useful plan exists, copy it into `.copilot/agent-plan.md` and continue from there instead of flattening it into backlog text automatically.
-- Users approve work by editing `.copilot/agent-backlog.txt` and changing an item's status to `approved`.
+- The plan is the **first gate**. Users approve an item for backlog intake by marking that plan item `approved`.
+- When a plan item is marked `approved`, the agent must move it into `.copilot/agent-backlog.txt` as `pending` and remove it from `.copilot/agent-plan.md`.
+- The backlog is the **second gate**. Users approve actual execution by marking a backlog item `approved`.
+- For automatic pickup, run `python langgraph_multi_agent.py --project-path . --watch --poll-interval 10` from the repo root.
+- In watch mode, approved plan items are moved to backlog automatically, and approved backlog items are claimed automatically by switching them to `in_progress`.
 - The agent must read `.copilot/agent-plan.md` before continuing work and keep it updated as work progresses.
 - When approved work is completed, remove it from `.copilot/agent-backlog.txt`, append it to `.copilot/agent-done.txt`, and remove or mark it complete in `.copilot/agent-plan.md`.
 

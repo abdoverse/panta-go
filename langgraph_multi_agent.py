@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
 import subprocess
+import time
 from pathlib import Path
 from typing import Any, Optional, TypedDict
 
@@ -23,6 +25,7 @@ DEFAULT_BACKLOG_FILE = ".copilot/agent-backlog.txt"
 DEFAULT_PLAN_FILE = ".copilot/agent-plan.md"
 DEFAULT_DONE_FILE = ".copilot/agent-done.txt"
 VALID_CATEGORIES = ("backend", "frontend", "both")
+VALID_PLAN_STATUSES = ("planned", "approved")
 VALID_BACKLOG_STATUSES = ("pending", "approved", "in_progress", "done")
 IGNORED_DIRECTORIES = {
     ".git",
@@ -50,6 +53,14 @@ class AgentReport(TypedDict):
 
 
 class BacklogItem(TypedDict):
+    id: str
+    category: str
+    title: str
+    details: str
+    status: str
+
+
+class PlanItem(TypedDict):
     id: str
     category: str
     title: str
@@ -113,7 +124,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--plan-file",
         default=DEFAULT_PLAN_FILE,
-        help="Project-relative plan markdown file generated from approved backlog items.",
+        help="Project-relative current plan markdown file.",
     )
     parser.add_argument(
         "--done-file",
@@ -145,6 +156,17 @@ def parse_args() -> argparse.Namespace:
         "--output",
         default="",
         help="Optional path to write the final orchestration JSON summary.",
+    )
+    parser.add_argument(
+        "--watch",
+        action="store_true",
+        help="Continuously watch the plan/backlog files and react to approval changes.",
+    )
+    parser.add_argument(
+        "--poll-interval",
+        type=int,
+        default=10,
+        help="Polling interval in seconds when --watch is enabled.",
     )
     return parser.parse_args()
 
@@ -402,12 +424,89 @@ def parse_backlog_text(content: str) -> list[BacklogItem]:
     return backlog
 
 
+def parse_plan_text(content: str) -> list[PlanItem]:
+    plan_items: list[PlanItem] = []
+    current_category: Optional[str] = None
+    current_item: Optional[PlanItem] = None
+
+    for raw_line in content.splitlines():
+        line = raw_line.rstrip()
+        section_match = re.match(r"^##\s+(backend|frontend|both)\s*$", line, re.IGNORECASE)
+        if section_match:
+            current_category = section_match.group(1).lower()
+            current_item = None
+            continue
+
+        item_match = re.match(
+            r"^([A-Za-z0-9_-]+)\s*\|\s*(planned|approved)\s*\|\s*(.+?)\s*$",
+            line,
+            re.IGNORECASE,
+        )
+        if item_match and current_category in VALID_CATEGORIES:
+            current_item = {
+                "id": item_match.group(1),
+                "category": current_category,
+                "title": item_match.group(3).strip(),
+                "details": "",
+                "status": item_match.group(2).lower(),
+            }
+            plan_items.append(current_item)
+            continue
+
+        if current_item is not None and (line.startswith("  ") or line.startswith("\t")):
+            detail_line = line.lstrip()
+            current_item["details"] = (
+                f"{current_item['details']}\n{detail_line}".strip()
+                if current_item["details"]
+                else detail_line
+            )
+
+    return plan_items
+
+
 def split_backlog_items(
     backlog: list[BacklogItem],
 ) -> tuple[list[BacklogItem], list[BacklogItem]]:
     active_items = [item for item in backlog if item["status"] != "done"]
     done_items = [item for item in backlog if item["status"] == "done"]
     return active_items, done_items
+
+
+def move_approved_plan_items_to_backlog(
+    plan_items: list[PlanItem], backlog: list[BacklogItem]
+) -> tuple[list[PlanItem], list[BacklogItem]]:
+    existing_ids = {item["id"] for item in backlog}
+    remaining_plan: list[PlanItem] = []
+    updated_backlog = list(backlog)
+
+    for item in plan_items:
+        if item["status"] == "approved":
+            if item["id"] not in existing_ids:
+                updated_backlog.append(
+                    {
+                        "id": item["id"],
+                        "category": item["category"],
+                        "title": item["title"],
+                        "details": item["details"],
+                        "status": "pending",
+                    }
+                )
+                existing_ids.add(item["id"])
+            continue
+        remaining_plan.append(item)
+
+    return remaining_plan, updated_backlog
+
+
+def promote_ready_backlog_item(backlog: list[BacklogItem]) -> list[BacklogItem]:
+    if any(item["status"] == "in_progress" for item in backlog):
+        return backlog
+
+    for item in backlog:
+        if item["status"] == "approved":
+            item["status"] = "in_progress"
+            break
+    return backlog
 
 
 def render_backlog_text(backlog: list[BacklogItem]) -> str:
@@ -469,13 +568,48 @@ def render_done_text(backlog: list[BacklogItem]) -> str:
     return "\n".join(lines).rstrip() + "\n"
 
 
+def render_plan_text(plan_items: list[PlanItem]) -> str:
+    grouped = {category: [] for category in VALID_CATEGORIES}
+    for item in plan_items:
+        grouped[item["category"]].append(item)
+
+    lines = [
+        "# Agent Plan",
+        "# First gate: mark a plan item as approved to move it into the backlog.",
+        "# Once moved, it leaves this file and enters `.copilot/agent-backlog.txt` as pending.",
+        "# Plan status values: planned, approved",
+        "",
+    ]
+
+    for category in VALID_CATEGORIES:
+        lines.append(f"## {category}")
+        items = grouped[category]
+        if not items:
+            lines.append("(empty)")
+            lines.append("")
+            continue
+        for item in items:
+            lines.append(f"{item['id']} | {item['status']} | {item['title']}")
+            if item["details"]:
+                for detail_line in item["details"].splitlines():
+                    lines.append(f"  {detail_line}")
+            lines.append("")
+    return "\n".join(lines).rstrip() + "\n"
+
+
 def sync_project_workflow_files(
-    backlog: list[BacklogItem], backlog_path: Path, done_path: Path
+    backlog: list[BacklogItem],
+    backlog_path: Path,
+    done_path: Path,
+    plan_items: list[PlanItem],
+    plan_path: Path,
 ) -> None:
     backlog_path.parent.mkdir(parents=True, exist_ok=True)
     done_path.parent.mkdir(parents=True, exist_ok=True)
+    plan_path.parent.mkdir(parents=True, exist_ok=True)
     backlog_path.write_text(render_backlog_text(backlog), encoding="utf-8")
     done_path.write_text(render_done_text(backlog), encoding="utf-8")
+    plan_path.write_text(render_plan_text(plan_items), encoding="utf-8")
 
 
 def load_or_create_project_backlog(
@@ -495,14 +629,15 @@ def load_or_create_project_backlog(
     if done_path.exists():
         backlog.extend(parse_backlog_text(done_path.read_text(encoding="utf-8")))
 
-    plan_path.parent.mkdir(parents=True, exist_ok=True)
-    if not plan_path.exists():
-        plan_path.write_text(
-            "# Agent Plan\n\nCopy the current approved roadmap here and update it as work progresses.\n",
-            encoding="utf-8",
-        )
+    if plan_path.exists():
+        plan_items = parse_plan_text(plan_path.read_text(encoding="utf-8"))
+    else:
+        plan_items = []
 
-    sync_project_workflow_files(backlog, backlog_path, done_path)
+    plan_items, backlog = move_approved_plan_items_to_backlog(plan_items, backlog)
+    backlog = promote_ready_backlog_item(backlog)
+
+    sync_project_workflow_files(backlog, backlog_path, done_path, plan_items, plan_path)
     return backlog, backlog_path, done_path, plan_path
 
 
@@ -689,13 +824,14 @@ def manager(state: State) -> dict[str, Any]:
         if state["approval_status"] == "no_backlog":
             message = (
                 "The current project plan is in place, but the active backlog is empty. "
-                "Add or approve items in the backlog file to let the work loop continue."
+                "First mark plan items approved to move them into the backlog, then mark "
+                "backlog items approved to let execution start."
             )
         else:
             message = (
-                "The project backlog is ready. Approve work by editing the backlog text file "
-                "and changing item statuses to approved. Completed work is moved to the done "
-                "file automatically."
+                "The project backlog is ready. This is the second gate: mark backlog items "
+                "approved to let execution start. Completed work is moved to the done file "
+                "automatically."
             )
         summary = json.dumps(
             {
@@ -916,8 +1052,29 @@ def build_graph():
     return builder.compile()
 
 
-def main() -> int:
-    args = parse_args()
+def write_summary_output(output: str, summary: str) -> None:
+    if not output:
+        return
+    output_path = Path(output).resolve()
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(summary + "\n", encoding="utf-8")
+
+
+def compute_workflow_signature(
+    project_path: Path, backlog_file: str, plan_file: str, done_file: str
+) -> str:
+    digest = hashlib.sha256()
+    for relative_path in (plan_file, backlog_file, done_file):
+        path = (project_path / relative_path).resolve()
+        digest.update(relative_path.encode("utf-8"))
+        if path.exists():
+            digest.update(path.read_bytes())
+        else:
+            digest.update(b"<missing>")
+    return digest.hexdigest()
+
+
+def run_once(args: argparse.Namespace, emit: bool = True) -> str:
     project_path = Path(args.project_path).resolve()
     instructions_text = load_instructions(project_path, args.instructions_file)
     backlog, backlog_path, done_path, plan_path = load_or_create_project_backlog(
@@ -956,14 +1113,36 @@ def main() -> int:
     )
 
     summary = result.get("final_summary") or json.dumps(result, indent=2)
-    print(summary)
+    if emit:
+        print(summary)
+    write_summary_output(args.output, summary)
+    return summary
 
-    if args.output:
-        output_path = Path(args.output).resolve()
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        output_path.write_text(summary + "\n", encoding="utf-8")
 
-    return 0
+def main() -> int:
+    args = parse_args()
+    if not args.watch:
+        run_once(args)
+        return 0
+
+    project_path = Path(args.project_path).resolve()
+    last_signature: Optional[str] = None
+    while True:
+        signature = compute_workflow_signature(
+            project_path=project_path,
+            backlog_file=args.backlog_file,
+            plan_file=args.plan_file,
+            done_file=args.done_file,
+        )
+        if signature != last_signature:
+            run_once(args)
+            last_signature = compute_workflow_signature(
+                project_path=project_path,
+                backlog_file=args.backlog_file,
+                plan_file=args.plan_file,
+                done_file=args.done_file,
+            )
+        time.sleep(max(args.poll_interval, 1))
 
 
 if __name__ == "__main__":
