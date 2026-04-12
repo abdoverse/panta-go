@@ -96,15 +96,15 @@ class _UserHomePageState extends State<UserHomePage> {
           NavigationDestination(
               icon: Icon(Icons.dashboard_outlined),
               selectedIcon: Icon(Icons.dashboard),
-               label: l10n.home),
+              label: l10n.home),
           NavigationDestination(
               icon: Icon(Icons.history_outlined),
               selectedIcon: Icon(Icons.history),
-               label: l10n.history),
+              label: l10n.history),
           NavigationDestination(
               icon: Icon(Icons.person_outline),
               selectedIcon: Icon(Icons.person),
-               label: l10n.profileTitle),
+              label: l10n.profileTitle),
         ],
       ),
       floatingActionButton: _currentIndex == 0
@@ -115,11 +115,11 @@ class _UserHomePageState extends State<UserHomePage> {
                     MaterialPageRoute(
                         builder: (_) => const CreateRequestPage()));
               },
-               backgroundColor: AppTheme.primaryGreen,
-               icon: const Icon(Icons.add, color: Colors.white),
-               label: Text(l10n.recycleNow,
-                   style: TextStyle(color: Colors.white)),
-             )
+              backgroundColor: AppTheme.primaryGreen,
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: Text(l10n.recycleNow,
+                  style: const TextStyle(color: Colors.white)),
+            )
           : null,
     );
   }
@@ -147,10 +147,10 @@ class _DashboardView extends StatelessWidget {
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
-                title: Text(
-                 l10n.welcomeBack(displayName),
-                 style:
-                     const TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
+              title: Text(
+                l10n.welcomeBack(displayName),
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
               ),
               background: Container(
                 decoration: BoxDecoration(
@@ -399,14 +399,34 @@ class _RequestCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            if (isInteractable &&
-                request.status == RequestStatus.pickedUp &&
-                !request.isRated)
-              OutlinedButton(
-                onPressed: () {
-                  _showRatingDialog(context, request);
-                },
-                child: Text(l10n.rateHelper),
+            if (isInteractable)
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  FilledButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => CreateRequestPage(
+                            initialRequest: request,
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: const Text('Book again'),
+                  ),
+                  if (request.status == RequestStatus.pickedUp &&
+                      !request.isRated)
+                    OutlinedButton(
+                      onPressed: () {
+                        _showRatingDialog(context, request);
+                      },
+                      child: Text(l10n.rateHelper),
+                    ),
+                ],
               ),
           ],
         ),
@@ -481,14 +501,14 @@ class _RequestCard extends StatelessWidget {
                             comment: commentController.text.isNotEmpty
                                 ? commentController.text
                                 : null,
-                           );
-                       Navigator.pop(ctx);
-                       ScaffoldMessenger.of(context).showSnackBar(
-                         SnackBar(content: Text(l10n.thankYouForRating)),
-                       );
-                     }
-                   : null,
-               child: Text(l10n.submit),
+                          );
+                      Navigator.pop(ctx);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(l10n.thankYouForRating)),
+                      );
+                    }
+                  : null,
+              child: Text(l10n.submit),
             ),
           ],
         );
@@ -509,8 +529,7 @@ class _RequestImage extends StatelessWidget {
       return _fallbackImage();
     }
 
-    final hasRemoteSource =
-        normalizedImageUrl.startsWith('http') ||
+    final hasRemoteSource = normalizedImageUrl.startsWith('http') ||
         normalizedImageUrl.startsWith('data:image/');
 
     if (hasRemoteSource) {

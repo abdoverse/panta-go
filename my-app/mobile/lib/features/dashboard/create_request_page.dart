@@ -14,7 +14,12 @@ import '../../core/constants/app_constants.dart';
 import '../../models/request_model.dart';
 
 class CreateRequestPage extends StatefulWidget {
-  const CreateRequestPage({super.key});
+  const CreateRequestPage({
+    super.key,
+    this.initialRequest,
+  });
+
+  final RecyclingRequest? initialRequest;
 
   @override
   State<CreateRequestPage> createState() => _CreateRequestPageState();
@@ -41,6 +46,48 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
   void initState() {
     super.initState();
     _locationController.addListener(_onLocationChanged);
+    _applyInitialRequest();
+  }
+
+  void _applyInitialRequest() {
+    final initialRequest = widget.initialRequest;
+    if (initialRequest == null) return;
+    final now = DateTime.now();
+    final requestWindow =
+        initialRequest.scheduledTo.difference(initialRequest.scheduledFrom);
+    final fallbackFrom = now.add(const Duration(hours: 1));
+    final fallbackTo = fallbackFrom.add(
+      requestWindow.isNegative || requestWindow == Duration.zero
+          ? const Duration(hours: 2)
+          : requestWindow,
+    );
+
+    _titleController.text = initialRequest.title;
+    _descriptionController.text = initialRequest.description;
+    _rewardController.text = _formatReward(initialRequest.reward ?? 0);
+    _locationController.text = initialRequest.location;
+    if (initialRequest.locationLatitude != null &&
+        initialRequest.locationLongitude != null) {
+      _selectedLocation = LocationSuggestion(
+        displayName: initialRequest.location,
+        title: initialRequest.location,
+        subtitle: '',
+        lat: initialRequest.locationLatitude!,
+        lon: initialRequest.locationLongitude!,
+      );
+    }
+    _fromDate = initialRequest.scheduledFrom.isAfter(now)
+        ? initialRequest.scheduledFrom
+        : fallbackFrom;
+    _toDate = initialRequest.scheduledTo.isAfter(_fromDate)
+        ? initialRequest.scheduledTo
+        : fallbackTo;
+  }
+
+  String _formatReward(double reward) {
+    return reward == reward.roundToDouble()
+        ? reward.toStringAsFixed(0)
+        : reward.toStringAsFixed(2);
   }
 
   void _onLocationChanged() {
@@ -85,6 +132,30 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (widget.initialRequest != null) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryGreen.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.history_toggle_off,
+                          color: AppTheme.primaryGreen),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Booking again from your request history. Update any details before posting.',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
               // Photo Placeholder Area
               Center(
                 child: InkWell(

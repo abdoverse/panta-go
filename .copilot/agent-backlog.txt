@@ -1,7 +1,7 @@
 # Agent Backlog
 # Managed by langgraph_multi_agent.py.
-# Last heartbeat at: 2026-04-12T16:07:16.804771+00:00
-# Loop status: idle | active_agents=0 | approved=0 | ready_approved=0 | pending=0 | in_progress=0 | done=8
+# Last heartbeat at: 2026-04-12T16:45:27.993956+00:00
+# Loop status: idle | active_agents=0 | approved=0 | ready_approved=0 | pending=0 | in_progress=0 | done=9
 # Approve work by changing an item's status from pending to approved.
 # Active status values: pending, approved, in_progress
 # Fields: id | status | priority | complexity | dependencies | title
@@ -18,6 +18,10 @@
 # Recently completed (read-only summary; canonical archive is .copilot/agent-done.txt)
 # Fields: id | status | priority | complexity | dependencies | title
 #
+# plan-13 | done | high | medium | plan-7 | Add a faster repeat-booking flow from request history
+#   Progress note: tester [done]: Validation passed and the task was delivered to git.
+#   Last progress at: 2026-04-12T16:45:27.993872+00:00
+#
 # plan-7 | done | medium | medium | plan-1,plan-4 | Add saved addresses and reusable request templates
 #   Progress note: tester [done]: Validation passed and the task was delivered to git.
 #   Last progress at: 2026-04-12T16:07:16.804691+00:00
@@ -31,6 +35,4 @@
 #   Last progress at: 2026-04-12T14:47:24.505765+00:00
 #
 # plan-2 | done | medium | large | none | Split the Go backend into maintainable modules
-#
-# plan-1 | done | high | large | none | Harden request ownership and query access
 #

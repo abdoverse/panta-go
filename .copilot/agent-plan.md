@@ -22,14 +22,6 @@ plan-12 | planned | high | medium | plan-6 | Add a notifications inbox and fine-
   Likely files:
   `my-app/mobile/lib/screens/...`, notification/provider files, backend notification preference storage and delivery surfaces.
 
-plan-13 | planned | high | medium | plan-7 | Add a faster repeat-booking flow from request history
-  Goal:
-  Let recyclers recreate a past pickup from request history with address, material, and scheduling defaults prefilled.
-  Why:
-  Saved addresses and templates help proactive setup, but history-driven repeat booking is the shortest path to higher repeat usage.
-  Likely files:
-  request history screens, request creation flow, provider models, backend request duplication helpers if needed.
-
 ## both
 plan-6 | planned | medium | medium | plan-1,plan-4 | Add marketplace timeline and in-app activity visibility
   Goal:
