@@ -4,8 +4,6 @@ import 'package:provider/provider.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/panta_provider.dart';
-import '../dashboard/helper_home_page.dart';
-import '../dashboard/user_home_page.dart';
 
 enum _AuthMode { login, signUp }
 
@@ -389,15 +387,7 @@ class _LoginPageState extends State<LoginPage> {
         );
     setState(() => _isLoading = false);
 
-    if (error == null && mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) =>
-              isHelper ? const HelperHomePage() : const UserHomePage(),
-        ),
-      );
-    } else if (mounted) {
+    if (error != null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.l10n.loginFailed(error ?? ''))),
         );
@@ -491,15 +481,7 @@ class _LoginPageState extends State<LoginPage> {
 
     setState(() => _isLoading = false);
 
-    if (loginError == null && mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) =>
-              isHelper ? const HelperHomePage() : const UserHomePage(),
-        ),
-      );
-    } else if (mounted) {
+    if (loginError != null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
