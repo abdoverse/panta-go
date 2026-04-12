@@ -1,9 +1,26 @@
 # Agent Done
 # Completed backlog items moved here automatically by langgraph_multi_agent.py.
 # Status values: done
+# Fields: id | status | priority | complexity | dependencies | title
 
 ## backend
-1 | done | Refactor `lib/infra-stack.ts` to define IAM roles, log group, and ECS Express service.
+plan-2 | done | medium | large | none | Split the Go backend into maintainable modules
+  Status:
+  Completed with real backend code changes. Split the former monolithic `my-app/backend/cmd/api/main.go` into focused modules for auth, bootstrap, HTTP helpers, notifications, realtime, requests, shared types, and uploads.
+  Changed files:
+  `my-app/backend/cmd/api/main.go`
+  `my-app/backend/cmd/api/auth.go`
+  `my-app/backend/cmd/api/bootstrap.go`
+  `my-app/backend/cmd/api/http_helpers.go`
+  `my-app/backend/cmd/api/notifications.go`
+  `my-app/backend/cmd/api/realtime.go`
+  `my-app/backend/cmd/api/requests.go`
+  `my-app/backend/cmd/api/types.go`
+  `my-app/backend/cmd/api/uploads.go`
+  Validation:
+  `gofmt` on the API package and `go test ./...` in `my-app/backend` passed.
+
+1 | done | medium | medium | none | Refactor `lib/infra-stack.ts` to define IAM roles, log group, and ECS Express service.
   Problem:
   Migrate `panta-go/my-app/infra` from the current `ApplicationLoadBalancedFargateService` deployment to AWS-supported ECS Express Mode while preserving the backend container build, DynamoDB access, Cognito setup, and useful stack outputs.
   Approach:
@@ -11,7 +28,7 @@
   Status:
   Already implemented in `my-app/infra/lib/infra-stack.ts` via the Express roles/log group/service block at lines 91-155.
 
-3 | done | Rebuild, test, and synthesize the infra project to confirm the new template is valid.
+3 | done | medium | medium | none | Rebuild, test, and synthesize the infra project to confirm the new template is valid.
   Problem:
   Migrate `panta-go/my-app/infra` from the current `ApplicationLoadBalancedFargateService` deployment to AWS-supported ECS Express Mode while preserving the backend container build, DynamoDB access, Cognito setup, and useful stack outputs.
   Approach:
@@ -23,7 +40,7 @@
 (empty)
 
 ## both
-2 | done | Preserve application environment variables and outputs used by the backend/mobile app.
+2 | done | medium | medium | none | Preserve application environment variables and outputs used by the backend/mobile app.
   Problem:
   Migrate `panta-go/my-app/infra` from the current `ApplicationLoadBalancedFargateService` deployment to AWS-supported ECS Express Mode while preserving the backend container build, DynamoDB access, Cognito setup, and useful stack outputs.
   Approach:

@@ -2,9 +2,10 @@
 # First gate: mark a plan item as approved to move it into the backlog.
 # Once moved, it leaves this file and enters `.copilot/agent-backlog.txt` as pending.
 # Plan status values: planned, approved
+# Fields: id | status | priority | complexity | dependencies | title
 
 ## backend
-plan-1 | planned | Harden request ownership and query access
+plan-1 | planned | high | large | none | Harden request ownership and query access
   Goal:
   Replace scan-heavy request access with ownership-aware query patterns and indexes.
   Why:
@@ -12,15 +13,7 @@ plan-1 | planned | Harden request ownership and query access
   Likely files:
   `my-app/backend/cmd/api/main.go`, `my-app/infra/lib/infra-stack.ts`, request model/provider files.
 
-plan-2 | planned | Split the Go backend into maintainable modules
-  Goal:
-  Break `main.go` into clearer auth, request, upload, notification, and realtime boundaries.
-  Why:
-  Backend changes are still bottlenecked by one large entrypoint file.
-  Likely files:
-  `my-app/backend/cmd/api/main.go` plus new backend package directories.
-
-plan-3 | planned | Add backend tests and production safety rails
+plan-3 | planned | high | medium | plan-2 | Add backend tests and production safety rails
   Goal:
   Add meaningful backend coverage, safer rollout defaults, and better observability.
   Why:
@@ -29,7 +22,7 @@ plan-3 | planned | Add backend tests and production safety rails
   `my-app/backend/...`, `my-app/infra/lib/infra-stack.ts`, `my-app/infra/test/infra.test.ts`.
 
 ## frontend
-plan-4 | planned | Slim down mobile state management
+plan-4 | planned | medium | medium | plan-5 | Slim down mobile state management
   Goal:
   Reduce the responsibility of `PantaProvider` and separate auth, request, location, and realtime concerns.
   Why:
@@ -38,7 +31,7 @@ plan-4 | planned | Slim down mobile state management
   `my-app/mobile/lib/providers/panta_provider.dart`, `my-app/mobile/lib/services/*.dart`, feature screens.
 
 ## both
-plan-5 | planned | Finish auth hardening and runtime configuration cleanup
+plan-5 | planned | high | medium | none | Finish auth hardening and runtime configuration cleanup
   Goal:
   Tighten session restore/logout behavior and remove remaining production-sensitive runtime assumptions.
   Why:
@@ -46,7 +39,7 @@ plan-5 | planned | Finish auth hardening and runtime configuration cleanup
   Likely files:
   `my-app/mobile/lib/services/api_config.dart`, auth/session files, backend websocket/CORS surfaces.
 
-plan-6 | planned | Add marketplace timeline and in-app activity visibility
+plan-6 | planned | medium | medium | plan-1,plan-4 | Add marketplace timeline and in-app activity visibility
   Goal:
   Show request lifecycle progress clearly and provide a stable in-app activity center.
   Why:
@@ -54,7 +47,7 @@ plan-6 | planned | Add marketplace timeline and in-app activity visibility
   Likely files:
   dashboard screens, request models/provider, backend request/activity emission logic.
 
-plan-7 | planned | Add saved addresses and reusable request templates
+plan-7 | planned | medium | medium | plan-1,plan-4 | Add saved addresses and reusable request templates
   Goal:
   Make repeat pickup creation faster for returning users.
   Why:
@@ -62,7 +55,7 @@ plan-7 | planned | Add saved addresses and reusable request templates
   Likely files:
   request creation flow, profile/dashboard surfaces, backend request/template storage.
 
-plan-8 | planned | Add trust foundations for verification and payment-ready profiles
+plan-8 | planned | medium | large | plan-5 | Add trust foundations for verification and payment-ready profiles
   Goal:
   Introduce verification state and the backend/mobile shape needed for BankID and payment extensions.
   Why:
@@ -70,7 +63,7 @@ plan-8 | planned | Add trust foundations for verification and payment-ready prof
   Likely files:
   profile UI, auth/backend files, secrets/config surfaces, future payment integration points.
 
-plan-9 | planned | Add structured categories and helper-side marketplace filters
+plan-9 | planned | medium | medium | plan-1,plan-6 | Add structured categories and helper-side marketplace filters
   Goal:
   Support material categories plus filtering by distance, time, reward, and material type.
   Why:
