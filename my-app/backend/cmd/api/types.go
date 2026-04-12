@@ -9,6 +9,7 @@ import (
 
 type RecyclingRequest struct {
 	ID                 string    `json:"id" dynamodbav:"id"`
+	CreatorID          string    `json:"-" dynamodbav:"creatorId,omitempty"`
 	Title              string    `json:"title" dynamodbav:"title"`
 	ImageUrl           string    `json:"imageUrl" dynamodbav:"imageUrl"`
 	ImageUploadKey     string    `json:"imageUploadKey,omitempty" dynamodbav:"-"`
@@ -46,6 +47,10 @@ type Claims struct {
 }
 
 func (c *Claims) helperID() string {
+	return c.requestOwnerID()
+}
+
+func (c *Claims) requestOwnerID() string {
 	if username := strings.TrimSpace(c.CognitoUsername); username != "" {
 		return username
 	}
@@ -62,5 +67,9 @@ func (c *Claims) notificationName() string {
 	if email := strings.TrimSpace(c.Email); email != "" {
 		return strings.Split(email, "@")[0]
 	}
-	return c.helperID()
+	return c.requestOwnerID()
+}
+
+func (c *Claims) isHelper() bool {
+	return strings.EqualFold(strings.TrimSpace(c.Role), "helper")
 }

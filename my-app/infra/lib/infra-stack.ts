@@ -33,6 +33,24 @@ export class InfraStack extends cdk.Stack {
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
+    table.addGlobalSecondaryIndex({
+      indexName: 'requests-by-creator',
+      partitionKey: { name: 'creatorId', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'scheduledFrom', type: dynamodb.AttributeType.STRING },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
+    table.addGlobalSecondaryIndex({
+      indexName: 'requests-by-status',
+      partitionKey: { name: 'status', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'scheduledFrom', type: dynamodb.AttributeType.STRING },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
+    table.addGlobalSecondaryIndex({
+      indexName: 'requests-by-helper',
+      partitionKey: { name: 'helperId', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'scheduledFrom', type: dynamodb.AttributeType.STRING },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
 
     const requestImagesBucket = new s3.Bucket(this, 'StaticPantaRequestImagesBucket', {
       bucketName: requestImagesBucketName,

@@ -22,3 +22,36 @@ test('request images bucket allows browser image reads through CORS', () => {
     },
   });
 });
+
+test('requests table exposes ownership and access query indexes', () => {
+  const app = new cdk.App();
+  const stack = new InfraStack(app, 'MyTestStack');
+  const template = Template.fromStack(stack);
+
+  template.hasResourceProperties('AWS::DynamoDB::Table', {
+    TableName: 'panta-go-requests',
+    GlobalSecondaryIndexes: Match.arrayWith([
+      Match.objectLike({
+        IndexName: 'requests-by-creator',
+        KeySchema: [
+          { AttributeName: 'creatorId', KeyType: 'HASH' },
+          { AttributeName: 'scheduledFrom', KeyType: 'RANGE' },
+        ],
+      }),
+      Match.objectLike({
+        IndexName: 'requests-by-status',
+        KeySchema: [
+          { AttributeName: 'status', KeyType: 'HASH' },
+          { AttributeName: 'scheduledFrom', KeyType: 'RANGE' },
+        ],
+      }),
+      Match.objectLike({
+        IndexName: 'requests-by-helper',
+        KeySchema: [
+          { AttributeName: 'helperId', KeyType: 'HASH' },
+          { AttributeName: 'scheduledFrom', KeyType: 'RANGE' },
+        ],
+      }),
+    ]),
+  });
+});

@@ -4,6 +4,17 @@
 # Fields: id | status | priority | complexity | dependencies | title
 
 ## backend
+plan-1 | done | high | large | none | Harden request ownership and query access
+  Status:
+  Completed with real backend and infra changes. Replaced scan-heavy request reads with ownership-aware DynamoDB query flows, persisted `creatorId` on create, and restricted rating to the request creator after pickup.
+  Changed files:
+  `my-app/backend/cmd/api/requests.go`
+  `my-app/backend/cmd/api/types.go`
+  `my-app/infra/lib/infra-stack.ts`
+  `my-app/infra/test/infra.test.ts`
+  Validation:
+  `go test ./...` in `my-app/backend`, plus `npm test -- --runInBand` and `npm run build` in `my-app/infra` passed.
+
 plan-2 | done | medium | large | none | Split the Go backend into maintainable modules
   Status:
   Completed with real backend code changes. Split the former monolithic `my-app/backend/cmd/api/main.go` into focused modules for auth, bootstrap, HTTP helpers, notifications, realtime, requests, shared types, and uploads.

@@ -5,14 +5,6 @@
 # Fields: id | status | priority | complexity | dependencies | title
 
 ## backend
-plan-1 | planned | high | large | none | Harden request ownership and query access
-  Goal:
-  Replace scan-heavy request access with ownership-aware query patterns and indexes.
-  Why:
-  This is still the biggest correctness and scalability risk in the backend data model.
-  Likely files:
-  `my-app/backend/cmd/api/main.go`, `my-app/infra/lib/infra-stack.ts`, request model/provider files.
-
 plan-3 | planned | high | medium | plan-2 | Add backend tests and production safety rails
   Goal:
   Add meaningful backend coverage, safer rollout defaults, and better observability.
