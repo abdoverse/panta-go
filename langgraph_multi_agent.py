@@ -36,6 +36,7 @@ VALID_COMPLEXITIES = ("small", "medium", "large")
 STALE_PROGRESS_MINUTES = 15
 CLAIM_TIMEOUT_MINUTES = 5
 NO_LOCAL_CHANGE_BLOCK_MINUTES = 2
+WORKER_NO_EDIT_TIMEOUT_MINUTES = 4
 IGNORED_DIRECTORIES = {
     ".git",
     ".dart_tool",
@@ -1597,11 +1598,73 @@ def pid_is_running(pid: int) -> bool:
     return True
 
 
+def stop_pid(pid: int) -> None:
+    if pid <= 0:
+        return
+    try:
+        os.kill(pid, 15)
+    except OSError:
+        return
+
+
 def refresh_worker_launches(project_path: Path) -> dict[str, WorkerLaunch]:
     launches = load_worker_launches(project_path)
     for launch in launches.values():
         launch["status"] = "running" if pid_is_running(launch["pid"]) else "finished"
     save_worker_launches(project_path, launches)
+    return launches
+
+
+def running_worker_count(project_path: Path, backlog: list[BacklogItem]) -> int:
+    launches = refresh_worker_launches(project_path)
+    backlog_ids = {item["id"] for item in backlog if item["status"] != "done"}
+    return sum(
+        1
+        for item_id, launch in launches.items()
+        if item_id in backlog_ids and launch["status"] == "running"
+    )
+
+
+def reconcile_worker_launches(project_path: Path, backlog: list[BacklogItem]) -> dict[str, WorkerLaunch]:
+    launches = refresh_worker_launches(project_path)
+    items_by_id = {item["id"]: item for item in backlog}
+    changed = False
+    for item_id, launch in list(launches.items()):
+        item = items_by_id.get(item_id)
+        if item is None or item["status"] == "done":
+            if launch["status"] == "running":
+                stop_pid(launch["pid"])
+            launches.pop(item_id, None)
+            changed = True
+            continue
+        if relevant_changed_paths(project_path, item):
+            continue
+        if launch["status"] == "running":
+            age = elapsed_minutes(launch["started_at"]) or 0
+            if age < WORKER_NO_EDIT_TIMEOUT_MINUTES:
+                continue
+            stop_pid(launch["pid"])
+            launch["status"] = "stalled"
+            item["progress_note"] = (
+                "Real worker stalled without task-relevant repository edits; relaunching automatically."
+            )
+            item["last_progress_at"] = now_iso()
+            changed = True
+            continue
+        if item["status"] == "in_progress":
+            item["status"] = "approved"
+            item["owner_agent"] = ""
+            item["started_at"] = ""
+            item["last_heartbeat_at"] = ""
+            item["blocked_reason"] = ""
+            item["agent_updates"] = []
+            item["progress_note"] = (
+                "Previous real worker exited without task-relevant repository edits; relaunching automatically."
+            )
+            item["last_progress_at"] = now_iso()
+            changed = True
+    if changed:
+        save_worker_launches(project_path, launches)
     return launches
 
 
@@ -1616,7 +1679,10 @@ def build_worker_prompt(item: BacklogItem, instructions_text: str) -> str:
         f"{item['details']}\n\n"
         "Requirements:\n"
         "- Make real repository edits for this backlog item.\n"
-        "- Run only existing relevant validation commands.\n"
+        "- Start editing task-relevant files quickly; do not spend the session only investigating.\n"
+        "- Make the first code edit before running validation commands.\n"
+        "- Keep pre-edit investigation minimal and focused on the listed likely files.\n"
+        "- Run only existing relevant validation commands, and only after the first code edit exists.\n"
         "- Do not ask the user questions.\n"
         "- Do not commit or push; leave validated edits in the working tree for the orchestrator.\n"
         "- Prefer task-relevant paths only.\n\n"
@@ -1646,6 +1712,8 @@ def launch_copilot_worker(
             "--allow-all",
             "--no-ask-user",
             "--silent",
+            "--effort",
+            "low",
             "--model",
             DEFAULT_MODEL,
             "--add-dir",
@@ -1671,7 +1739,7 @@ def launch_copilot_worker(
 def launch_ready_workers(
     backlog: list[BacklogItem], project_path: Path, instructions_text: str
 ) -> list[BacklogItem]:
-    launches = refresh_worker_launches(project_path)
+    launches = reconcile_worker_launches(project_path, backlog)
     active_items = [item for item in backlog if item["status"] == "in_progress"]
     launched_items = {
         item_id: launch
