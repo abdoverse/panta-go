@@ -35,6 +35,17 @@
 - Watcher invariant: if the workflow depends on automatic plan/backlog movement, the agent must leave **exactly one** `langgraph_multi_agent.py --watch` process running before it concludes.
 - Watcher verification is mandatory after any loop change, recovery action, or process restart: check the live process list, confirm there is one watcher for this repo, and confirm the backlog heartbeat is moving.
 - If no watcher is running, the agent must start one immediately. If multiple watchers are running, the agent must stop the extras and leave one current watcher.
+- The detached Copilot worker is the source of truth for implementation activity. The orchestrator must not invent backend/frontend "working" activity for backlog display when no real worker for that item is running.
+- Worker liveness must be judged from produced worker logs and process state, not minute-based timeout guesses. Backlog progress should mirror the latest meaningful worker log line whenever available.
+- Keep one append-only log file per logical agent owner under `.copilot/agent-logs/` instead of per-task worker log files. Combined items may use a combined owner log such as `backend_dev+frontend_dev.log`.
+- A newly launched worker must never surface a placeholder like "waiting for first task-relevant repository edits." Show either the latest worker log line or an explicit "worker process is running; awaiting its first per-agent log line" message until real output appears, and include the agent log path in the live backlog note.
+- Workers must report back explicitly to the orchestrator through structured log lines. Each worker should emit `ORCH_REPORT|state=...|summary=...|next=...` checkpoints on assignment, meaningful progress changes, blockers, and before exit.
+- Workers must also emit literal `ORCH_STEP|action=...|detail=...` lines for exact files, exact commands, exact tests, and exact failure lines. Their first real output after assignment must be an `ORCH_STEP` line, not vague prose.
+- Silent waiting is forbidden. If a worker concludes there is no further useful work, no more task-relevant change is needed, or the task is already effectively complete, it must emit a final `ORCH_REPORT` with `state=done` immediately instead of idling or exiting quietly.
+- If a worker believes its assigned task is implemented or effectively complete, it must emit a final `ORCH_REPORT` with `state=ready_for_validation` or `state=done` instead of silently exiting.
+- Every worker session must end with a final structured report line: `ready_for_validation`, `done`, or `blocked`. Silent exits are always a worker failure.
+- The orchestrator must honor those final worker reports: `ready_for_validation` should advance the item to validation, and `done` should close the item when no additional task-relevant changes are pending.
+- If a worker exits repeatedly without any structured progress/completion report beyond the initial assignment checkpoint, the orchestrator must stop silent thrashing, record a clear worker-reporting failure, and pause automatic relaunches for that item until the failure is addressed.
 - The loop may work on up to **3 non-colliding in-progress items at a time**.
 - Use declared dependencies to prevent conflicting work, and mention relevant dependencies explicitly in the task instruction when they matter.
 - When one in-progress item finishes, the loop should pick the next ready **highest-priority** approved item whose dependencies are already satisfied.
@@ -46,7 +57,11 @@
 - If an item is blocked, record the blocker explicitly so the watcher can surface it instead of looking passively healthy.
 - An `in_progress` task with no task-relevant local code changes after a short grace period must be treated as a **synthetic claim**, returned to `approved`, and annotated as waiting for a real worker. The loop must never keep that state as healthy `in_progress`.
 - The "waiting for a real worker" note is a short-lived launch state, not an acceptable steady state. The loop must respond by launching a real worker and then either claim the task once edits appear or surface that the worker exited without producing task-relevant changes.
+- If a worker is still running but produces no new log activity across repeated watcher polls and no task-relevant edits appear, the loop should treat it as inactive and relaunch automatically.
 - Tester work must not start until task-relevant implementation changes exist for the item being validated.
+- Heartbeat-only watcher passes must not overwrite a real blocked/progress state with synthetic validation-prep or handoff text.
+- Validation failure is a repair handoff, not a terminal excuse: preserve the tester failure summary, return the item to an actionable approval state, and relaunch a real worker automatically with that failure context.
+- Approved follow-up work that already has task-relevant local edits is eligible for a repair worker relaunch when the blocker is a failed validation result.
 - The live status snapshot must classify each active item as `claimed_no_checkpoint`, `progressing`, `blocked`, or `stale`.
 - The live status snapshot must show stale tasks when the watcher heartbeat is current but task progress has not moved for too long.
 - If a task stays `claimed_no_checkpoint` beyond the claim timeout, it should be considered recoverable rather than trusted as active execution.

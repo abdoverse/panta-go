@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 import re
+import signal
 import shutil
 import subprocess
 import time
@@ -27,7 +28,7 @@ DEFAULT_BACKLOG_FILE = ".copilot/agent-backlog.txt"
 DEFAULT_PLAN_FILE = ".copilot/agent-plan.md"
 DEFAULT_DONE_FILE = ".copilot/agent-done.txt"
 DEFAULT_WORKER_STATE_FILE = ".copilot/worker-state.json"
-DEFAULT_WORKER_LOG_DIR = ".copilot/worker-logs"
+DEFAULT_AGENT_LOG_DIR = ".copilot/agent-logs"
 VALID_CATEGORIES = ("backend", "frontend", "both")
 VALID_PLAN_STATUSES = ("planned", "approved")
 VALID_BACKLOG_STATUSES = ("pending", "approved", "in_progress", "done")
@@ -36,7 +37,10 @@ VALID_COMPLEXITIES = ("small", "medium", "large")
 STALE_PROGRESS_MINUTES = 15
 CLAIM_TIMEOUT_MINUTES = 5
 NO_LOCAL_CHANGE_BLOCK_MINUTES = 2
-WORKER_NO_EDIT_TIMEOUT_MINUTES = 2
+MAX_QUIET_LOG_POLLS = 3
+WORKER_REPORT_PREFIX = "ORCH_REPORT|"
+WORKER_STEP_PREFIX = "ORCH_STEP|"
+MAX_UNREPORTED_WORKER_ATTEMPTS = 3
 IGNORED_DIRECTORIES = {
     ".git",
     ".dart_tool",
@@ -94,11 +98,22 @@ class BacklogItem(TypedDict):
 
 class WorkerLaunch(TypedDict):
     item_id: str
+    agent_key: str
     pid: int
     started_at: str
     status: str
     log_path: str
+    log_offset: int
     attempt_count: int
+    last_log_at: str
+    last_log_line: str
+    last_log_signature: str
+    last_report_state: str
+    last_report_summary: str
+    last_report_next: str
+    last_step_action: str
+    last_step_detail: str
+    quiet_polls: int
 
 
 class PlanItem(TypedDict):
@@ -134,6 +149,7 @@ class State(TypedDict):
     plan_path: str
     done_path: str
     approval_status: str
+    heartbeat_only: bool
 
 
 def parse_args() -> argparse.Namespace:
@@ -790,6 +806,7 @@ def collides_with_active(item: BacklogItem, active_items: list[BacklogItem]) -> 
 def promote_ready_backlog_items(
     backlog: list[BacklogItem], project_path: Path
 ) -> list[BacklogItem]:
+    launches = refresh_worker_launches(project_path)
     active_items = [item for item in backlog if item["status"] == "in_progress"]
     available_slots = max(0, 3 - len(active_items))
     if available_slots == 0:
@@ -818,6 +835,11 @@ def promote_ready_backlog_items(
             item["progress_note"] = (
                 "Approved and ready, but still waiting for a real worker to begin task-relevant repository edits."
             )
+            continue
+        if item["blocked_reason"].startswith("Validation failed"):
+            continue
+        launch = launches.get(item["id"])
+        if launch is None or launch["status"] != "running":
             continue
         item["status"] = "in_progress"
         item["owner_agent"] = assigned_agent_for_item(item)
@@ -858,6 +880,23 @@ def reset_item_to_approved(item: BacklogItem, progress_note: str) -> None:
     item["blocked_reason"] = ""
     item["agent_updates"] = []
     item["progress_note"] = progress_note
+
+
+def requeue_item_for_follow_up(
+    item: BacklogItem, progress_note: str, blocked_reason: str
+) -> None:
+    item["status"] = "approved"
+    item["owner_agent"] = ""
+    item["started_at"] = ""
+    item["last_heartbeat_at"] = ""
+    item["last_progress_at"] = now_iso()
+    item["blocked_reason"] = blocked_reason
+    item["agent_updates"] = []
+    item["progress_note"] = progress_note
+
+
+def item_has_worker_reporting_failure(item: BacklogItem) -> bool:
+    return item["blocked_reason"].startswith("Worker reporting failure:")
 
 
 def recover_stalled_items(backlog: list[BacklogItem]) -> list[BacklogItem]:
@@ -1125,11 +1164,14 @@ def apply_agent_reports_to_backlog(
             continue
 
         if tester_report.get("outcome") == "failed":
-            item["blocked_reason"] = (
+            failure_summary = tester_report["summary"].strip() or (
                 "Validation failed; commit delivery was not attempted until tests pass."
             )
-            item["progress_note"] = f"tester [failed]: {tester_report['summary']}"
-            item["last_progress_at"] = update_time
+            requeue_item_for_follow_up(
+                item,
+                "Validation failed; relaunching a real worker with tester feedback.",
+                failure_summary,
+            )
             continue
 
         if (
@@ -1227,22 +1269,12 @@ def commit_completed_item(
     return True, sha_completed.stdout.strip()
 
 
-def pending_done_delivery_item(
-    backlog: list[BacklogItem], project_path: Path
-) -> Optional[BacklogItem]:
-    for item in backlog:
-        if item["status"] != "done":
-            continue
-        if relevant_changed_paths(project_path, item):
-            return item
-    return None
-
-
 def ready_approved_items(backlog: list[BacklogItem]) -> list[BacklogItem]:
     return [
         item
         for item in backlog
         if item["status"] == "approved"
+        and not item_has_worker_reporting_failure(item)
         and dependencies_satisfied(item, backlog)
     ]
 
@@ -1582,8 +1614,84 @@ def worker_state_path(project_path: Path) -> Path:
     return (project_path / DEFAULT_WORKER_STATE_FILE).resolve()
 
 
-def worker_log_dir(project_path: Path) -> Path:
-    return (project_path / DEFAULT_WORKER_LOG_DIR).resolve()
+def agent_log_dir(project_path: Path) -> Path:
+    return (project_path / DEFAULT_AGENT_LOG_DIR).resolve()
+
+
+def worker_agent_key(item: BacklogItem) -> str:
+    return assigned_agent_for_item(item)
+
+
+def display_log_path(project_path: Path, log_path: str) -> str:
+    try:
+        return os.path.relpath(log_path, project_path)
+    except ValueError:
+        return log_path
+
+
+def normalize_worker_protocol_line(line: str) -> str:
+    return re.sub(r"^[\s>*\-●]+", "", line.strip())
+
+
+def parse_worker_report_line(line: str) -> Optional[dict[str, str]]:
+    line = normalize_worker_protocol_line(line)
+    if not line.startswith(WORKER_REPORT_PREFIX):
+        return None
+    payload: dict[str, str] = {}
+    for part in line[len(WORKER_REPORT_PREFIX) :].split("|"):
+        key, sep, value = part.partition("=")
+        if not sep:
+            continue
+        payload[key.strip()] = value.strip()
+    state = payload.get("state", "")
+    if not state:
+        return None
+    return {
+        "state": state,
+        "summary": payload.get("summary", ""),
+        "next": payload.get("next", ""),
+    }
+
+
+def parse_worker_step_line(line: str) -> Optional[dict[str, str]]:
+    line = normalize_worker_protocol_line(line)
+    if not line.startswith(WORKER_STEP_PREFIX):
+        return None
+    payload: dict[str, str] = {}
+    for part in line[len(WORKER_STEP_PREFIX) :].split("|"):
+        key, sep, value = part.partition("=")
+        if not sep:
+            continue
+        payload[key.strip()] = value.strip()
+    detail = payload.get("detail", "")
+    if not detail:
+        return None
+    return {
+        "action": payload.get("action", ""),
+        "detail": detail,
+    }
+
+
+def count_recent_unreported_launches(log_path: Path, item_id: str) -> int:
+    if not log_path.exists():
+        return 0
+    try:
+        lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return 0
+
+    launch_marker = f"orchestrator: launched item {item_id} "
+    count = 0
+    for raw_line in reversed(lines):
+        line = raw_line.strip()
+        if not line:
+            continue
+        report = parse_worker_report_line(line)
+        if report is not None and report["state"] not in {"assigned", ""}:
+            break
+        if launch_marker in line:
+            count += 1
+    return count
 
 
 def load_worker_launches(project_path: Path) -> dict[str, WorkerLaunch]:
@@ -1603,11 +1711,22 @@ def load_worker_launches(project_path: Path) -> dict[str, WorkerLaunch]:
         try:
             launches[str(item_id)] = {
                 "item_id": str(payload["item_id"]),
+                "agent_key": str(payload.get("agent_key", "")),
                 "pid": int(payload["pid"]),
                 "started_at": str(payload["started_at"]),
                 "status": str(payload["status"]),
                 "log_path": str(payload["log_path"]),
+                "log_offset": int(payload.get("log_offset", 0)),
                 "attempt_count": int(payload.get("attempt_count", 1)),
+                "last_log_at": str(payload.get("last_log_at", "")),
+                "last_log_line": str(payload.get("last_log_line", "")),
+                "last_log_signature": str(payload.get("last_log_signature", "")),
+                "last_report_state": str(payload.get("last_report_state", "")),
+                "last_report_summary": str(payload.get("last_report_summary", "")),
+                "last_report_next": str(payload.get("last_report_next", "")),
+                "last_step_action": str(payload.get("last_step_action", "")),
+                "last_step_detail": str(payload.get("last_step_detail", "")),
+                "quiet_polls": int(payload.get("quiet_polls", 0)),
             }
         except Exception:
             continue
@@ -1624,6 +1743,15 @@ def pid_is_running(pid: int) -> bool:
     if pid <= 0:
         return False
     try:
+        os.killpg(pid, 0)
+        return True
+    except ProcessLookupError:
+        pass
+    except PermissionError:
+        return True
+    except OSError:
+        pass
+    try:
         os.kill(pid, 0)
     except OSError:
         return False
@@ -1634,17 +1762,197 @@ def stop_pid(pid: int) -> None:
     if pid <= 0:
         return
     try:
-        os.kill(pid, 15)
+        os.killpg(pid, signal.SIGTERM)
+        return
+    except ProcessLookupError:
+        pass
+    except PermissionError:
+        return
+    except OSError:
+        pass
+    try:
+        os.kill(pid, signal.SIGTERM)
     except OSError:
         return
+
+
+def stop_worker_launch(project_path: Path, item_id: str) -> None:
+    launches = load_worker_launches(project_path)
+    launch = launches.pop(item_id, None)
+    if launch is None:
+        return
+    if launch["status"] == "running" or pid_is_running(launch["pid"]):
+        stop_pid(launch["pid"])
+    save_worker_launches(project_path, launches)
+
+
+def read_worker_log_snapshot(
+    launch: WorkerLaunch,
+) -> tuple[str, str, str, str, str, str, str, str]:
+    path = Path(launch["log_path"])
+    if not path.exists():
+        return "", "", "", "", "", "", "", ""
+    try:
+        stat = path.stat()
+        updated_at = datetime.fromtimestamp(stat.st_mtime, timezone.utc).isoformat()
+        signature = f"{stat.st_mtime_ns}:{stat.st_size}:{launch['log_offset']}"
+        with path.open("rb") as handle:
+            handle.seek(max(0, launch["log_offset"]))
+            content = handle.read().decode("utf-8", errors="replace")
+    except OSError:
+        return "", "", "", "", "", "", "", ""
+
+    lines = [line.strip() for line in content.splitlines() if line.strip()]
+    last_line = lines[-1] if lines else ""
+    last_report_state = launch["last_report_state"]
+    last_report_summary = launch["last_report_summary"]
+    last_report_next = launch["last_report_next"]
+    last_step_action = launch["last_step_action"]
+    last_step_detail = launch["last_step_detail"]
+    for line in lines:
+        report = parse_worker_report_line(line)
+        if report is None:
+            step = parse_worker_step_line(line)
+            if step is None:
+                continue
+            last_step_action = step["action"]
+            last_step_detail = step["detail"]
+            continue
+        last_report_state = report["state"]
+        last_report_summary = report["summary"]
+        last_report_next = report["next"]
+    if len(last_line) > 240:
+        last_line = last_line[:237] + "..."
+    return (
+        signature,
+        updated_at,
+        last_line,
+        last_report_state,
+        last_report_summary,
+        last_report_next,
+        last_step_action,
+        last_step_detail,
+    )
+
+
+def worker_log_note(launch: WorkerLaunch) -> str:
+    step_detail = launch["last_step_detail"].strip()
+    if step_detail:
+        step_action = launch["last_step_action"].strip()
+        if step_action:
+            return f"{step_action}: {step_detail}"
+        return step_detail
+    report_state = launch["last_report_state"].strip()
+    report_summary = launch["last_report_summary"].strip()
+    if report_state and report_summary:
+        if report_state in {"ready_for_validation", "done"}:
+            return f"Worker reported completion: {report_summary}"
+        if report_state == "blocked":
+            return f"Worker reported blocker: {report_summary}"
+        return f"Worker reported {report_state}: {report_summary}"
+    line = launch["last_log_line"].strip()
+    if line:
+        return line
+    if launch["status"] == "running":
+        return "Worker process is running; awaiting its first per-agent log line."
+    return "Worker exited without a usable log summary."
 
 
 def refresh_worker_launches(project_path: Path) -> dict[str, WorkerLaunch]:
     launches = load_worker_launches(project_path)
     for launch in launches.values():
         launch["status"] = "running" if pid_is_running(launch["pid"]) else "finished"
+        (
+            signature,
+            updated_at,
+            last_line,
+            last_report_state,
+            last_report_summary,
+            last_report_next,
+            last_step_action,
+            last_step_detail,
+        ) = read_worker_log_snapshot(launch)
+        if signature and signature != launch["last_log_signature"]:
+            launch["last_log_signature"] = signature
+            launch["last_log_at"] = updated_at
+            launch["last_log_line"] = last_line
+            launch["last_report_state"] = last_report_state
+            launch["last_report_summary"] = last_report_summary
+            launch["last_report_next"] = last_report_next
+            launch["last_step_action"] = last_step_action
+            launch["last_step_detail"] = last_step_detail
+            launch["quiet_polls"] = 0
+        elif launch["status"] == "running":
+            launch["quiet_polls"] = launch.get("quiet_polls", 0) + 1
     save_worker_launches(project_path, launches)
     return launches
+
+
+def running_launch_for_item(
+    project_path: Path, item: Optional[BacklogItem]
+) -> Optional[WorkerLaunch]:
+    if item is None:
+        return None
+    launch = refresh_worker_launches(project_path).get(item["id"])
+    if launch and launch["status"] == "running":
+        return launch
+    return None
+
+
+def item_needs_follow_up_worker(item: BacklogItem) -> bool:
+    return item["blocked_reason"].startswith("Validation failed")
+
+
+def worker_missing_structured_report(launch: WorkerLaunch) -> bool:
+    return launch["last_report_state"].strip() in {"", "assigned"}
+
+
+def worker_reported_completion(launch: WorkerLaunch) -> bool:
+    return launch["last_report_state"].strip() in {"ready_for_validation", "done"}
+
+
+def sync_item_with_launch(
+    project_path: Path, item: BacklogItem, launch: WorkerLaunch
+) -> None:
+    progress_note = worker_log_note(launch)
+    log_path = display_log_path(project_path, launch["log_path"])
+    if launch["status"] == "running":
+        progress_note = (
+            f"Real worker active (pid {launch['pid']}; log {log_path}): {progress_note}"
+        )
+    else:
+        progress_note = f"Real worker finished (log {log_path}): {progress_note}"
+    if item["progress_note"] != progress_note:
+        item["progress_note"] = progress_note
+    if launch["last_log_at"]:
+        item["last_progress_at"] = launch["last_log_at"]
+        item["last_heartbeat_at"] = launch["last_log_at"]
+    report_state = launch["last_report_state"].strip()
+    if report_state:
+        item["agent_updates"] = [
+            {
+                "agent": launch["agent_key"],
+                "updated_at": launch["last_log_at"] or launch["started_at"],
+                "phase": report_state,
+                "activity": launch["last_report_summary"] or worker_log_note(launch),
+                "next_command": launch["last_report_next"],
+            }
+        ]
+
+
+def mark_worker_reporting_failure(
+    project_path: Path, item: BacklogItem, launch: WorkerLaunch
+) -> None:
+    log_path = display_log_path(project_path, launch["log_path"])
+    requeue_item_for_follow_up(
+        item,
+        "Worker failed to emit a structured completion/progress report; automatic relaunch paused.",
+        (
+            "Worker reporting failure: "
+            f"{launch['agent_key']} exited or stayed quiet without any `{WORKER_REPORT_PREFIX}` "
+            f"checkpoint after {launch['attempt_count']} launches. Inspect {log_path}."
+        ),
+    )
 
 
 def running_worker_count(project_path: Path, backlog: list[BacklogItem]) -> int:
@@ -1669,18 +1977,87 @@ def reconcile_worker_launches(project_path: Path, backlog: list[BacklogItem]) ->
             launches.pop(item_id, None)
             changed = True
             continue
-        if relevant_changed_paths(project_path, item):
+        if launch["status"] != "running" and item_needs_follow_up_worker(item):
+            launches.pop(item_id, None)
+            changed = True
             continue
         if launch["status"] == "running":
-            age = elapsed_minutes(launch["started_at"]) or 0
-            if age < WORKER_NO_EDIT_TIMEOUT_MINUTES:
+            sync_item_with_launch(project_path, item, launch)
+            if relevant_changed_paths(project_path, item):
+                continue
+            if launch["quiet_polls"] < MAX_QUIET_LOG_POLLS:
                 continue
             stop_pid(launch["pid"])
             launch["status"] = "stalled"
+            if (
+                worker_missing_structured_report(launch)
+                and launch["attempt_count"] >= MAX_UNREPORTED_WORKER_ATTEMPTS
+            ):
+                mark_worker_reporting_failure(project_path, item, launch)
+                launches.pop(item_id, None)
+                changed = True
+                continue
             item["progress_note"] = (
-                "Real worker stalled without task-relevant repository edits; relaunching automatically."
+                "Real worker stopped after repeated watcher polls without new log activity or task-relevant edits; relaunching automatically."
             )
             item["last_progress_at"] = now_iso()
+            item["last_heartbeat_at"] = item["last_progress_at"]
+            launches.pop(item_id, None)
+            if item["status"] == "in_progress":
+                reset_item_to_approved(
+                    item,
+                    "Previous real worker stopped after no new log activity and no task-relevant edits; relaunching automatically.",
+                )
+            changed = True
+            continue
+        if launch["last_report_state"] == "blocked":
+            requeue_item_for_follow_up(
+                item,
+                "Worker reported a blocker and returned the task for follow-up.",
+                launch["last_report_summary"] or "Worker reported a blocker without a summary.",
+            )
+            launches.pop(item_id, None)
+            changed = True
+            continue
+        if worker_reported_completion(launch):
+            if relevant_changed_paths(project_path, item):
+                if item["status"] != "in_progress":
+                    item["status"] = "in_progress"
+                    item["owner_agent"] = assigned_agent_for_item(item)
+                    if not item["started_at"]:
+                        item["started_at"] = launch["started_at"] or now_iso()
+                    changed = True
+                sync_item_with_launch(project_path, item, launch)
+                launches.pop(item_id, None)
+                changed = True
+                continue
+            if launch["last_report_state"] == "done":
+                item["status"] = "done"
+                item["owner_agent"] = ""
+                item["blocked_reason"] = ""
+                sync_item_with_launch(project_path, item, launch)
+                launches.pop(item_id, None)
+                changed = True
+                continue
+        if (
+            worker_missing_structured_report(launch)
+            and not relevant_changed_paths(project_path, item)
+            and launch["attempt_count"] >= MAX_UNREPORTED_WORKER_ATTEMPTS
+        ):
+            mark_worker_reporting_failure(project_path, item, launch)
+            launches.pop(item_id, None)
+            changed = True
+            continue
+        if relevant_changed_paths(project_path, item):
+            if item["status"] != "in_progress":
+                item["status"] = "in_progress"
+                item["owner_agent"] = assigned_agent_for_item(item)
+                if not item["started_at"]:
+                    item["started_at"] = launch["started_at"] or now_iso()
+                changed = True
+            sync_item_with_launch(project_path, item, launch)
+            item["agent_updates"] = []
+            launches.pop(item_id, None)
             changed = True
             continue
         if item["status"] == "in_progress":
@@ -1691,7 +2068,7 @@ def reconcile_worker_launches(project_path: Path, backlog: list[BacklogItem]) ->
             item["blocked_reason"] = ""
             item["agent_updates"] = []
             item["progress_note"] = (
-                "Previous real worker exited without task-relevant repository edits; relaunching automatically."
+                "Previous real worker exited without task-relevant repository edits or a completion report; relaunching automatically."
             )
             item["last_progress_at"] = now_iso()
             changed = True
@@ -1702,12 +2079,19 @@ def reconcile_worker_launches(project_path: Path, backlog: list[BacklogItem]) ->
 
 def build_worker_prompt(item: BacklogItem, instructions_text: str) -> str:
     dependency_text = format_dependencies(item["dependencies"])
+    blocked_reason = item["blocked_reason"].strip()
+    failure_context = (
+        f"Current blocker to resolve before finishing:\n{blocked_reason}\n\n"
+        if blocked_reason
+        else ""
+    )
     return (
         f"You are the autonomous coding worker for backlog item {item['id']} "
         f"({item['category']}): {item['title']}.\n\n"
         f"Priority: {item['priority']}\n"
         f"Complexity: {item['complexity']}\n"
         f"Dependencies: {dependency_text}\n\n"
+        f"{failure_context}"
         f"{item['details']}\n\n"
         "Requirements:\n"
         "- Inspect at most 3 likely files before the first edit.\n"
@@ -1719,7 +2103,33 @@ def build_worker_prompt(item: BacklogItem, instructions_text: str) -> str:
         "- Run only existing relevant validation commands, and only after the first code edit exists.\n"
         "- Do not ask the user questions.\n"
         "- Do not commit or push; leave validated edits in the working tree for the orchestrator.\n"
-        "- Prefer task-relevant paths only.\n\n"
+        "- Prefer task-relevant paths only.\n"
+        "- Silent waiting is not allowed. If you reach a point where there is no further useful work, emit a final completion or blocker checkpoint and exit.\n"
+        "- If the task is already complete or no additional task-relevant edit is needed after your short inspection, emit `ORCH_REPORT|state=done|...` immediately instead of idling.\n\n"
+        "Reporting protocol:\n"
+        f"- Emit single-line status checkpoints prefixed exactly with `{WORKER_REPORT_PREFIX}`.\n"
+        "- Use this format exactly: "
+        f"`{WORKER_REPORT_PREFIX}state=<assigned|working|ready_for_validation|done|blocked>"
+        "|summary=<short single line>|next=<short single line>`.\n"
+        "- Emit one checkpoint immediately after you understand the task, whenever the state meaningfully changes, "
+        "and as your final line before exiting.\n"
+        "- Never end the session without a final `ORCH_REPORT` line. Use `ready_for_validation`, `done`, or `blocked`; do not silently stop.\n"
+        "- If you believe the assigned task is implemented and ready for tester handoff, your final checkpoint must use "
+        "`state=ready_for_validation`.\n"
+        "- If you believe the assigned task is already effectively complete and needs no more code changes, your final "
+        "checkpoint must use `state=done` and explain why.\n"
+        "- If you are blocked, emit `state=blocked` with the blocker and the next action needed.\n"
+        f"- Emit literal step lines prefixed exactly with `{WORKER_STEP_PREFIX}`.\n"
+        f"- Use this format exactly: `{WORKER_STEP_PREFIX}action=<read|edit|command|test|decision|result>"
+        "|detail=<exact file path, command, diff target, or failure line>`.\n"
+        "- Your first output after the initial assigned checkpoint must be an `ORCH_STEP` line, unless the correct immediate final action is a `done` or `blocked` report.\n"
+        "- Emit a literal step line before each important read/edit/command and after any meaningful command result.\n"
+        "- Keep step details literal and concrete: exact file paths, exact shell commands, exact test names, or exact error lines when they fit.\n"
+        "- Do not use vague narration like 'checking things' or 'working on the task'. Prefer concrete lines such as:\n"
+        f"  `{WORKER_STEP_PREFIX}action=read|detail=my-app/mobile/lib/providers/panta_provider.dart`\n"
+        f"  `{WORKER_STEP_PREFIX}action=command|detail=cd my-app/mobile && flutter test test/widget_test.dart`\n"
+        f"  `{WORKER_STEP_PREFIX}action=result|detail=flutter test failed: Expected 1 widget with text Login`\n"
+        f"  `{WORKER_STEP_PREFIX}action=edit|detail=my-app/mobile/lib/services/auth_service.dart`\n\n"
         "Use `.github/copilot-instructions.md` for repo conventions if needed, but do not spend the session restating or re-reading unrelated sections.\n"
     ).strip()
 
@@ -1733,39 +2143,73 @@ def launch_copilot_worker(
     copilot_path = shutil.which("copilot")
     if not copilot_path:
         return None
-    log_dir = worker_log_dir(project_path)
+    log_dir = agent_log_dir(project_path)
     log_dir.mkdir(parents=True, exist_ok=True)
-    log_path = log_dir / f"{item['id']}.log"
-    log_handle = open(log_path, "a", encoding="utf-8")
-    process = subprocess.Popen(
-        [
-            copilot_path,
-            "-p",
-            build_worker_prompt(item, instructions_text),
-            "--allow-all",
-            "--no-ask-user",
-            "--silent",
-            "--effort",
-            "low",
-            "--model",
-            DEFAULT_MODEL,
-            "--add-dir",
-            str(project_path),
-        ],
-        cwd=project_path,
-        stdout=log_handle,
-        stderr=subprocess.STDOUT,
-        stdin=subprocess.DEVNULL,
-        start_new_session=True,
-        text=True,
+    agent_key = worker_agent_key(item)
+    safe_agent_key = re.sub(r"[^A-Za-z0-9_.+-]+", "_", agent_key)
+    log_path = log_dir / f"{safe_agent_key}.log"
+    existing_size = log_path.stat().st_size if log_path.exists() else 0
+    attempt_count = max(
+        attempt_count,
+        count_recent_unreported_launches(log_path, item["id"]) + 1,
     )
+    log_handle = open(log_path, "a", encoding="utf-8")
+    started_at = now_iso()
+    log_handle.write(
+        f"[{started_at}] orchestrator: launched item {item['id']} ({item['title']}) "
+        f"for agent {agent_key}\n"
+    )
+    log_handle.write(
+        f"{WORKER_REPORT_PREFIX}state=assigned|summary=Task {item['id']} assigned to {agent_key}; "
+        "worker process started.|next=emit a worker progress checkpoint or begin the first task-relevant edit\n"
+    )
+    log_handle.flush()
+    worker_command = [
+        copilot_path,
+        "-p",
+        build_worker_prompt(item, instructions_text),
+        "--allow-all",
+        "--no-ask-user",
+        "--effort",
+        "low",
+        "--model",
+        DEFAULT_MODEL,
+        "--add-dir",
+        str(project_path),
+        "--no-color",
+        "--stream",
+        "off",
+    ]
+    try:
+        process = subprocess.Popen(
+            worker_command,
+            cwd=project_path,
+            stdout=log_handle,
+            stderr=subprocess.STDOUT,
+            stdin=subprocess.DEVNULL,
+            start_new_session=True,
+            text=True,
+        )
+    finally:
+        log_handle.close()
     return {
         "item_id": item["id"],
+        "agent_key": agent_key,
         "pid": process.pid,
-        "started_at": now_iso(),
+        "started_at": started_at,
         "status": "running",
         "log_path": str(log_path),
+        "log_offset": existing_size,
         "attempt_count": attempt_count,
+        "last_log_at": "",
+        "last_log_line": "",
+        "last_log_signature": "",
+        "last_report_state": "assigned",
+        "last_report_summary": f"Task {item['id']} assigned to {agent_key}; worker process started.",
+        "last_report_next": "emit a worker progress checkpoint or begin the first task-relevant edit",
+        "last_step_action": "",
+        "last_step_detail": "",
+        "quiet_polls": 0,
     }
 
 
@@ -1798,14 +2242,12 @@ def launch_ready_workers(
     for item in ready_items:
         launch = launches.get(item["id"])
         if launch and launch["status"] == "running":
-            item["progress_note"] = (
-                f"Real worker running (pid {launch['pid']}); waiting for task-relevant repository edits."
-            )
-            item["last_progress_at"] = launch["started_at"]
+            sync_item_with_launch(project_path, item, launch)
             continue
         if collides_with_active(item, occupied_items):
             continue
-        if relevant_changed_paths(project_path, item):
+        has_local_changes = bool(relevant_changed_paths(project_path, item))
+        if has_local_changes and not item_needs_follow_up_worker(item):
             continue
         attempts = 1 if launch is None else launch["attempt_count"] + 1
         new_launch = launch_copilot_worker(project_path, item, instructions_text, attempts)
@@ -1813,10 +2255,13 @@ def launch_ready_workers(
             continue
         launches[item["id"]] = new_launch
         save_worker_launches(project_path, launches)
-        item["progress_note"] = (
-            f"Real worker launched (pid {new_launch['pid']}); waiting for first task-relevant repository edits."
-        )
-        item["last_progress_at"] = new_launch["started_at"]
+        sync_item_with_launch(project_path, item, new_launch)
+        if has_local_changes:
+            item["blocked_reason"] = ""
+        if not item["last_progress_at"]:
+            item["last_progress_at"] = new_launch["started_at"]
+        if not item["last_heartbeat_at"]:
+            item["last_heartbeat_at"] = new_launch["started_at"]
         occupied_items.append(item)
         available_slots -= 1
         if available_slots == 0:
@@ -1882,12 +2327,11 @@ def backend_phase_payload(
 
 
 def tester_ready_for_item(project_path: Path, item: BacklogItem) -> bool:
-    latest = latest_agent_update(item, "backend_dev")
-    if latest is None:
+    if item["status"] != "in_progress":
         return False
-    return latest["phase"] in {"ready_for_validation", "validation_support"} and bool(
-        relevant_changed_paths(project_path, item)
-    )
+    if running_launch_for_item(project_path, item) is not None:
+        return False
+    return bool(relevant_changed_paths(project_path, item))
 
 
 def tester_ready_for_items(project_path: Path, items: list[BacklogItem]) -> bool:
@@ -1942,37 +2386,10 @@ def build_deterministic_tasks(state: State) -> list[AgentTask]:
     instruction = build_work_instruction(state)
     instructions_text = state["instructions_text"].strip()
     active_backlog_items = state.get("active_backlog_items", [])
+    if state.get("heartbeat_only"):
+        return []
 
     tasks: list[AgentTask] = []
-
-    if surfaces["frontend_dev"] and agent_enabled_for_items("frontend_dev", active_backlog_items):
-        tasks.append(
-            {
-                "agent": "frontend_dev",
-                "instruction": (
-                    f"{instruction}\n\n"
-                    "Frontend focus:\n"
-                    "- Respect .github/copilot-instructions.md when deciding app targets.\n"
-                    "- Prioritize my-app/mobile and web-friendly flows.\n"
-                    f"- Relevant paths: {', '.join(surfaces['frontend_dev'])}.\n"
-                    f"- Additional instructions context:\n{instructions_text or '(none)'}"
-                ),
-            }
-        )
-
-    if surfaces["backend_dev"] and agent_enabled_for_items("backend_dev", active_backlog_items):
-        tasks.append(
-            {
-                "agent": "backend_dev",
-                "instruction": (
-                    f"{instruction}\n\n"
-                    "Backend focus:\n"
-                    "- Cover API, infra, and service-impacting changes when relevant.\n"
-                    f"- Relevant paths: {', '.join(surfaces['backend_dev'])}.\n"
-                    f"- Additional instructions context:\n{instructions_text or '(none)'}"
-                ),
-            }
-        )
 
     if (
         agent_enabled_for_items("tester", active_backlog_items)
@@ -1995,13 +2412,15 @@ def build_deterministic_tasks(state: State) -> list[AgentTask]:
 
 
 def build_llm_tasks(state: State) -> Optional[list[AgentTask]]:
+    if state.get("heartbeat_only"):
+        return []
     if ChatOpenAI is None or not has_openai_credentials():
         return None
 
     llm = ChatOpenAI(model=state["model"], temperature=0)
     allowed_agents = [
         agent
-        for agent in ("backend_dev", "frontend_dev", "tester")
+        for agent in ("tester",)
         if agent_enabled_for_items(agent, state.get("active_backlog_items", []))
         and (
             agent != "tester"
@@ -2220,12 +2639,30 @@ def run_detected_tests(project_path: Path) -> list[dict[str, str]]:
     return results
 
 
+def summarize_test_results(results: list[dict[str, str]], ran_tests: bool) -> str:
+    if not ran_tests:
+        return "Tester agent prepared the existing validation commands without running them."
+    if not results:
+        return "Validation did not run any detected test commands."
+
+    failures = [result for result in results if result["status"] != "passed"]
+    if not failures:
+        commands = ", ".join(result["command"] for result in results)
+        return f"Validation passed for: {commands}"
+
+    snippets = []
+    for result in failures:
+        output_lines = result["output"].strip().splitlines()
+        tail = output_lines[-1].strip() if output_lines else "command failed without output"
+        snippets.append(f"{result['command']} -> {tail[:240]}")
+    return "Validation failed: " + " | ".join(snippets)
+
+
 def tester(state: State) -> dict[str, Any]:
     task = _task_or_default(state, "tester")
     project_path = Path(state["project_path"])
     test_results = run_detected_tests(project_path) if state["run_tests"] else []
     active_item = state.get("active_backlog_item")
-    backend_update = latest_agent_update(active_item, "backend_dev")
     outcome = "skipped"
 
     if state["run_tests"]:
@@ -2234,11 +2671,8 @@ def tester(state: State) -> dict[str, Any]:
         elif test_results:
             outcome = "failed"
 
-    summary = (
-        "Tester agent executed the detected validation commands."
-        if state["run_tests"]
-        else "Tester agent prepared the existing validation commands without running them."
-    )
+    summary = summarize_test_results(test_results, state["run_tests"])
+    has_relevant_changes = bool(relevant_changed_paths(project_path, active_item))
 
     report: AgentReport = {
         "agent": "tester",
@@ -2248,15 +2682,15 @@ def tester(state: State) -> dict[str, Any]:
             "Running the existing validation commands after backend implementation handoff."
             if state["run_tests"]
             else (
-                "Preparing validation after backend handoff."
-                if backend_update is not None
-                else "Waiting for backend implementation handoff."
+                "Validation commands are available, but this pass is heartbeat-only."
+                if has_relevant_changes
+                else "Waiting for task-relevant implementation changes before validation."
             )
         ),
         "next_command": (
             "cd my-app/mobile && flutter test"
-            if backend_update is not None
-            else "wait for backend_dev to reach ready_for_validation"
+            if has_relevant_changes
+            else "wait for task-relevant repository edits"
         ),
         "summary": summary,
         "targets": ["my-app/mobile/test", "my-app/infra/test"],
@@ -2412,6 +2846,7 @@ def run_once(
             "done_path": str(done_path),
             "plan_path": str(plan_path),
             "approval_status": approval_status,
+            "heartbeat_only": heartbeat_only,
         }
     )
 
@@ -2441,6 +2876,7 @@ def run_once(
             None,
         )
         if delivery_item is not None:
+            stop_worker_launch(project_path, delivery_item["id"])
             delivery_item["status"] = "done"
             delivery_item["blocked_reason"] = ""
             delivery_item["progress_note"] = (
@@ -2448,8 +2884,6 @@ def run_once(
             )
             delivery_item["last_progress_at"] = now_iso()
             delivery_item["last_heartbeat_at"] = delivery_item["last_progress_at"]
-    else:
-        delivery_item = pending_done_delivery_item(backlog, project_path)
     sync_project_workflow_files(backlog, backlog_path, done_path, plan_items, plan_path)
     if delivery_item is not None:
         delivered, delivery_message = commit_completed_item(
