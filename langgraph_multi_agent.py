@@ -774,7 +774,9 @@ def collides_with_active(item: BacklogItem, active_items: list[BacklogItem]) -> 
     return any(active["category"] == item["category"] for active in active_items)
 
 
-def promote_ready_backlog_items(backlog: list[BacklogItem]) -> list[BacklogItem]:
+def promote_ready_backlog_items(
+    backlog: list[BacklogItem], project_path: Path
+) -> list[BacklogItem]:
     active_items = [item for item in backlog if item["status"] == "in_progress"]
     available_slots = max(0, 3 - len(active_items))
     if available_slots == 0:
@@ -798,6 +800,11 @@ def promote_ready_backlog_items(backlog: list[BacklogItem]) -> list[BacklogItem]
         if available_slots == 0:
             break
         if collides_with_active(item, active_items):
+            continue
+        if not relevant_changed_paths(project_path, item):
+            item["progress_note"] = (
+                "Approved and ready, but still waiting for a real worker to begin task-relevant repository edits."
+            )
             continue
         item["status"] = "in_progress"
         item["owner_agent"] = assigned_agent_for_item(item)
@@ -852,7 +859,7 @@ def recover_stalled_items(backlog: list[BacklogItem]) -> list[BacklogItem]:
 
 
 def render_backlog_text(backlog: list[BacklogItem]) -> str:
-    active_items, _ = split_backlog_items(backlog)
+    active_items, done_items = split_backlog_items(backlog)
     pending_items = [item for item in backlog if item["status"] == "pending"]
     approved_items = [item for item in backlog if item["status"] == "approved"]
     in_progress_items = [item for item in backlog if item["status"] == "in_progress"]
@@ -877,7 +884,8 @@ def render_backlog_text(backlog: list[BacklogItem]) -> str:
             "# Loop status: "
             f"{loop_status} | active_agents={active_agents} | "
             f"approved={len(approved_items)} | ready_approved={len(ready_approved)} | "
-            f"pending={len(pending_items)} | in_progress={len(in_progress_items)}"
+            f"pending={len(pending_items)} | in_progress={len(in_progress_items)} | "
+            f"done={len(done_items)}"
         ),
         "# Approve work by changing an item's status from pending to approved.",
         "# Active status values: pending, approved, in_progress",
@@ -920,6 +928,34 @@ def render_backlog_text(backlog: list[BacklogItem]) -> str:
                 for detail_line in item["details"].splitlines():
                     lines.append(f"  {detail_line}")
             lines.append("")
+
+    if done_items:
+        lines.extend(
+            [
+                "# Recently completed (read-only summary; canonical archive is .copilot/agent-done.txt)",
+                "# Fields: id | status | priority | complexity | dependencies | title",
+                "#",
+            ]
+        )
+        for item in sorted(
+            done_items,
+            key=lambda done_item: (
+                done_item["last_progress_at"] or done_item["last_heartbeat_at"] or done_item["started_at"],
+                done_item["id"],
+            ),
+            reverse=True,
+        )[:5]:
+            lines.append(
+                "# "
+                f"{item['id']} | {item['status']} | {item['priority']} | "
+                f"{item['complexity']} | {format_dependencies(item['dependencies'])} | "
+                f"{item['title']}"
+            )
+            if item["progress_note"]:
+                lines.append(f"#   Progress note: {item['progress_note']}")
+            if item["last_progress_at"]:
+                lines.append(f"#   Last progress at: {item['last_progress_at']}")
+            lines.append("#")
     return "\n".join(lines).rstrip() + "\n"
 
 
@@ -1213,23 +1249,16 @@ def mark_no_change_stalls(
             continue
         if age < NO_LOCAL_CHANGE_BLOCK_MINUTES:
             continue
-        item["blocked_reason"] = (
-            "No task-relevant local code changes detected after claim; "
-            "a real worker has not started producing repository edits."
-        )
-        item["progress_note"] = (
-            "backend_dev [blocked]: No task-relevant local code changes detected yet."
-        )
+        item["status"] = "approved"
+        item["owner_agent"] = ""
+        item["started_at"] = ""
+        item["last_heartbeat_at"] = ""
         item["last_progress_at"] = now_iso()
-        item["agent_updates"] = [
-            {
-                "agent": item["owner_agent"] or assigned_agent_for_item(item),
-                "updated_at": item["last_progress_at"],
-                "phase": "blocked",
-                "activity": "No task-relevant local code changes detected yet.",
-                "next_command": "start a real worker on the backlog item",
-            }
-        ]
+        item["blocked_reason"] = ""
+        item["agent_updates"] = []
+        item["progress_note"] = (
+            "Approved and ready, but returned from a synthetic claim because no real worker started task-relevant repository edits."
+        )
     return backlog
 
 
@@ -1398,7 +1427,7 @@ def load_or_create_project_backlog(
     plan_items, backlog = move_approved_plan_items_to_backlog(plan_items, backlog)
     if recover_stalled:
         backlog = recover_stalled_items(backlog)
-    backlog = promote_ready_backlog_items(backlog)
+    backlog = promote_ready_backlog_items(backlog, project_path)
     backlog = normalize_active_backlog_metadata(backlog)
     backlog = mark_no_change_stalls(backlog, project_path)
 
