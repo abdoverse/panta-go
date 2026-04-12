@@ -68,7 +68,7 @@ test('backend service uses safer deployment defaults and structured logging rete
   template.hasResourceProperties('AWS::ECS::ExpressGatewayService', {
     HealthCheckPath: '/health',
     ScalingTarget: {
-      MaxTaskCount: 2,
+      MaxTaskCount: 1,
       MinTaskCount: 1,
     },
     PrimaryContainer: Match.objectLike({
