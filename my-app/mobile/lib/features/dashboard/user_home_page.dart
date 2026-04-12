@@ -110,10 +110,16 @@ class _UserHomePageState extends State<UserHomePage> {
       floatingActionButton: _currentIndex == 0
           ? FloatingActionButton.extended(
               onPressed: () {
+                final provider = context.read<PantaProvider>();
                 Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (_) => const CreateRequestPage()));
+                        builder: (_) => CreateRequestPage(
+                              startInQuickMode:
+                                  provider.previousRequests.isNotEmpty ||
+                                      provider.savedAddresses.isNotEmpty ||
+                                      provider.requestTemplates.isNotEmpty,
+                            )));
               },
               backgroundColor: AppTheme.primaryGreen,
               icon: const Icon(Icons.add, color: Colors.white),
@@ -132,8 +138,17 @@ class _DashboardView extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.watch<PantaProvider>();
     final ongoing = provider.ongoingRequests;
+    final history = provider.previousRequests;
+    final latestRequest = history.isEmpty
+        ? null
+        : (history.toList()
+              ..sort((a, b) => b.scheduledTo.compareTo(a.scheduledTo)))
+            .first;
     final displayName = provider.currentUserDisplayName;
     final l10n = context.l10n;
+    final hasQuickData = history.isNotEmpty ||
+        provider.savedAddresses.isNotEmpty ||
+        provider.requestTemplates.isNotEmpty;
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -190,6 +205,12 @@ class _DashboardView extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (hasQuickData) ...[
+                      _QuickRequestLauncher(
+                        latestRequest: latestRequest,
+                      ),
+                      const SizedBox(height: 24),
+                    ],
                     Text(l10n.ongoingRequests,
                         style: TextStyle(
                             fontSize: 18, fontWeight: FontWeight.bold)),
@@ -240,6 +261,114 @@ class _HistoryView extends StatelessWidget {
                 request: history[index], isInteractable: true, index: index);
           },
         ),
+      ),
+    );
+  }
+}
+
+class _QuickRequestLauncher extends StatelessWidget {
+  const _QuickRequestLauncher({required this.latestRequest});
+
+  final RecyclingRequest? latestRequest;
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<PantaProvider>();
+    final theme = Theme.of(context);
+    final recentAddressLabels = [
+      ...provider.savedAddresses.map((address) => address.label),
+      if (latestRequest != null) latestRequest!.location,
+    ].take(3).toList(growable: false);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border:
+            Border.all(color: AppTheme.primaryGreen.withValues(alpha: 0.12)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryGreen.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.flash_on_rounded,
+                  color: AppTheme.primaryGreen,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Book in 30 seconds',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Use your recent pickup details and confirm in one tap.',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (recentAddressLabels.isNotEmpty)
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: recentAddressLabels
+                  .map(
+                    (label) => Chip(
+                      label: Text(label),
+                      avatar: const Icon(Icons.history, size: 16),
+                    ),
+                  )
+                  .toList(growable: false),
+            ),
+          if (recentAddressLabels.isNotEmpty) const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CreateRequestPage(
+                      initialRequest: latestRequest,
+                      startInQuickMode: true,
+                    ),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.bolt_rounded),
+              label: const Text('Start quick request'),
+            ),
+          ),
+        ],
       ),
     );
   }

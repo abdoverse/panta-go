@@ -17,9 +17,11 @@ class CreateRequestPage extends StatefulWidget {
   const CreateRequestPage({
     super.key,
     this.initialRequest,
+    this.startInQuickMode = false,
   });
 
   final RecyclingRequest? initialRequest;
+  final bool startInQuickMode;
 
   @override
   State<CreateRequestPage> createState() => _CreateRequestPageState();
@@ -41,12 +43,26 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
   String? _selectedPhotoFileName;
   bool _saveAsAddress = false;
   bool _saveAsTemplate = false;
+  late bool _isQuickMode = widget.startInQuickMode;
+  bool _didInitializeQuickDefaults = false;
 
   @override
   void initState() {
     super.initState();
     _locationController.addListener(_onLocationChanged);
     _applyInitialRequest();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_didInitializeQuickDefaults) {
+      return;
+    }
+    _didInitializeQuickDefaults = true;
+    if (_isQuickMode) {
+      _applyQuickDefaults(context.read<PantaProvider>());
+    }
   }
 
   void _applyInitialRequest() {
@@ -121,6 +137,7 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final provider = context.watch<PantaProvider>();
+    final canShowQuickSummary = _isQuickMode;
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.newPickupRequest),
@@ -132,6 +149,21 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (canShowQuickSummary) ...[
+                _QuickRequestSummaryCard(
+                  title: _titleController.text,
+                  location: _locationController.text,
+                  fromDate: _fromDate,
+                  toDate: _toDate,
+                  rewardText: _rewardController.text,
+                  onEditPressed: () {
+                    setState(() {
+                      _isQuickMode = false;
+                    });
+                  },
+                ),
+                const SizedBox(height: 24),
+              ],
               if (widget.initialRequest != null) ...[
                 Container(
                   width: double.infinity,
@@ -156,98 +188,98 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                 ),
                 const SizedBox(height: 24),
               ],
-              // Photo Placeholder Area
-              Center(
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(24),
-                  onTap: _pickPhoto,
-                  child: DottedBorder(
-                    borderType: BorderType.RRect,
-                    radius: const Radius.circular(24),
-                    color: Colors.grey[400]!,
-                    dashPattern: const [8, 4],
-                    strokeWidth: 2,
-                    child: Container(
-                      height: 200,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: AppTheme.surfaceGrey,
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      child: _selectedPhotoBytes == null
-                          ? Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.add_a_photo_outlined,
-                                    size: 48,
-                                    color:
-                                        AppTheme.primaryGreen.withOpacity(0.5)),
-                                const SizedBox(height: 12),
-                                Text(
-                                  l10n.addPhoto,
-                                  style: TextStyle(
-                                    color: AppTheme.textSecondary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  l10n.tapToChooseImage,
-                                  style: TextStyle(color: Colors.grey[600]),
-                                ),
-                              ],
-                            )
-                          : ClipRRect(
-                              borderRadius: BorderRadius.circular(24),
-                              child: Stack(
-                                fit: StackFit.expand,
+              if (!_isQuickMode) ...[
+                Center(
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(24),
+                    onTap: _pickPhoto,
+                    child: DottedBorder(
+                      borderType: BorderType.RRect,
+                      radius: const Radius.circular(24),
+                      color: Colors.grey[400]!,
+                      dashPattern: const [8, 4],
+                      strokeWidth: 2,
+                      child: Container(
+                        height: 200,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: AppTheme.surfaceGrey,
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        child: _selectedPhotoBytes == null
+                            ? Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Image.memory(
-                                    _selectedPhotoBytes!,
-                                    fit: BoxFit.cover,
-                                  ),
-                                  Positioned(
-                                    right: 12,
-                                    top: 12,
-                                    child: DecoratedBox(
-                                      decoration: BoxDecoration(
-                                        color: Colors.black54,
-                                        borderRadius:
-                                            BorderRadius.circular(999),
-                                      ),
-                                      child: IconButton(
-                                        onPressed: () {
-                                          setState(() {
-                                            _selectedPhotoBytes = null;
-                                            _selectedPhotoMimeType = null;
-                                            _selectedPhotoFileName = null;
-                                          });
-                                        },
-                                        icon: const Icon(Icons.close,
-                                            color: Colors.white),
-                                        tooltip: l10n.removePhoto,
-                                      ),
+                                  Icon(Icons.add_a_photo_outlined,
+                                      size: 48,
+                                      color: AppTheme.primaryGreen
+                                          .withValues(alpha: 0.5)),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    l10n.addPhoto,
+                                    style: TextStyle(
+                                      color: AppTheme.textSecondary,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    l10n.tapToChooseImage,
+                                    style: TextStyle(color: Colors.grey[600]),
+                                  ),
                                 ],
+                              )
+                            : ClipRRect(
+                                borderRadius: BorderRadius.circular(24),
+                                child: Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    Image.memory(
+                                      _selectedPhotoBytes!,
+                                      fit: BoxFit.cover,
+                                    ),
+                                    Positioned(
+                                      right: 12,
+                                      top: 12,
+                                      child: DecoratedBox(
+                                        decoration: BoxDecoration(
+                                          color: Colors.black54,
+                                          borderRadius:
+                                              BorderRadius.circular(999),
+                                        ),
+                                        child: IconButton(
+                                          onPressed: () {
+                                            setState(() {
+                                              _selectedPhotoBytes = null;
+                                              _selectedPhotoMimeType = null;
+                                              _selectedPhotoFileName = null;
+                                            });
+                                          },
+                                          icon: const Icon(Icons.close,
+                                              color: Colors.white),
+                                          tooltip: l10n.removePhoto,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              Center(
-                child: OutlinedButton.icon(
-                  onPressed: _pickPhoto,
-                  icon: const Icon(Icons.photo_library_outlined),
-                  label: Text(_selectedPhotoBytes == null
-                      ? l10n.choosePhoto
-                      : l10n.changePhoto),
+                const SizedBox(height: 12),
+                Center(
+                  child: OutlinedButton.icon(
+                    onPressed: _pickPhoto,
+                    icon: const Icon(Icons.photo_library_outlined),
+                    label: Text(_selectedPhotoBytes == null
+                        ? l10n.choosePhoto
+                        : l10n.changePhoto),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 32),
-
+                const SizedBox(height: 32),
+              ],
               Text(l10n.whatAreYouGettingRidOf,
                   style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 12),
@@ -279,27 +311,27 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                 ),
                 validator: (v) => v!.isEmpty ? l10n.pleaseEnterTitle : null,
               ),
-
-              const SizedBox(height: 24),
-              Text(l10n.description,
-                  style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _descriptionController,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  hintText: l10n.descriptionHint,
-                  alignLabelWithHint: true,
+              if (!_isQuickMode) ...[
+                const SizedBox(height: 24),
+                Text(l10n.description,
+                    style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _descriptionController,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    hintText: l10n.descriptionHint,
+                    alignLabelWithHint: true,
+                  ),
                 ),
-              ),
-
+              ],
               const SizedBox(height: 24),
               Text(l10n.location,
                   style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 12),
               if (provider.savedAddresses.isNotEmpty) ...[
                 Text(
-                  'Saved addresses',
+                  _isQuickMode ? 'Recent addresses' : 'Saved addresses',
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 8),
@@ -368,150 +400,149 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                   });
                 },
               ),
-
-              const SizedBox(height: 24),
-              Text(l10n.when, style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 12),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: _DateSelector(
-                      label: l10n.from,
-                      date: _fromDate,
-                      onTap: () async {
-                        final date = await showDatePicker(
-                          context: context,
-                          firstDate:
-                              DateTime.now().subtract(const Duration(days: 1)),
-                          lastDate: DateTime(2030),
-                          initialDate: _fromDate,
-                        );
-                        if (date != null && context.mounted) {
-                          final time = await showTimePicker(
+              if (!_isQuickMode) ...[
+                const SizedBox(height: 24),
+                Text(l10n.when, style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _DateSelector(
+                        label: l10n.from,
+                        date: _fromDate,
+                        onTap: () async {
+                          final date = await showDatePicker(
                             context: context,
-                            initialTime: TimeOfDay.fromDateTime(_fromDate),
-                            builder: (BuildContext context, Widget? child) {
-                              return MediaQuery(
-                                data: MediaQuery.of(context)
-                                    .copyWith(alwaysUse24HourFormat: true),
-                                child: child!,
-                              );
-                            },
+                            firstDate: DateTime.now()
+                                .subtract(const Duration(days: 1)),
+                            lastDate: DateTime(2030),
+                            initialDate: _fromDate,
                           );
-                          final newTime =
-                              time ?? TimeOfDay.fromDateTime(_fromDate);
-                          setState(() => _fromDate = DateTime(
-                                date.year,
-                                date.month,
-                                date.day,
-                                newTime.hour,
-                                newTime.minute,
-                              ));
-                        }
-                      },
+                          if (date != null && context.mounted) {
+                            final time = await showTimePicker(
+                              context: context,
+                              initialTime: TimeOfDay.fromDateTime(_fromDate),
+                              builder: (BuildContext context, Widget? child) {
+                                return MediaQuery(
+                                  data: MediaQuery.of(context)
+                                      .copyWith(alwaysUse24HourFormat: true),
+                                  child: child!,
+                                );
+                              },
+                            );
+                            final newTime =
+                                time ?? TimeOfDay.fromDateTime(_fromDate);
+                            setState(() => _fromDate = DateTime(
+                                  date.year,
+                                  date.month,
+                                  date.day,
+                                  newTime.hour,
+                                  newTime.minute,
+                                ));
+                          }
+                        },
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _DateSelector(
-                      label: l10n.to,
-                      date: _toDate,
-                      onTap: () async {
-                        final date = await showDatePicker(
-                          context: context,
-                          firstDate:
-                              DateTime.now().subtract(const Duration(days: 1)),
-                          lastDate: DateTime(2030),
-                          initialDate: _toDate,
-                        );
-                        if (date != null && context.mounted) {
-                          final time = await showTimePicker(
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _DateSelector(
+                        label: l10n.to,
+                        date: _toDate,
+                        onTap: () async {
+                          final date = await showDatePicker(
                             context: context,
-                            initialTime: TimeOfDay.fromDateTime(_toDate),
-                            builder: (BuildContext context, Widget? child) {
-                              return MediaQuery(
-                                data: MediaQuery.of(context)
-                                    .copyWith(alwaysUse24HourFormat: true),
-                                child: child!,
-                              );
-                            },
+                            firstDate: DateTime.now()
+                                .subtract(const Duration(days: 1)),
+                            lastDate: DateTime(2030),
+                            initialDate: _toDate,
                           );
-                          final newTime =
-                              time ?? TimeOfDay.fromDateTime(_toDate);
-                          setState(() => _toDate = DateTime(
-                                date.year,
-                                date.month,
-                                date.day,
-                                newTime.hour,
-                                newTime.minute,
-                              ));
-                        }
-                      },
+                          if (date != null && context.mounted) {
+                            final time = await showTimePicker(
+                              context: context,
+                              initialTime: TimeOfDay.fromDateTime(_toDate),
+                              builder: (BuildContext context, Widget? child) {
+                                return MediaQuery(
+                                  data: MediaQuery.of(context)
+                                      .copyWith(alwaysUse24HourFormat: true),
+                                  child: child!,
+                                );
+                              },
+                            );
+                            final newTime =
+                                time ?? TimeOfDay.fromDateTime(_toDate);
+                            setState(() => _toDate = DateTime(
+                                  date.year,
+                                  date.month,
+                                  date.day,
+                                  newTime.hour,
+                                  newTime.minute,
+                                ));
+                          }
+                        },
+                      ),
                     ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 24),
-              Text(l10n.yourPriceReward,
-                  style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _rewardController,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryGreen),
-                decoration: InputDecoration(
-                  hintText: '0.00',
-                  prefixIcon: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Text(AppConstants.currencySymbol,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 20,
-                              color: AppTheme.primaryGreen))),
-                  suffixText: AppConstants.currencyCode,
-                  fillColor:
-                      AppTheme.primaryGreen.withOpacity(0.05), // Subtle tint
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none),
+                  ],
                 ),
-                validator: (v) {
-                  if (v == null || v.isEmpty) return l10n.pleaseSetPrice;
-                  if (double.tryParse(v) == null) return l10n.invalidNumber;
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              SwitchListTile.adaptive(
-                contentPadding: EdgeInsets.zero,
-                value: _saveAsAddress,
-                title: const Text('Save this address for later'),
-                subtitle: const Text('Keep this pickup location one tap away.'),
-                onChanged: (value) {
-                  setState(() {
-                    _saveAsAddress = value;
-                  });
-                },
-              ),
-              SwitchListTile.adaptive(
-                contentPadding: EdgeInsets.zero,
-                value: _saveAsTemplate,
-                title: const Text('Save as reusable template'),
-                subtitle:
-                    const Text('Reuse the title, notes, and reward next time.'),
-                onChanged: (value) {
-                  setState(() {
-                    _saveAsTemplate = value;
-                  });
-                },
-              ),
-
+                const SizedBox(height: 24),
+                Text(l10n.yourPriceReward,
+                    style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _rewardController,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryGreen),
+                  decoration: InputDecoration(
+                    hintText: '0.00',
+                    prefixIcon: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Text(AppConstants.currencySymbol,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 20,
+                                color: AppTheme.primaryGreen))),
+                    suffixText: AppConstants.currencyCode,
+                    fillColor: AppTheme.primaryGreen.withValues(alpha: 0.05),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none),
+                  ),
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return l10n.pleaseSetPrice;
+                    if (double.tryParse(v) == null) return l10n.invalidNumber;
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                SwitchListTile.adaptive(
+                  contentPadding: EdgeInsets.zero,
+                  value: _saveAsAddress,
+                  title: const Text('Save this address for later'),
+                  subtitle:
+                      const Text('Keep this pickup location one tap away.'),
+                  onChanged: (value) {
+                    setState(() {
+                      _saveAsAddress = value;
+                    });
+                  },
+                ),
+                SwitchListTile.adaptive(
+                  contentPadding: EdgeInsets.zero,
+                  value: _saveAsTemplate,
+                  title: const Text('Save as reusable template'),
+                  subtitle: const Text(
+                    'Reuse the title, notes, and reward next time.',
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      _saveAsTemplate = value;
+                    });
+                  },
+                ),
+              ],
               const SizedBox(height: 40),
               SizedBox(
                 width: double.infinity,
@@ -520,30 +551,7 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                   onPressed: provider.isLoading
                       ? null
                       : () async {
-                          if (_formKey.currentState!.validate()) {
-                            final success = await provider.createRequest(
-                              _titleController.text,
-                              _fromDate,
-                              _toDate,
-                              _locationController.text,
-                              locationLatitude: _selectedLocation?.lat,
-                              locationLongitude: _selectedLocation?.lon,
-                              description: _descriptionController.text,
-                              reward: double.tryParse(_rewardController.text) ??
-                                  0.0,
-                              imageBytes: _selectedPhotoBytes,
-                              imageMimeType: _selectedPhotoMimeType,
-                              imageFileName: _selectedPhotoFileName,
-                              saveAddress: _saveAsAddress,
-                              saveTemplate: _saveAsTemplate,
-                            );
-                            if (success && context.mounted) {
-                              Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(l10n.requestCreated)),
-                              );
-                            }
-                          }
+                          await _submitRequest(provider);
                         },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryGreen,
@@ -556,7 +564,9 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                   child: provider.isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
                       : Text(
-                          l10n.postRequest,
+                          _isQuickMode
+                              ? 'Confirm quick request'
+                              : l10n.postRequest,
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -662,6 +672,201 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
       _saveAsTemplate = false;
     });
   }
+
+  void _applyQuickDefaults(PantaProvider provider) {
+    final latestRequest = provider.previousRequests.isNotEmpty
+        ? (provider.previousRequests.toList()
+              ..sort((a, b) => b.scheduledTo.compareTo(a.scheduledTo)))
+            .first
+        : null;
+
+    if (latestRequest != null && widget.initialRequest == null) {
+      _applyInitialRequestValues(latestRequest);
+    } else if (provider.requestTemplates.isNotEmpty) {
+      _applyTemplate(provider.requestTemplates.first);
+    }
+
+    if (_locationController.text.trim().isEmpty) {
+      if (provider.savedAddresses.isNotEmpty) {
+        _applySavedAddress(provider.savedAddresses.first);
+      } else if (latestRequest != null) {
+        _locationController.text = latestRequest.location;
+        if (latestRequest.locationLatitude != null &&
+            latestRequest.locationLongitude != null) {
+          _selectedLocation = LocationSuggestion(
+            displayName: latestRequest.location,
+            title: latestRequest.location,
+            subtitle: 'Recent pickup',
+            lat: latestRequest.locationLatitude!,
+            lon: latestRequest.locationLongitude!,
+          );
+        }
+      }
+    }
+
+    if (_titleController.text.trim().isEmpty) {
+      _titleController.text = 'Routine pickup';
+    }
+    if (_rewardController.text.trim().isEmpty) {
+      _rewardController.text = '0';
+    }
+
+    final start = DateTime.now().add(const Duration(hours: 1));
+    _fromDate = DateTime(start.year, start.month, start.day, start.hour, 0);
+    _toDate = _fromDate.add(const Duration(hours: 2));
+  }
+
+  void _applyInitialRequestValues(RecyclingRequest request) {
+    _titleController.text = request.title;
+    _descriptionController.text = request.description;
+    _rewardController.text = _formatReward(request.reward ?? 0);
+    _locationController.text = request.location;
+    if (request.locationLatitude != null && request.locationLongitude != null) {
+      _selectedLocation = LocationSuggestion(
+        displayName: request.location,
+        title: request.location,
+        subtitle: '',
+        lat: request.locationLatitude!,
+        lon: request.locationLongitude!,
+      );
+    }
+  }
+
+  Future<void> _submitRequest(PantaProvider provider) async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    final success = await provider.createRequest(
+      _titleController.text,
+      _fromDate,
+      _toDate,
+      _locationController.text,
+      locationLatitude: _selectedLocation?.lat,
+      locationLongitude: _selectedLocation?.lon,
+      description: _descriptionController.text,
+      reward: double.tryParse(_rewardController.text) ?? 0.0,
+      imageBytes: _selectedPhotoBytes,
+      imageMimeType: _selectedPhotoMimeType,
+      imageFileName: _selectedPhotoFileName,
+      saveAddress: _saveAsAddress || _isQuickMode,
+      saveTemplate: _saveAsTemplate,
+    );
+    if (success && mounted) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.requestCreated)),
+      );
+    }
+  }
+}
+
+class _QuickRequestSummaryCard extends StatelessWidget {
+  const _QuickRequestSummaryCard({
+    required this.title,
+    required this.location,
+    required this.fromDate,
+    required this.toDate,
+    required this.rewardText,
+    required this.onEditPressed,
+  });
+
+  final String title;
+  final String location;
+  final DateTime fromDate;
+  final DateTime toDate;
+  final String rewardText;
+  final VoidCallback onEditPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final localeName = l10n.localeName;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppTheme.primaryGreen,
+            AppTheme.primaryGreen.withValues(alpha: 0.85),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.flash_on_rounded, color: Colors.white),
+              const SizedBox(width: 8),
+              Text(
+                'Book in 30 seconds',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const Spacer(),
+              TextButton(
+                onPressed: onEditPressed,
+                child: const Text(
+                  'Edit details',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _QuickInfoRow(
+            icon: Icons.inventory_2_outlined,
+            label: title.isEmpty ? 'Routine pickup' : title,
+          ),
+          const SizedBox(height: 8),
+          _QuickInfoRow(
+            icon: Icons.location_on_outlined,
+            label: location.isEmpty ? 'Choose a pickup address' : location,
+          ),
+          const SizedBox(height: 8),
+          _QuickInfoRow(
+            icon: Icons.schedule_outlined,
+            label:
+                '${DateFormat('d MMM, HH:mm', localeName).format(fromDate)} - ${DateFormat('HH:mm', localeName).format(toDate)}',
+          ),
+          const SizedBox(height: 8),
+          _QuickInfoRow(
+            icon: Icons.payments_outlined,
+            label:
+                '${AppConstants.currencySymbol}${rewardText.isEmpty ? '0' : rewardText} ${AppConstants.currencyCode}',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickInfoRow extends StatelessWidget {
+  const _QuickInfoRow({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, color: Colors.white70, size: 18),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(color: Colors.white),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _DateSelector extends StatelessWidget {
@@ -681,7 +886,7 @@ class _DateSelector extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.withOpacity(0.2)),
+          border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
           borderRadius: BorderRadius.circular(16),
           color: Colors.white,
         ),

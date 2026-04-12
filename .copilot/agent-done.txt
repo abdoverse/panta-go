@@ -48,6 +48,56 @@ plan-2 | done | medium | large | none | Split the Go backend into maintainable m
   Confirmed with the existing infra validation surface: `npm test -- --runInBand`, `npm run build`, and `npm run cdk -- synth` all succeed.
 
 ## frontend
+plan-35 | done | high | medium | none | Add a guided "book in 30 seconds" quick-request flow
+  Owner agent: frontend_dev
+  Started at: 2026-04-12T17:07:33.891657+00:00
+  Last heartbeat at: 2026-04-12T17:11:05.971505+00:00
+  Last progress at: 2026-04-12T17:11:05.971505+00:00
+  Progress note: tester [done]: Validation passed and the task was delivered to git.
+  Agent activity: tester | 2026-04-12T17:11:05.957656+00:00 | validation | Running the existing validation commands after backend implementation handoff. | cd my-app/mobile && flutter test
+  Agent activity: frontend_dev | 2026-04-12T17:10:34.284336+00:00 | working | Starting repository edits in request flow |
+  Agent activity: frontend_dev | 2026-04-12T17:10:19.953355+00:00 | working | Starting repository edits in request flow |
+  Agent activity: frontend_dev | 2026-04-12T17:10:19.953355+00:00 | working | Starting repository edits in request flow |
+  Agent activity: frontend_dev | 2026-04-12T17:10:19.953355+00:00 | working | Starting repository edits in request flow |
+  Agent activity: frontend_dev | 2026-04-12T17:10:08.370371+00:00 | working | Starting repository edits in request flow |
+  Agent activity: frontend_dev | 2026-04-12T17:10:08.370371+00:00 | working | Starting repository edits in request flow |
+  Agent activity: frontend_dev | 2026-04-12T17:09:58.229384+00:00 | working | Starting repository edits in request flow |
+  Agent activity: frontend_dev | 2026-04-12T17:09:50.924394+00:00 | working | Starting repository edits in request flow |
+  Agent activity: frontend_dev | 2026-04-12T17:09:50.924394+00:00 | working | Starting repository edits in request flow |
+  Agent activity: frontend_dev | 2026-04-12T17:09:44.671402+00:00 | working | Starting repository edits in request flow |
+  Agent activity: frontend_dev | 2026-04-12T17:09:40.192407+00:00 | working | Starting repository edits in request flow |
+  Agent activity: frontend_dev | 2026-04-12T17:09:32.213418+00:00 | working | Starting repository edits in request flow |
+  Agent activity: frontend_dev | 2026-04-12T17:09:23.967427+00:00 | working | Starting repository edits in request flow |
+  Agent activity: frontend_dev | 2026-04-12T17:09:23.967427+00:00 | working | Starting repository edits in request flow |
+  Agent activity: frontend_dev | 2026-04-12T17:09:14.976439+00:00 | working | Starting repository edits in request flow |
+  Agent activity: frontend_dev | 2026-04-12T17:08:59.793456+00:00 | working | Starting repository edits in request flow |
+  Agent activity: frontend_dev | 2026-04-12T17:08:59.793456+00:00 | working | Starting repository edits in request flow |
+  Agent activity: frontend_dev | 2026-04-12T17:08:59.793456+00:00 | working | Starting repository edits in request flow |
+  Agent activity: frontend_dev | 2026-04-12T17:07:50.240528+00:00 | working | Starting repository edits in request flow |
+  Agent activity: frontend_dev | 2026-04-12T17:07:50.240528+00:00 | working | Starting repository edits in request flow |
+  Agent activity: frontend_dev | 2026-04-12T17:07:50.240528+00:00 | working | Starting repository edits in request flow |
+  Agent activity: frontend_dev | 2026-04-12T17:07:50.240528+00:00 | working | Starting repository edits in request flow |
+  Agent activity: frontend_dev | 2026-04-12T17:07:50.240528+00:00 | working | Starting repository edits in request flow |
+  Agent activity: frontend_dev | 2026-04-12T17:07:50.240528+00:00 | working | Starting repository edits in request flow |
+  Agent activity: frontend_dev | 2026-04-12T17:07:50.240528+00:00 | working | Starting repository edits in request flow |
+  Agent activity: frontend_dev | 2026-04-12T17:07:50.240528+00:00 | working | Starting repository edits in request flow |
+  Agent activity: frontend_dev | 2026-04-12T17:07:50.240528+00:00 | working | Starting repository edits in request flow |
+  Agent activity: frontend_dev | 2026-04-12T17:07:50.240528+00:00 | working | Starting repository edits in request flow |
+  Agent activity: frontend_dev | 2026-04-12T17:07:50.240528+00:00 | working | Starting repository edits in request flow |
+  Agent activity: frontend_dev | 2026-04-12T17:07:50.240528+00:00 | working | Starting repository edits in request flow |
+  Agent activity: frontend_dev | 2026-04-12T17:07:50.240528+00:00 | working | Starting repository edits in request flow |
+  Agent activity: frontend_dev | 2026-04-12T17:07:39.038538+00:00 | working | Starting repository edits in request flow |
+  Agent activity: frontend_dev | 2026-04-12T17:07:39.038538+00:00 | working | Starting repository edits in request flow |
+  Agent activity: frontend_dev | 2026-04-12T17:07:33.376543+00:00 | working | Starting repository edits in request flow |
+  Agent activity: frontend_dev | 2026-04-12T17:07:26.111549+00:00 | assigned | Implementing quick-request flow for |
+  Agent activity: frontend_dev | 2026-04-12T17:07:21.323552+00:00 | assigned | Implementing quick-request flow for |
+  Goal:
+  Let returning users create a pickup from a very short flow with smart defaults, recent addresses, and one-tap confirmation.
+  Why:
+  The fastest app win for conversion is reducing the friction of creating a routine request.
+  Likely files:
+  create-request UI, dashboard shortcuts, provider state, request form helpers.
+
 plan-13 | done | high | medium | plan-7 | Add a faster repeat-booking flow from request history
   Owner agent: frontend_dev
   Started at: 2026-04-12T16:22:43.478430+00:00
