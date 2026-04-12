@@ -62,13 +62,13 @@ test('backend service uses safer deployment defaults and structured logging rete
   const template = Template.fromStack(stack);
 
   template.hasResourceProperties('AWS::Logs::LogGroup', {
-    RetentionInDays: 14,
+    RetentionInDays: 7,
   });
 
   template.hasResourceProperties('AWS::ECS::ExpressGatewayService', {
     HealthCheckPath: '/health',
     ScalingTarget: {
-      MaxTaskCount: 1,
+      MaxTaskCount: 2,
       MinTaskCount: 1,
     },
     PrimaryContainer: Match.objectLike({
@@ -89,4 +89,12 @@ test('backend service uses safer deployment defaults and structured logging rete
   expect(serializedDeploymentConfig).toContain('\\"minimumHealthyPercent\\":100');
   expect(serializedDeploymentConfig).toContain('\\"maximumPercent\\":200');
   expect(serializedDeploymentConfig).toContain('\\"rollback\\":true');
+
+  const targetGroupResourceEntries = Object.entries(customResources).filter(([logicalId]) =>
+    logicalId.includes('TuneManagedTargetGroupDraining'),
+  );
+  expect(targetGroupResourceEntries).toHaveLength(1);
+  expect(JSON.stringify(targetGroupResourceEntries[0][1])).toContain(
+    '\\"deregistration_delay.timeout_seconds\\",\\"Value\\":\\"15\\"',
+  );
 });

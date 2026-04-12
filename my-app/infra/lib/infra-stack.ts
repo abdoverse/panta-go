@@ -22,7 +22,8 @@ export class InfraStack extends cdk.Stack {
     const backendCpu = '256';
     const backendMemory = '512';
     const steadyStateTaskCount = 1;
-    const logRetentionDays = 14;
+    const maxTaskCount = 2;
+    const logRetentionDays = 7;
 
     const backendAsset = new assets.DockerImageAsset(this, 'BackendAsset', {
       directory: path.join(__dirname, '../../backend'),
@@ -171,7 +172,7 @@ export class InfraStack extends cdk.Stack {
       },
       scalingTarget: {
         minTaskCount: steadyStateTaskCount,
-        maxTaskCount: steadyStateTaskCount,
+        maxTaskCount,
       },
     });
     expressService.node.addDependency(backendAsset);
@@ -236,7 +237,7 @@ export class InfraStack extends cdk.Stack {
             Attributes: [
               {
                 Key: 'deregistration_delay.timeout_seconds',
-                Value: '30',
+                Value: '15',
               },
             ],
           },
@@ -252,7 +253,7 @@ export class InfraStack extends cdk.Stack {
             Attributes: [
               {
                 Key: 'deregistration_delay.timeout_seconds',
-                Value: '30',
+                Value: '15',
               },
             ],
           },
