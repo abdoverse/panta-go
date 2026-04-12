@@ -1,8 +1,5 @@
 class ApiConfig {
-  static const String _defaultBaseUrl =
-      'https://pa-aca8ea7c8969414ca91da0ae5bb650e6.ecs.eu-north-1.on.aws';
-  static const String _defaultUserPoolId = 'eu-north-1_sdkTYJTjU';
-  static const String _defaultClientId = '3loh3skschrk2vt8mq6d7sa0pd';
+  static const String _defaultBaseUrl = 'http://127.0.0.1:8080';
   static const String _defaultRegion = 'eu-north-1';
 
   static String get baseUrl => _normalizedBaseUri.toString();
@@ -33,6 +30,14 @@ class ApiConfig {
     return uri.replace(path: '', query: null, fragment: null);
   }
 
+  static String _requiredEnvironmentValue(String name) {
+    final value = const String.fromEnvironment(name, defaultValue: '').trim();
+    if (value.isEmpty) {
+      throw StateError('$name must be provided at build time.');
+    }
+    return value;
+  }
+
   static Uri apiUri(String path, {Map<String, String>? queryParameters}) {
     final normalizedPath = path.startsWith('/') ? path : '/$path';
     return _normalizedBaseUri.replace(
@@ -51,15 +56,13 @@ class ApiConfig {
     );
   }
 
-  static String get userPoolId => const String.fromEnvironment(
+  static String get userPoolId => _requiredEnvironmentValue(
         'COGNITO_USER_POOL_ID',
-        defaultValue: _defaultUserPoolId,
-      ).trim();
+      );
 
-  static String get clientId => const String.fromEnvironment(
+  static String get clientId => _requiredEnvironmentValue(
         'COGNITO_CLIENT_ID',
-        defaultValue: _defaultClientId,
-      ).trim();
+      );
 
   static String get region => const String.fromEnvironment(
         'AWS_REGION',
