@@ -157,12 +157,13 @@ export class InfraStack extends cdk.Stack {
       'TuneManagedTargetGroupHealthCheck',
       {
         onCreate: {
-          service: 'ElasticLoadBalancingV2',
+          service: 'ELBv2',
           action: 'modifyTargetGroup',
           parameters: {
             TargetGroupArn: managedTargetGroupArn,
             HealthCheckPath: '/health',
             HealthCheckIntervalSeconds: 5,
+            HealthCheckTimeoutSeconds: 4,
             HealthyThresholdCount: 2,
             UnhealthyThresholdCount: 2,
           },
@@ -171,12 +172,13 @@ export class InfraStack extends cdk.Stack {
           ),
         },
         onUpdate: {
-          service: 'ElasticLoadBalancingV2',
+          service: 'ELBv2',
           action: 'modifyTargetGroup',
           parameters: {
             TargetGroupArn: managedTargetGroupArn,
             HealthCheckPath: '/health',
             HealthCheckIntervalSeconds: 5,
+            HealthCheckTimeoutSeconds: 4,
             HealthyThresholdCount: 2,
             UnhealthyThresholdCount: 2,
           },
@@ -195,7 +197,7 @@ export class InfraStack extends cdk.Stack {
       'TuneManagedTargetGroupDraining',
       {
         onCreate: {
-          service: 'ElasticLoadBalancingV2',
+          service: 'ELBv2',
           action: 'modifyTargetGroupAttributes',
           parameters: {
             TargetGroupArn: managedTargetGroupArn,
@@ -211,7 +213,7 @@ export class InfraStack extends cdk.Stack {
           ),
         },
         onUpdate: {
-          service: 'ElasticLoadBalancingV2',
+          service: 'ELBv2',
           action: 'modifyTargetGroupAttributes',
           parameters: {
             TargetGroupArn: managedTargetGroupArn,
@@ -251,6 +253,7 @@ export class InfraStack extends cdk.Stack {
               minimumHealthyPercent: 0,
             },
           },
+          outputPaths: ['service.serviceArn'],
           physicalResourceId: cr.PhysicalResourceId.of(
             `ecs-deployment-${deploymentTuningVersion}`,
           ),
@@ -270,6 +273,7 @@ export class InfraStack extends cdk.Stack {
               minimumHealthyPercent: 0,
             },
           },
+          outputPaths: ['service.serviceArn'],
           physicalResourceId: cr.PhysicalResourceId.of(
             `ecs-deployment-${deploymentTuningVersion}`,
           ),
