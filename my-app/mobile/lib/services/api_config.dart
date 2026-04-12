@@ -51,20 +51,17 @@ class ApiConfig {
     );
   }
 
-  static String get userPoolId =>
-      const String.fromEnvironment(
+  static String get userPoolId => const String.fromEnvironment(
         'COGNITO_USER_POOL_ID',
         defaultValue: _defaultUserPoolId,
       ).trim();
 
-  static String get clientId =>
-      const String.fromEnvironment(
+  static String get clientId => const String.fromEnvironment(
         'COGNITO_CLIENT_ID',
         defaultValue: _defaultClientId,
       ).trim();
 
-  static String get region =>
-      const String.fromEnvironment(
+  static String get region => const String.fromEnvironment(
         'AWS_REGION',
         defaultValue: _defaultRegion,
       ).trim();
