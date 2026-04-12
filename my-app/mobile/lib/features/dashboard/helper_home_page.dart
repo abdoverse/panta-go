@@ -16,6 +16,12 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../shared/widgets/loading_skeletons.dart';
 import '../shared/widgets/location_actions.dart';
 
+String _formatRatingValue(double value) {
+  return value == value.roundToDouble()
+      ? value.toStringAsFixed(0)
+      : value.toStringAsFixed(1);
+}
+
 class HelperHomePage extends StatefulWidget {
   const HelperHomePage({super.key});
 
@@ -52,11 +58,10 @@ class _HelperHomePageState extends State<HelperHomePage> {
 
       _channel!.stream.listen(
         (message) {
-          if (message.toString().contains('"type":"refresh"')) {
-            if (mounted) {
-              context.read<PantaProvider>().fetchRequests(silent: true);
-            }
-          }
+          if (!mounted) return;
+          context
+              .read<PantaProvider>()
+              .handleRealtimeMessage(message.toString());
         },
         onError: (error) {
           debugPrint('WS Error: $error');
@@ -436,7 +441,10 @@ class _JobCard extends StatelessWidget {
                   ),
                 ],
                 const SizedBox(height: 16),
-                LocationActions(address: job.location),
+                LocationActions(
+                  address: job.location,
+                  showDirections: true,
+                ),
                 if (job.locationLatitude != null &&
                     job.locationLongitude != null)
                   Padding(
@@ -512,7 +520,7 @@ class _JobCard extends StatelessWidget {
                                         size: 16, color: Colors.amber),
                                     const SizedBox(width: 4),
                                     Text(
-                                      "Rated ${job.rating?.toStringAsFixed(1) ?? 'N/A'}",
+                                      "Rated ${job.rating == null ? 'N/A' : _formatRatingValue(job.rating!)}",
                                       style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                           color: Colors.amber),
@@ -541,11 +549,24 @@ class _JobCard extends StatelessWidget {
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () {
-                        context.read<PantaProvider>().acceptRequest(job.id);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content:
-                                    Text("Job Accepted! Head to My Jobs.")));
+                        context
+                            .read<PantaProvider>()
+                            .acceptRequest(job.id)
+                            .then((accepted) {
+                          if (!context.mounted) return;
+                          if (!accepted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Could not accept this pickup."),
+                              ),
+                            );
+                            return;
+                          }
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content:
+                                      Text("Job Accepted! Head to My Jobs.")));
+                        });
                       },
                       child: const Text("Accept Pickup"),
                     ),
@@ -582,10 +603,19 @@ class _JobCard extends StatelessWidget {
                               return;
                             }
 
-                            await context
+                            final cancelled = await context
                                 .read<PantaProvider>()
                                 .cancelRequest(job.id);
                             if (!context.mounted) return;
+                            if (!cancelled) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content:
+                                      Text("Could not cancel this pickup."),
+                                ),
+                              );
+                              return;
+                            }
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text(

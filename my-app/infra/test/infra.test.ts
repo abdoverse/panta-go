@@ -1,17 +1,24 @@
-// import * as cdk from 'aws-cdk-lib/core';
-// import { Template } from 'aws-cdk-lib/assertions';
-// import * as Infra from '../lib/infra-stack';
+import * as cdk from 'aws-cdk-lib';
+import { Match, Template } from 'aws-cdk-lib/assertions';
 
-// example test. To run these tests, uncomment this file along with the
-// example resource in lib/infra-stack.ts
-test('SQS Queue Created', () => {
-//   const app = new cdk.App();
-//     // WHEN
-//   const stack = new Infra.InfraStack(app, 'MyTestStack');
-//     // THEN
-//   const template = Template.fromStack(stack);
+import { InfraStack } from '../lib/infra-stack';
 
-//   template.hasResourceProperties('AWS::SQS::Queue', {
-//     VisibilityTimeout: 300
-//   });
+test('request images bucket allows browser image reads through CORS', () => {
+  const app = new cdk.App();
+  const stack = new InfraStack(app, 'MyTestStack');
+  const template = Template.fromStack(stack);
+
+  template.hasResourceProperties('AWS::S3::Bucket', {
+    BucketName: 'panta-go-request-images',
+    CorsConfiguration: {
+      CorsRules: Match.arrayWith([
+        Match.objectLike({
+          AllowedMethods: ['GET', 'HEAD'],
+          AllowedOrigins: ['*'],
+          AllowedHeaders: ['*'],
+          MaxAge: 3000,
+        }),
+      ]),
+    },
+  });
 });

@@ -43,11 +43,10 @@ class _UserHomePageState extends State<UserHomePage> {
 
       _channel!.stream.listen(
         (message) {
-          if (message.toString().contains('"type":"refresh"')) {
-            if (mounted) {
-              context.read<PantaProvider>().fetchRequests(silent: true);
-            }
-          }
+          if (!mounted) return;
+          context
+              .read<PantaProvider>()
+              .handleRealtimeMessage(message.toString());
         },
         onError: (error) {
           debugPrint('WS Error: $error');
@@ -325,16 +324,13 @@ class _RequestCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                Container(
+                SizedBox(
                   width: 60,
                   height: 60,
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryGreen
-                        .withOpacity(0.08), // Softer background
-                    borderRadius: BorderRadius.circular(16), // Softer corners
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: _RequestImage(imageUrl: request.imageUrl),
                   ),
-                  child: const Icon(Icons.inventory_2_outlined,
-                      color: AppTheme.primaryGreen, size: 28),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -493,6 +489,44 @@ class _RequestCard extends StatelessWidget {
           ],
         );
       }),
+    );
+  }
+}
+
+class _RequestImage extends StatelessWidget {
+  final String imageUrl;
+
+  const _RequestImage({required this.imageUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    final hasRemoteSource =
+        imageUrl.startsWith('http') || imageUrl.startsWith('data:image/');
+
+    if (hasRemoteSource) {
+      return Image.network(
+        imageUrl,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _fallbackImage(),
+      );
+    }
+
+    return Image.asset(
+      imageUrl,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => _fallbackImage(),
+    );
+  }
+
+  Widget _fallbackImage() {
+    return Container(
+      color: AppTheme.primaryGreen.withOpacity(0.08),
+      alignment: Alignment.center,
+      child: const Icon(
+        Icons.inventory_2_outlined,
+        color: AppTheme.primaryGreen,
+        size: 28,
+      ),
     );
   }
 }

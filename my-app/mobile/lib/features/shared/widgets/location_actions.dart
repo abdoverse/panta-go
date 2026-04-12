@@ -5,10 +5,12 @@ import '../../../core/theme/app_theme.dart';
 
 class LocationActions extends StatelessWidget {
   final String address;
+  final bool showDirections;
 
   const LocationActions({
     super.key,
     required this.address,
+    this.showDirections = false,
   });
 
   @override
@@ -55,16 +57,12 @@ class LocationActions extends StatelessWidget {
           spacing: 10,
           runSpacing: 10,
           children: [
-            OutlinedButton.icon(
-              onPressed: () => _showMapChooser(context, directions: false),
-              icon: const Icon(Icons.map_outlined),
-              label: const Text('Open map'),
-            ),
-            OutlinedButton.icon(
-              onPressed: () => _showMapChooser(context, directions: true),
-              icon: const Icon(Icons.directions_outlined),
-              label: const Text('Get directions'),
-            ),
+            if (showDirections)
+              OutlinedButton.icon(
+                onPressed: () => _showMapChooser(context, directions: true),
+                icon: const Icon(Icons.directions_outlined),
+                label: const Text('Get directions'),
+              ),
           ],
         ),
       ],

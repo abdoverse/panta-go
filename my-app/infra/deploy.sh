@@ -12,9 +12,9 @@ if [ ! -d "node_modules" ]; then
     npm install
 fi
 
-# Bootstrap (idempotent, ensures CDK toolkit stack exists)
-echo "Bootstrapping CDK..."
-npx cdk bootstrap
+# Bootstrap is temporarily disabled; re-enable if the toolkit stack needs to be refreshed.
+# echo "Bootstrapping CDK..."
+# npx cdk bootstrap
 
 # Deploy
 echo "Deploying Stack..."

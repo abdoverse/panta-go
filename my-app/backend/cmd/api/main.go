@@ -346,6 +346,38 @@ func resolveImageURL(ctx context.Context, storedValue string) (string, error) {
 	return presigned.URL, nil
 }
 
+func enrichRequestForClient(ctx context.Context, request *RecyclingRequest) error {
+	resolvedURL, err := resolveImageURL(ctx, request.ImageUrl)
+	if err != nil {
+		return err
+	}
+	request.ImageUrl = resolvedURL
+	return nil
+}
+
+func broadcastRequestUpdate(ctx context.Context, request RecyclingRequest) {
+	if hub == nil {
+		return
+	}
+
+	clientRequest := request
+	if err := enrichRequestForClient(ctx, &clientRequest); err != nil {
+		log.Printf("Failed to enrich request %s for websocket update: %v", request.ID, err)
+		return
+	}
+
+	payload, err := json.Marshal(map[string]interface{}{
+		"type":    "request-updated",
+		"request": clientRequest,
+	})
+	if err != nil {
+		log.Printf("Failed to marshal request update for %s: %v", request.ID, err)
+		return
+	}
+
+	hub.broadcast <- payload
+}
+
 func imageExtensionForContentType(contentType string) (string, bool) {
 	normalized := strings.ToLower(strings.TrimSpace(contentType))
 	if ext, ok := allowedImageContentTypes[normalized]; ok {
@@ -762,9 +794,13 @@ func main() {
 				return
 			}
 
-			// Broadcast Update
-			hub.broadcast <- []byte(`{"type":"refresh"}`)
+			if err := enrichRequestForClient(r.Context(), &req); err != nil {
+				log.Printf("Failed to resolve image URL for created request %s: %v", req.ID, err)
+				jsonResponse(w, 500, map[string]string{"error": "Failed to resolve request image"})
+				return
+			}
 
+			broadcastRequestUpdate(r.Context(), req)
 			jsonResponse(w, 201, req)
 			return
 		}
@@ -827,22 +863,29 @@ func main() {
 			return
 		}
 
-		// Check for CreatorDeviceToken and send notification
 		var updatedReq RecyclingRequest
-		if err := attributevalue.UnmarshalMap(out.Attributes, &updatedReq); err == nil {
-			if updatedReq.CreatorDeviceToken != "" {
-				go sendPushNotification(
-					updatedReq.CreatorDeviceToken,
-					"Request Accepted! 🚛",
-					fmt.Sprintf("%s has accepted your request and is on the way.", claims.notificationName()),
-				)
-			}
+		if err := attributevalue.UnmarshalMap(out.Attributes, &updatedReq); err != nil {
+			log.Printf("Failed to parse accepted request: %v", err)
+			jsonResponse(w, 500, map[string]string{"error": "Failed to parse request update"})
+			return
 		}
 
-		// Broadcast Update
-		hub.broadcast <- []byte(`{"type":"refresh"}`)
+		if updatedReq.CreatorDeviceToken != "" {
+			go sendPushNotification(
+				updatedReq.CreatorDeviceToken,
+				"Request Accepted! 🚛",
+				fmt.Sprintf("%s has accepted your request and is on the way.", claims.notificationName()),
+			)
+		}
 
-		jsonResponse(w, 200, map[string]string{"status": "accepted"})
+		if err := enrichRequestForClient(r.Context(), &updatedReq); err != nil {
+			log.Printf("Failed to resolve image URL for accepted request %s: %v", updatedReq.ID, err)
+			jsonResponse(w, 500, map[string]string{"error": "Failed to resolve request image"})
+			return
+		}
+
+		broadcastRequestUpdate(r.Context(), updatedReq)
+		jsonResponse(w, 200, updatedReq)
 	}))
 
 	// POST /api/v1/requests/cancel
@@ -878,6 +921,7 @@ func main() {
 				"#status": "status",
 			},
 			ExpressionAttributeValues: map[string]types.AttributeValue{
+				":accepted":  &types.AttributeValueMemberS{Value: "accepted"},
 				":pending":   &types.AttributeValueMemberS{Value: "pending"},
 				":helperId":  &types.AttributeValueMemberS{Value: helperID},
 				":emptyList": &types.AttributeValueMemberL{Value: []types.AttributeValue{}},
@@ -900,19 +944,28 @@ func main() {
 		}
 
 		var updatedReq RecyclingRequest
-		if err := attributevalue.UnmarshalMap(out.Attributes, &updatedReq); err == nil {
-			if updatedReq.CreatorDeviceToken != "" {
-				go sendPushNotification(
-					updatedReq.CreatorDeviceToken,
-					"Pickup Cancelled",
-					fmt.Sprintf("%s can no longer complete your pickup. Your request is available for another helper again.", claims.notificationName()),
-				)
-			}
+		if err := attributevalue.UnmarshalMap(out.Attributes, &updatedReq); err != nil {
+			log.Printf("Failed to parse cancelled request: %v", err)
+			jsonResponse(w, 500, map[string]string{"error": "Failed to parse request update"})
+			return
 		}
 
-		hub.broadcast <- []byte(`{"type":"refresh"}`)
+		if updatedReq.CreatorDeviceToken != "" {
+			go sendPushNotification(
+				updatedReq.CreatorDeviceToken,
+				"Pickup Cancelled",
+				fmt.Sprintf("%s can no longer complete your pickup. Your request is available for another helper again.", claims.notificationName()),
+			)
+		}
 
-		jsonResponse(w, 200, map[string]string{"status": "pending"})
+		if err := enrichRequestForClient(r.Context(), &updatedReq); err != nil {
+			log.Printf("Failed to resolve image URL for cancelled request %s: %v", updatedReq.ID, err)
+			jsonResponse(w, 500, map[string]string{"error": "Failed to resolve request image"})
+			return
+		}
+
+		broadcastRequestUpdate(r.Context(), updatedReq)
+		jsonResponse(w, 200, updatedReq)
 	}))
 
 	// POST /api/v1/requests/complete
@@ -936,7 +989,7 @@ func main() {
 			return
 		}
 
-		_, err := svc.UpdateItem(context.TODO(), &dynamodb.UpdateItemInput{
+		out, err := svc.UpdateItem(context.TODO(), &dynamodb.UpdateItemInput{
 			TableName: aws.String(tableName),
 			Key: map[string]types.AttributeValue{
 				"id": &types.AttributeValueMemberS{Value: payload.ID},
@@ -949,6 +1002,7 @@ func main() {
 				":accepted": &types.AttributeValueMemberS{Value: "accepted"},
 				":helperId": &types.AttributeValueMemberS{Value: claims.helperID()},
 			},
+			ReturnValues: types.ReturnValueAllNew,
 		})
 
 		if err != nil {
@@ -962,10 +1016,21 @@ func main() {
 			return
 		}
 
-		// Broadcast Update
-		hub.broadcast <- []byte(`{"type":"refresh"}`)
+		var updatedReq RecyclingRequest
+		if err := attributevalue.UnmarshalMap(out.Attributes, &updatedReq); err != nil {
+			log.Printf("Failed to parse completed request: %v", err)
+			jsonResponse(w, 500, map[string]string{"error": "Failed to parse request update"})
+			return
+		}
 
-		jsonResponse(w, 200, map[string]string{"status": "pickedUp"})
+		if err := enrichRequestForClient(r.Context(), &updatedReq); err != nil {
+			log.Printf("Failed to resolve image URL for completed request %s: %v", updatedReq.ID, err)
+			jsonResponse(w, 500, map[string]string{"error": "Failed to resolve request image"})
+			return
+		}
+
+		broadcastRequestUpdate(r.Context(), updatedReq)
+		jsonResponse(w, 200, updatedReq)
 	}))
 
 	// POST /api/v1/requests/rate

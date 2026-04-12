@@ -107,6 +107,57 @@ class PantaProvider extends ChangeNotifier {
   List<RecyclingRequest> get requests => _requests;
   String? get currentUserDisplayName => _currentUserDisplayName;
 
+  void _upsertRequest(RecyclingRequest request, {bool notify = true}) {
+    final existingIndex = _requests.indexWhere((item) => item.id == request.id);
+    if (existingIndex == -1) {
+      _requests = [..._requests, request];
+    } else {
+      final updated = List<RecyclingRequest>.from(_requests);
+      updated[existingIndex] = request;
+      _requests = updated;
+    }
+
+    if (notify) {
+      notifyListeners();
+    }
+  }
+
+  void handleRealtimeMessage(String rawMessage) {
+    final chunks = rawMessage
+        .split('\n')
+        .map((chunk) => chunk.trim())
+        .where((chunk) => chunk.isNotEmpty);
+
+    for (final chunk in chunks) {
+      try {
+        final payload = json.decode(chunk);
+        if (payload is! Map<String, dynamic>) {
+          continue;
+        }
+
+        switch (payload['type']) {
+          case 'request-updated':
+            final requestPayload = payload['request'];
+            if (requestPayload is Map<String, dynamic>) {
+              _upsertRequest(_fromJson(requestPayload));
+            } else if (requestPayload is Map) {
+              _upsertRequest(
+                _fromJson(requestPayload.map(
+                  (key, value) => MapEntry(key.toString(), value),
+                )),
+              );
+            }
+            break;
+          case 'refresh':
+            fetchRequests(silent: true);
+            break;
+        }
+      } catch (e) {
+        debugPrint('Failed to handle realtime message: $e');
+      }
+    }
+  }
+
   // For User Dashboard
   List<RecyclingRequest> get myRequests =>
       _requests; // In real app, filter by userId
@@ -423,9 +474,9 @@ class PantaProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> acceptRequest(String id) async {
+  Future<bool> acceptRequest(String id) async {
     final token = await _authService.getToken();
-    if (token == null) return;
+    if (token == null) return false;
 
     try {
       final response = await http.post(
@@ -437,11 +488,14 @@ class PantaProvider extends ChangeNotifier {
         body: json.encode({'id': id}),
       );
       if (response.statusCode == 200) {
-        await fetchRequests();
+        final payload = json.decode(response.body) as Map<String, dynamic>;
+        _upsertRequest(_fromJson(payload));
+        return true;
       }
     } catch (e) {
       debugPrint('Error accepting request: $e');
     }
+    return false;
   }
 
   Future<bool> completeRequest(String id) async {
@@ -458,7 +512,8 @@ class PantaProvider extends ChangeNotifier {
         body: json.encode({'id': id}),
       );
       if (response.statusCode == 200) {
-        await fetchRequests();
+        final payload = json.decode(response.body) as Map<String, dynamic>;
+        _upsertRequest(_fromJson(payload));
         return true;
       }
     } catch (e) {
@@ -467,9 +522,9 @@ class PantaProvider extends ChangeNotifier {
     return false;
   }
 
-  Future<void> cancelRequest(String id) async {
+  Future<bool> cancelRequest(String id) async {
     final token = await _authService.getToken();
-    if (token == null) return;
+    if (token == null) return false;
 
     try {
       final response = await http.post(
@@ -481,11 +536,14 @@ class PantaProvider extends ChangeNotifier {
         body: json.encode({'id': id}),
       );
       if (response.statusCode == 200) {
-        await fetchRequests();
+        final payload = json.decode(response.body) as Map<String, dynamic>;
+        _upsertRequest(_fromJson(payload));
+        return true;
       }
     } catch (e) {
       debugPrint('Error canceling request: $e');
     }
+    return false;
   }
 
   Future<void> rateHelper(String id, double rating, {String? comment}) async {

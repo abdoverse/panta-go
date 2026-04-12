@@ -5,6 +5,12 @@ import '../../core/theme/app_theme.dart';
 import '../../providers/panta_provider.dart';
 import '../auth/login_page.dart';
 
+String _formatRating(double value) {
+  return value == value.roundToDouble()
+      ? value.toStringAsFixed(0)
+      : value.toStringAsFixed(1);
+}
+
 class ProfileScreen extends StatelessWidget {
   final bool isHelper;
 
@@ -226,7 +232,7 @@ class _HelperRatingCard extends StatelessWidget {
               Text(
                 rating == null
                     ? 'No history yet'
-                    : '${rating!.toStringAsFixed(1)} / 5',
+                    : '${_formatRating(rating!)} / 5',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: AppTheme.textPrimary,
                       fontWeight: FontWeight.w700,
