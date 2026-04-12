@@ -217,7 +217,9 @@ class AuthService {
     _session = null;
     _currentUser = null;
     try {
-      if (currentUser != null && activeSession != null && activeSession.isValid()) {
+      if (currentUser != null &&
+          activeSession != null &&
+          activeSession.isValid()) {
         await currentUser.globalSignOut();
       }
     } finally {
@@ -253,7 +255,8 @@ class AuthService {
   }
 
   Future<void> _clearLocalSession({CognitoUser? currentUser}) async {
-    final resolvedUser = currentUser ?? _currentUser ?? await _userPool.getCurrentUser();
+    final resolvedUser =
+        currentUser ?? _currentUser ?? await _userPool.getCurrentUser();
     if (resolvedUser != null) {
       await resolvedUser.signOut();
     }

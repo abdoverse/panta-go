@@ -12,7 +12,8 @@ class ApiConfig {
     ).trim();
     if (configuredValue.isEmpty) {
       if (_isProduction) {
-        throw StateError('API_BASE_URL must be provided for production builds.');
+        throw StateError(
+            'API_BASE_URL must be provided for production builds.');
       }
       return Uri.parse(_defaultBaseUrl);
     }
@@ -76,11 +77,11 @@ class ApiConfig {
         'AWS_REGION',
         defaultValue: '',
       ).trim().isNotEmpty
-      ? const String.fromEnvironment(
-          'AWS_REGION',
-          defaultValue: '',
-        ).trim()
-      : _fallbackRegion;
+          ? const String.fromEnvironment(
+              'AWS_REGION',
+              defaultValue: '',
+            ).trim()
+          : _fallbackRegion;
 
   static String get _fallbackRegion {
     if (_isProduction) {
