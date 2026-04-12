@@ -7,6 +7,8 @@ class RecyclingRequest {
   final DateTime scheduledFrom;
   final DateTime scheduledTo;
   final String location;
+  final double? locationLatitude;
+  final double? locationLongitude;
   final String description;
   final double?
       reward; // Changed to nullable to safe-guard against hot-reload nulls
@@ -24,6 +26,8 @@ class RecyclingRequest {
     required this.scheduledFrom,
     required this.scheduledTo,
     required this.location,
+    this.locationLatitude,
+    this.locationLongitude,
     this.description = '',
     this.reward = 0.0,
     this.status = RequestStatus.pending,
@@ -43,6 +47,8 @@ class RecyclingRequest {
     String? ratingComment,
     String? description,
     double? reward,
+    double? locationLatitude,
+    double? locationLongitude,
   }) {
     return RecyclingRequest(
       id: id,
@@ -51,6 +57,8 @@ class RecyclingRequest {
       scheduledFrom: scheduledFrom,
       scheduledTo: scheduledTo,
       location: location,
+      locationLatitude: locationLatitude ?? this.locationLatitude,
+      locationLongitude: locationLongitude ?? this.locationLongitude,
       description: description ?? this.description,
       reward: reward ?? this.reward,
       status: status ?? this.status,

@@ -29,6 +29,10 @@ class _HelperHomePageState extends State<HelperHomePage> {
     super.initState();
     // Initialize WebSocket connection
     _connectWebSocket();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<PantaProvider>().refreshHelperLocation();
+    });
   }
 
   void _connectWebSocket() async {
@@ -126,6 +130,7 @@ class _MarketplaceView extends StatelessWidget {
 
     return RefreshIndicator(
       onRefresh: () async {
+        await context.read<PantaProvider>().refreshHelperLocation();
         await context.read<PantaProvider>().fetchRequests();
       },
       child: CustomScrollView(
@@ -166,6 +171,40 @@ class _MarketplaceView extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: provider.isSortingJobsByDistance
+                            ? AppTheme.accentLeaf
+                            : AppTheme.surfaceMuted,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            provider.isSortingJobsByDistance
+                                ? Icons.near_me_rounded
+                                : Icons.location_disabled_outlined,
+                            color: AppTheme.primaryGreen,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              provider.helperLocationSortingMessage,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ),
+                          if (provider.isResolvingHelperLocation)
+                            const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     if (jobs.isEmpty)
                       const Center(
                               child: Padding(
@@ -395,6 +434,17 @@ class _JobCard extends StatelessWidget {
                 ],
                 const SizedBox(height: 16),
                 LocationActions(address: job.location),
+                if (job.locationLatitude != null &&
+                    job.locationLongitude != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      'Distance-aware sorting is enabled for this pickup.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Colors.grey[600],
+                          ),
+                    ),
+                  ),
                 const SizedBox(height: 8),
                 Row(
                   children: [

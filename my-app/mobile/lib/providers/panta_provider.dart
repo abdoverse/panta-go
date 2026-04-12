@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart'; // Add this for kIsWeb
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 
@@ -25,6 +26,67 @@ double? calculateHelperReliabilityRating({
   return double.parse(score.clamp(1, 5).toStringAsFixed(1));
 }
 
+double? calculateDistanceInKilometers({
+  required double fromLatitude,
+  required double fromLongitude,
+  required double toLatitude,
+  required double toLongitude,
+}) {
+  final meters = Geolocator.distanceBetween(
+    fromLatitude,
+    fromLongitude,
+    toLatitude,
+    toLongitude,
+  );
+  return double.parse((meters / 1000).toStringAsFixed(1));
+}
+
+List<RecyclingRequest> sortRequestsByDistance(
+  List<RecyclingRequest> requests, {
+  double? helperLatitude,
+  double? helperLongitude,
+}) {
+  final sorted = List<RecyclingRequest>.from(requests);
+  if (helperLatitude == null || helperLongitude == null) {
+    return sorted;
+  }
+
+  double? distanceFor(RecyclingRequest request) {
+    final latitude = request.locationLatitude;
+    final longitude = request.locationLongitude;
+    if (latitude == null || longitude == null) {
+      return null;
+    }
+    return calculateDistanceInKilometers(
+      fromLatitude: helperLatitude,
+      fromLongitude: helperLongitude,
+      toLatitude: latitude,
+      toLongitude: longitude,
+    );
+  }
+
+  sorted.sort((a, b) {
+    final distanceA = distanceFor(a);
+    final distanceB = distanceFor(b);
+    if (distanceA == null && distanceB == null) {
+      return a.scheduledFrom.compareTo(b.scheduledFrom);
+    }
+    if (distanceA == null) {
+      return 1;
+    }
+    if (distanceB == null) {
+      return -1;
+    }
+    final byDistance = distanceA.compareTo(distanceB);
+    if (byDistance != 0) {
+      return byDistance;
+    }
+    return a.scheduledFrom.compareTo(b.scheduledFrom);
+  });
+
+  return sorted;
+}
+
 class PantaProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
   List<RecyclingRequest> _requests = [];
@@ -33,6 +95,9 @@ class PantaProvider extends ChangeNotifier {
   String? _currentUserId;
   String? _currentUserDisplayName;
   bool _isHelper = false;
+  double? _helperLatitude;
+  double? _helperLongitude;
+  bool _isResolvingHelperLocation = false;
 
   String? _pendingSignupEmail;
   String? _pendingSignupUsername;
@@ -51,12 +116,19 @@ class PantaProvider extends ChangeNotifier {
       _requests.where((r) => r.status == RequestStatus.pickedUp).toList();
 
   // For Helper Dashboard
-  List<RecyclingRequest> get availableJobs => _requests
-      .where((r) =>
-          r.status == RequestStatus.pending &&
-          (_currentUserId == null ||
-              !r.canceledHelperIds.contains(_currentUserId)))
-      .toList();
+  List<RecyclingRequest> get availableJobs {
+    final jobs = _requests
+        .where((r) =>
+            r.status == RequestStatus.pending &&
+            (_currentUserId == null ||
+                !r.canceledHelperIds.contains(_currentUserId)))
+        .toList();
+    return sortRequestsByDistance(
+      jobs,
+      helperLatitude: _helperLatitude,
+      helperLongitude: _helperLongitude,
+    );
+  }
 
   List<RecyclingRequest> get acceptedJobs => _requests
       .where((r) =>
@@ -67,6 +139,12 @@ class PantaProvider extends ChangeNotifier {
       .where((r) =>
           r.status == RequestStatus.pickedUp && r.helperId == _currentUserId)
       .toList();
+  bool get isResolvingHelperLocation => _isResolvingHelperLocation;
+  bool get isSortingJobsByDistance =>
+      _helperLatitude != null && _helperLongitude != null;
+  String get helperLocationSortingMessage => isSortingJobsByDistance
+      ? 'Closest jobs are shown first based on your current location.'
+      : 'Enable location access to sort available jobs by distance.';
 
   int get helperCompletedCount => completedJobs.length;
   int get helperCancellationCount => _requests
@@ -78,6 +156,49 @@ class PantaProvider extends ChangeNotifier {
         completedJobs: helperCompletedCount,
         canceledPickups: helperCancellationCount,
       );
+
+  Future<void> refreshHelperLocation() async {
+    if (_isResolvingHelperLocation) {
+      return;
+    }
+
+    _isResolvingHelperLocation = true;
+    notifyListeners();
+
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        _helperLatitude = null;
+        _helperLongitude = null;
+        return;
+      }
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        _helperLatitude = null;
+        _helperLongitude = null;
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.medium,
+      );
+      _helperLatitude = position.latitude;
+      _helperLongitude = position.longitude;
+    } catch (e) {
+      debugPrint('Error fetching helper location: $e');
+      _helperLatitude = null;
+      _helperLongitude = null;
+    } finally {
+      _isResolvingHelperLocation = false;
+      notifyListeners();
+    }
+  }
 
   Future<String?> login(String email, String password, bool asHelper) async {
     _isHelper = asHelper;
@@ -203,6 +324,8 @@ class PantaProvider extends ChangeNotifier {
     DateTime from,
     DateTime to,
     String location, {
+    double? locationLatitude,
+    double? locationLongitude,
     String description = '',
     double reward = 0.0,
     Uint8List? imageBytes,
@@ -264,6 +387,8 @@ class PantaProvider extends ChangeNotifier {
       'scheduledFrom': from.toUtc().toIso8601String(),
       'scheduledTo': to.toUtc().toIso8601String(),
       'location': location,
+      'locationLatitude': locationLatitude,
+      'locationLongitude': locationLongitude,
       'description': description, // Add description
       'reward': reward, // Add reward
       'imageUrl': imageUploadKey == null ? 'assets/images/generic.png' : null,
@@ -396,6 +521,12 @@ class PantaProvider extends ChangeNotifier {
       scheduledFrom: DateTime.parse(json['scheduledFrom']),
       scheduledTo: DateTime.parse(json['scheduledTo']),
       location: json['location'],
+      locationLatitude: json['locationLatitude'] != null
+          ? double.tryParse(json['locationLatitude'].toString())
+          : null,
+      locationLongitude: json['locationLongitude'] != null
+          ? double.tryParse(json['locationLongitude'].toString())
+          : null,
       description: json['description'] ?? '',
       reward: json['reward'] != null
           ? double.tryParse(json['reward'].toString()) ?? 0.0

@@ -388,6 +388,8 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                                   _fromDate,
                                   _toDate,
                                   _locationController.text,
+                                  locationLatitude: _selectedLocation?.lat,
+                                  locationLongitude: _selectedLocation?.lon,
                                   description: _descriptionController.text,
                                   reward:
                                       double.tryParse(_rewardController.text) ??
