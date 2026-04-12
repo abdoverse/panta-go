@@ -283,7 +283,9 @@ class PantaProvider extends ChangeNotifier {
       }
 
       final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.medium,
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+        ),
       );
       _helperLatitude = position.latitude;
       _helperLongitude = position.longitude;
