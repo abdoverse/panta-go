@@ -20,10 +20,15 @@ try:
 except ImportError:  # Optional at runtime when falling back to deterministic routing.
     ChatOpenAI = None
 
+try:
+    from langchain_google_vertexai import ChatVertexAI
+except ImportError:
+    ChatVertexAI = None
+
 
 DEFAULT_PROJECT_PATH = Path(".").resolve()
 DEFAULT_INSTRUCTIONS_FILE = Path(".github/copilot-instructions.md")
-DEFAULT_MODEL = "gpt-5.4"
+DEFAULT_MODEL = "gemini-1.5-pro-preview-0514" # Using a Vertex AI model name
 DEFAULT_BACKLOG_FILE = ".copilot/agent-backlog.txt"
 DEFAULT_PLAN_FILE = ".copilot/agent-plan.md"
 DEFAULT_DONE_FILE = ".copilot/agent-done.txt"
@@ -144,6 +149,7 @@ class State(TypedDict):
     max_iterations: int
     run_tests: bool
     model: str
+    provider: str
     final_summary: str
     backlog: list[BacklogItem]
     backlog_path: str
@@ -207,7 +213,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--model",
         default=DEFAULT_MODEL,
-        help="OpenAI model name when OPENAI_API_KEY is available.",
+        help="The model name to use for the selected provider.",
+    )
+    parser.add_argument(
+        "--provider",
+        default="google",
+        choices=["openai", "google"],
+        help="The model provider to use.",
     )
     parser.add_argument(
         "--run-tests",
@@ -1547,8 +1559,15 @@ def derive_approval_status(backlog: list[BacklogItem]) -> str:
     return "awaiting_manual_approval"
 
 
-def has_openai_credentials() -> bool:
-    return bool(os.environ.get("OPENAI_API_KEY"))
+def has_llm_credentials(provider: str) -> bool:
+    if provider == "openai":
+        return bool(os.environ.get("OPENAI_API_KEY"))
+    elif provider == "google":
+        # For Google models (Vertex AI), credentials are often implicit
+        # (e.g., via `gcloud auth application-default login` or service account).
+        # We assume the environment is correctly set up for Vertex AI.
+        return True
+    return False
 
 
 def available_surfaces(project_path: Path) -> dict[str, list[str]]:
@@ -2476,10 +2495,22 @@ def build_deterministic_tasks(state: State) -> list[AgentTask]:
 def build_llm_tasks(state: State) -> Optional[list[AgentTask]]:
     if state.get("heartbeat_only"):
         return []
-    if ChatOpenAI is None or not has_openai_credentials():
+
+    llm = None
+    if state["provider"] == "openai":
+        if ChatOpenAI is None or not has_llm_credentials(state["provider"]):
+            return None
+        llm = ChatOpenAI(model=state["model"], temperature=0)
+    elif state["provider"] == "google":
+        if ChatVertexAI is None or not has_llm_credentials(state["provider"]):
+            return None
+        llm = ChatVertexAI(model_name=state["model"], temperature=0)
+    else:
+        return None # Unknown provider
+
+    if not llm: # Fallback if LLM could not be instantiated
         return None
 
-    llm = ChatOpenAI(model=state["model"], temperature=0)
     allowed_agents = [
         agent
         for agent in ("tester",)
@@ -2902,6 +2933,7 @@ def run_once(
             "max_iterations": args.max_iterations,
             "run_tests": (args.run_tests or args.watch) and not heartbeat_only,
             "model": args.model,
+            "provider": args.provider, # Add provider to state
             "final_summary": "",
             "backlog": backlog,
             "backlog_path": str(backlog_path),
