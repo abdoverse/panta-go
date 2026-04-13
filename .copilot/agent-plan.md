@@ -334,3 +334,63 @@ plan-49 | planned | high | medium | plan-8,plan-14 | Add task-specific trust add
   Trust works best when it is built around the specific job the customer is booking, not only around general account verification.
   Likely files:
   request flow UI, protection and verification option models, backend proof capture and status logic, completion surfaces.
+
+plan-52 | planned | medium | medium | none | Instant Payouts for Helpers
+  Goal:
+  Allow helpers to cash out their earnings instantly for a small fee, providing them with more financial flexibility.
+  Why:
+  Instant access to earnings can be a strong incentive for helpers to join and stay on the platform.
+
+plan-53 | planned | medium | medium | none | Dynamic Pricing based on Supply and Demand
+  Goal:
+  Implement a dynamic pricing system that adjusts the price of pickups based on the real-time supply and demand in a particular area.
+  Why:
+  This would help to ensure that there are always enough helpers available to meet the demand, and it can also increase earnings for helpers during peak times.
+
+plan-54 | planned | medium | medium | none | Gamified Recycling Streaks & Achievements
+  Goal:
+  Encourage consistent recycling by rewarding users with badges and achievements for maintaining recycling "streaks".
+  Why:
+  Gamification can make recycling more engaging and fun, leading to higher user retention and more recycling.
+
+plan-55 | planned | medium | medium | none | Community Recycling Goals
+  Goal:
+  Allow users to join or create local community groups with collective recycling goals.
+  Why:
+  This fosters a sense of community and friendly competition, which can be a powerful motivator for users to recycle more.
+
+plan-56 | planned | medium | medium | none | "Leave at Door" option with Photo Confirmation
+  Goal:
+  Allow users to select a "leave at door" option for their pickups, with helpers providing a photo confirmation.
+  Why:
+  This adds convenience for users who may not be home during the pickup window and provides peace of mind that the pickup was completed.
+
+plan-57 | planned | medium | medium | none | Instant Quote for Unusual Items
+  Goal:
+  Allow users to take a photo of an unusual item and get an instant quote from helpers for the pickup.
+  Why:
+  This makes it easier for users to recycle items that are not on the standard list, increasing the app's utility.
+
+plan-58 | planned | medium | medium | none | "Hotspot" Map for High-Demand Areas
+  Goal:
+  Show helpers a map with "hotspots" where there is a high concentration of pickup requests.
+  Why:
+  This helps helpers to plan their routes more efficiently and maximize their earnings.
+
+plan-59 | planned | medium | medium | none | Helper Leaderboards and Tiers
+  Goal:
+  Introduce a system of helper tiers and leaderboards based on performance.
+  Why:
+  This incentivizes good performance and can give users more confidence in the helpers they choose.
+
+plan-60 | planned | medium | medium | none | Integration with Smart Home Devices
+  Goal:
+  Allow users to schedule pickups using voice commands with smart home devices like Amazon Echo and Google Home.
+  Why:
+  This adds a new level of convenience and makes the app more accessible.
+
+plan-61 | planned | medium | medium | none | Partnerships with Local Recycling Centers
+  Goal:
+  Partner with local recycling centers to provide users with more information about recycling.
+  Why:
+  This increases the app's value as a trusted source of information and can help to ensure that materials are recycled correctly.
