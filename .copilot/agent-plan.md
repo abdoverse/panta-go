@@ -394,3 +394,63 @@ plan-61 | planned | medium | medium | none | Partnerships with Local Recycling C
   Partner with local recycling centers to provide users with more information about recycling.
   Why:
   This increases the app's value as a trusted source of information and can help to ensure that materials are recycled correctly.
+
+plan-62 | planned | medium | medium | none | Automated Payout Calculation
+  Goal:
+  The app would automatically calculate the recycler's and the helper's share of the "Pant" money based on the scanned receipt and the agreed-upon percentage.
+  Why:
+  Automating the payout calculation reduces the chance of errors and saves time for both users.
+
+plan-63 | planned | high | large | none | Live Map View for Pickups
+  Goal:
+  A map that shows the helper's real-time location as they travel to the pickup location.
+  Why:
+  This is a standard feature in apps like Uber and provides peace of mind to the user.
+
+plan-64 | planned | high | medium | none | ETA and Progress Updates
+  Goal:
+  The app should provide an estimated time of arrival (ETA) for the helper and send push notifications to the user at key moments (e.g., "Your helper is on their way", "Your helper is arriving soon", "Your helper has arrived").
+  Why:
+  This keeps the user informed and improves the overall experience.
+
+plan-65 | planned | medium | medium | none | "I'm at the Door" Button for Helpers
+  Goal:
+  A button for the helper to press when they have arrived at the pickup location. This would send a notification to the user.
+  Why:
+  This provides a clear signal to the user that the helper has arrived and is ready for the pickup.
+
+plan-66 | planned | medium | large | none | Geofenced Pick-up/Drop-off Confirmation
+  Goal:
+  Automatically confirm pickup and drop-off at the recycling center when the helper's GPS location enters and leaves a predefined geographical area (geofence).
+  Why:
+  This automates the tracking process and adds a layer of trust to the system.
+
+plan-67 | planned | high | large | none | Receipt Scanner with OCR
+  Goal:
+  A feature that allows the helper to scan the recycling receipt ("kvitto") using their phone's camera. The app would use Optical Character Recognition (OCR) to automatically read the amount from the receipt.
+  Why:
+  This eliminates the need for manual entry and reduces the chance of errors, making the "Pant" process much smoother.
+
+plan-68 | planned | medium | medium | none | "Pant" History and Analytics
+  Goal:
+  A section in the app where both recyclers and helpers can see their "Pant" earnings over time, with charts and graphs to visualize their impact.
+  Why:
+  This helps users to track their earnings and see the positive impact of their recycling efforts.
+
+plan-69 | planned | medium | medium | none | In-app Chat with Pre-defined Messages
+  Goal:
+  An in-app chat feature to allow communication between the recycler and the helper, with pre-defined messages for common scenarios.
+  Why:
+  This makes it easy for users to communicate with each other without having to share their personal contact information.
+
+plan-70 | planned | medium | medium | none | Helper Ratings and Reviews with "Pant" Specifics
+  Goal:
+  A rating system where recyclers can rate helpers on things like punctuality and communication, and reviews can include information about "Pant" earnings.
+  Why:
+  This helps to build trust in the marketplace and allows users to make more informed decisions.
+
+plan-71 | planned | medium | medium | none | "Request a Helper" vs "Offer a Pickup" modes
+  Goal:
+  Allow helpers to post their availability and the areas they are willing to cover, and allow recyclers to choose from a list of available helpers.
+  Why:
+  This creates a more dynamic and on-demand marketplace.
