@@ -231,82 +231,22 @@ func listHelperAccessibleRequests(ctx context.Context, helperID string) ([]Recyc
 }
 
 func helperPoolCandidateStatuses() []string {
-	return []string{"pending", "cancelled", "canceled"}
+	return []string{"pending"}
 }
 
 func filterHelperVisiblePendingRequests(requests []RecyclingRequest, helperID string) []RecyclingRequest {
 	filtered := make([]RecyclingRequest, 0, len(requests))
 	for _, request := range requests {
-		if !requestReturnsToHelperPool(request) {
+		if request.Status != "pending" {
 			continue
 		}
 		if helperHasCancelledRequest(request.CanceledHelperIDs, helperID) {
 			continue
 		}
-		if isCancelledRequestStatus(request.Status) {
-			request.Status = "pending"
-		}
 		request.HelperID = ""
 		filtered = append(filtered, request)
 	}
 	return filtered
-}
-
-func requestReturnsToHelperPool(request RecyclingRequest) bool {
-	status := strings.TrimSpace(request.Status)
-	if strings.EqualFold(status, "pending") {
-		return true
-	}
-	if !isCancelledRequestStatus(status) {
-		return false
-	}
-	return cancelledRequestCanReturnToHelperPool(request)
-}
-
-func isCancelledRequestStatus(status string) bool {
-	return strings.EqualFold(status, "cancelled") || strings.EqualFold(status, "canceled")
-}
-
-func cancelledRequestCanReturnToHelperPool(request RecyclingRequest) bool {
-	if !requestHasActiveHelper(request) {
-		return true
-	}
-
-	if strings.TrimSpace(request.HelperID) == "" {
-		return true
-	}
-
-	return helperCancellationRecorded(request)
-}
-
-func requestHasActiveHelper(request RecyclingRequest) bool {
-	helperID := strings.TrimSpace(request.HelperID)
-	if helperID == "" {
-		return false
-	}
-	return !helperHasCancelledRequest(request.CanceledHelperIDs, helperID)
-}
-
-func helperCancellationRecorded(request RecyclingRequest) bool {
-	if len(request.CanceledHelperIDs) == 0 {
-		return false
-	}
-
-	helperID := strings.TrimSpace(request.HelperID)
-	if helperID == "" {
-		return true
-	}
-
-	for _, cancelledHelperID := range request.CanceledHelperIDs {
-		if strings.TrimSpace(cancelledHelperID) == "" {
-			continue
-		}
-		if strings.EqualFold(strings.TrimSpace(cancelledHelperID), helperID) {
-			return true
-		}
-	}
-
-	return false
 }
 
 func helperHasCancelledRequest(cancelledHelperIDs []string, helperID string) bool {
@@ -329,7 +269,7 @@ func filterHelperAssignedRequests(requests []RecyclingRequest, helperID string) 
 		if !strings.EqualFold(strings.TrimSpace(request.HelperID), normalizedHelperID) {
 			continue
 		}
-		if requestReturnsToHelperPool(request) {
+		if request.Status != "accepted" && request.Status != "pickedUp" {
 			continue
 		}
 		filtered = append(filtered, request)
