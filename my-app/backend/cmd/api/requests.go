@@ -49,6 +49,7 @@ func registerRequestRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/v1/requests/complete", authMiddleware(handleCompleteRequest))
 	mux.HandleFunc("/api/v1/requests/location", authMiddleware(handleUpdateLocation))
 	mux.HandleFunc("/api/v1/requests/rate", authMiddleware(handleRateRequest))
+	mux.HandleFunc("/api/v1/requests/arrived", authMiddleware(handleArrivedAtDoor))
 	mux.HandleFunc("/api/v1/analytics", authMiddleware(handleAnalytics))
 }
 
@@ -728,6 +729,87 @@ func handleUpdateLocation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondWithUpdatedRequest(w, r, updatedReq, "location_updated")
+}
+
+func handleArrivedAtDoor(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	claims, ok := currentClaims(r)
+	if !ok || claims == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	var payload ArrivedAtDoorPayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "Invalid payload"})
+		return
+	}
+
+	if payload.ID == "" {
+		jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "id is required"})
+		return
+	}
+
+	now := time.Now().UTC()
+	nowStr := now.Format(time.RFC3339)
+	eta0 := 0
+
+	expr := "SET arrivedAtDoor = :now, milestone = :milestone, etaMinutes = :eta"
+	exprValues := map[string]types.AttributeValue{
+		":now":       &types.AttributeValueMemberS{Value: nowStr},
+		":milestone": &types.AttributeValueMemberS{Value: "arrived"},
+		":eta":       &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", eta0)},
+		":accepted":  &types.AttributeValueMemberS{Value: "accepted"},
+		":helperId":  &types.AttributeValueMemberS{Value: claims.helperID()},
+	}
+
+	out, err := svc.UpdateItem(r.Context(), &dynamodb.UpdateItemInput{
+		TableName: aws.String(tableName),
+		Key: map[string]types.AttributeValue{
+			"id": &types.AttributeValueMemberS{Value: payload.ID},
+		},
+		UpdateExpression:          aws.String(expr),
+		ConditionExpression:       aws.String("status = :accepted AND helperId = :helperId"),
+		ExpressionAttributeValues: exprValues,
+		ReturnValues:              types.ReturnValueAllNew,
+	})
+	if err != nil {
+		log.Printf("Failed to record arrived at door: %v", err)
+		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "Failed to update arrival state"})
+		return
+	}
+
+	var updatedReq RecyclingRequest
+	if err := attributevalue.UnmarshalMap(out.Attributes, &updatedReq); err != nil {
+		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "Failed to parse updated request"})
+		return
+	}
+
+	// Broadcast arrival alert via WebSocket
+	arrivedMsg := map[string]interface{}{
+		"type":      "helper-arrived-at-door",
+		"requestId": updatedReq.ID,
+		"arrivedAt": nowStr,
+		"title":     "Helper is at your door!",
+		"message":   fmt.Sprintf("%s is outside your door with Panta Go.", claims.notificationName()),
+	}
+	rawMsg, _ := json.Marshal(arrivedMsg)
+	hub.broadcast <- rawMsg
+
+	// Push notification to creator device if token exists
+	if updatedReq.CreatorDeviceToken != "" {
+		go sendPushNotification(
+			updatedReq.CreatorDeviceToken,
+			"Ding-Dong! Helper is at your door 🛎️",
+			fmt.Sprintf("%s has arrived for your recycling pickup.", claims.notificationName()),
+		)
+	}
+
+	respondWithUpdatedRequest(w, r, updatedReq, "arrived_at_door")
 }
 
 func handleRateRequest(w http.ResponseWriter, r *http.Request) {

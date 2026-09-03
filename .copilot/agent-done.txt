@@ -613,3 +613,8 @@ plan-54 | done | medium | medium | none | Gamified Recycling Streaks & Achieveme
   Owner agent: pantaswarm
   Completed at: 2026-09-04T01:14:00.000000+00:00
   Progress note: Implemented gamified recycling streaks with weekly flame trackers (🔥) and progressive eco badges (First Step, Centurion Recycler, Carbon Crusher, Streak Master, Pant Legend, Eco Champion) backed by backend CalculateImpact algorithm and mobile progress UI on both Recycler and Helper dashboards. Deployed to AWS ECS Express.
+
+plan-65 | done | medium | medium | none | "I'm at the Door" Button for Helpers
+  Owner agent: pantaswarm
+  Completed at: 2026-09-04T01:43:00.000000+00:00
+  Progress note: Implemented one-tap "I'm at the Door" arrival alert for helpers (POST /api/v1/requests/arrived) with instant WebSocket broadcasting, push notification trigger, helper confirmation badge with timestamp, and prominent amber alert banner on recycler dashboard. Deployed to AWS ECS Express.

@@ -43,7 +43,12 @@ type RecyclingRequest struct {
 	DoorInstructions   string     `json:"doorInstructions,omitempty" dynamodbav:"doorInstructions,omitempty"`
 	DropoffPhotoUrl    string        `json:"dropoffPhotoUrl,omitempty" dynamodbav:"dropoffPhotoUrl,omitempty"`
 	DropoffConfirmedAt *time.Time    `json:"dropoffConfirmedAt,omitempty" dynamodbav:"dropoffConfirmedAt,omitempty"`
+	ArrivedAtDoor      *time.Time    `json:"arrivedAtDoor,omitempty" dynamodbav:"arrivedAtDoor,omitempty"`
 	Messages           []ChatMessage `json:"messages,omitempty" dynamodbav:"messages,omitempty"`
+}
+
+type ArrivedAtDoorPayload struct {
+	ID string `json:"id"`
 }
 
 type ChatMessage struct {

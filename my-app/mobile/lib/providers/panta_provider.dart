@@ -820,6 +820,31 @@ class PantaProvider extends ChangeNotifier {
     return null;
   }
 
+  Future<bool> markArrivedAtDoor(String requestId) async {
+    final token = await _authService.getToken();
+    if (token == null) return false;
+
+    try {
+      final response = await http.post(
+        ApiConfig.apiUri('/api/v1/requests/arrived'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode({'id': requestId}),
+      );
+      if (response.statusCode == 200) {
+        final payload = json.decode(response.body) as Map<String, dynamic>;
+        _requestState.upsert(_fromJson(payload));
+        notifyListeners();
+        return true;
+      }
+    } catch (e) {
+      debugPrint('Error marking arrived at door: $e');
+    }
+    return false;
+  }
+
   Future<bool> updateHelperLocation(
     String requestId,
     double lat,
@@ -971,6 +996,9 @@ class PantaProvider extends ChangeNotifier {
       dropoffPhotoUrl: json['dropoffPhotoUrl']?.toString(),
       dropoffConfirmedAt: json['dropoffConfirmedAt'] != null
           ? DateTime.tryParse(json['dropoffConfirmedAt'].toString())
+          : null,
+      arrivedAtDoor: json['arrivedAtDoor'] != null
+          ? DateTime.tryParse(json['arrivedAtDoor'].toString())
           : null,
       messages: (json['messages'] as List<dynamic>?)
               ?.map((m) => ChatMessage.fromJson(m as Map<String, dynamic>))

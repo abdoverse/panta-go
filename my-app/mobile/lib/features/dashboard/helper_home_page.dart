@@ -701,14 +701,67 @@ class _JobCard extends StatelessWidget {
                         ),
                       ],
                       const SizedBox(height: 10),
-                      OutlinedButton.icon(
-                        onPressed: () => ChatBottomSheet.show(
-                          context,
-                          request: job,
-                          isHelper: true,
-                        ),
-                        icon: const Icon(Icons.chat_bubble_outline, size: 16),
-                        label: const Text('Chat with Recycler'),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () => ChatBottomSheet.show(
+                                context,
+                                request: job,
+                                isHelper: true,
+                              ),
+                              icon: const Icon(Icons.chat_bubble_outline, size: 16),
+                              label: const Text('Chat'),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: job.arrivedAtDoor != null
+                                ? Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.green.shade50,
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(color: Colors.green.shade400),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(Icons.check_circle, size: 16, color: Colors.green),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'At Door (${job.arrivedAtDoor!.hour.toString().padLeft(2, '0')}:${job.arrivedAtDoor!.minute.toString().padLeft(2, '0')})',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.green,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : FilledButton.icon(
+                                    onPressed: () async {
+                                      final ok = await context
+                                          .read<PantaProvider>()
+                                          .markArrivedAtDoor(job.id);
+                                      if (context.mounted && ok) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('🛎️ Ding-Dong! Arrival alert sent to recycler.'),
+                                            backgroundColor: Colors.amber,
+                                          ),
+                                        );
+                                      }
+                                    },
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor: Colors.amber.shade800,
+                                    ),
+                                    icon: const Icon(Icons.doorbell_outlined, size: 16),
+                                    label: const Text("I'm at Door"),
+                                  ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 12),
                       Row(

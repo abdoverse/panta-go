@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
 
 func TestHelperPoolCandidateStatuses(t *testing.T) {
 	t.Parallel()
@@ -268,5 +271,32 @@ func TestCalculateImpact(t *testing.T) {
 		t.Fatalf("expected first_step and centurion to be unlocked, got: %+v", recyclerImpact.Badges)
 	}
 }
+
+func TestArrivedAtDoorPayload(t *testing.T) {
+	t.Parallel()
+
+	now := time.Now().UTC()
+	req := RecyclingRequest{
+		ID:            "req-door-alert",
+		Title:         "Bottles at door",
+		ArrivedAtDoor: &now,
+		Milestone:     "arrived",
+	}
+
+	if req.ArrivedAtDoor == nil {
+		t.Fatalf("expected ArrivedAtDoor to be set")
+	}
+	if req.Milestone != "arrived" {
+		t.Fatalf("expected milestone to be arrived, got %s", req.Milestone)
+	}
+
+	payload := ArrivedAtDoorPayload{
+		ID: "req-door-alert",
+	}
+	if payload.ID != "req-door-alert" {
+		t.Fatalf("unexpected payload ID: %s", payload.ID)
+	}
+}
+
 
 

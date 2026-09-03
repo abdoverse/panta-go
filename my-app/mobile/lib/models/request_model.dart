@@ -80,6 +80,7 @@ class RecyclingRequest {
   final String? doorInstructions;
   final String? dropoffPhotoUrl;
   final DateTime? dropoffConfirmedAt;
+  final DateTime? arrivedAtDoor;
   final List<ChatMessage> messages;
 
   RecyclingRequest({
@@ -113,6 +114,7 @@ class RecyclingRequest {
     this.doorInstructions,
     this.dropoffPhotoUrl,
     this.dropoffConfirmedAt,
+    this.arrivedAtDoor,
     this.messages = const [],
   });
 
@@ -141,6 +143,7 @@ class RecyclingRequest {
     String? doorInstructions,
     String? dropoffPhotoUrl,
     DateTime? dropoffConfirmedAt,
+    DateTime? arrivedAtDoor,
     List<ChatMessage>? messages,
   }) {
     return RecyclingRequest(
@@ -174,6 +177,7 @@ class RecyclingRequest {
       doorInstructions: doorInstructions ?? this.doorInstructions,
       dropoffPhotoUrl: dropoffPhotoUrl ?? this.dropoffPhotoUrl,
       dropoffConfirmedAt: dropoffConfirmedAt ?? this.dropoffConfirmedAt,
+      arrivedAtDoor: arrivedAtDoor ?? this.arrivedAtDoor,
       messages: messages ?? this.messages,
     );
   }

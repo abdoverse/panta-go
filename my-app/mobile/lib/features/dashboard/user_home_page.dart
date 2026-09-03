@@ -749,6 +749,44 @@ class _RequestCard extends StatelessWidget {
               ],
             ),
             if (request.status == RequestStatus.accepted) ...[
+              if (request.arrivedAtDoor != null) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.amber.shade400, width: 1.5),
+                  ),
+                  child: Row(
+                    children: [
+                      const Text('🛎️', style: TextStyle(fontSize: 24)),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Helper is outside your door!',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                                color: Colors.brown,
+                              ),
+                            ),
+                            Text(
+                              request.leaveAtDoor
+                                  ? 'Bags can be picked up directly outside your door.'
+                                  : 'Please open your door or meet the helper to hand over pant bags.',
+                              style: TextStyle(fontSize: 11, color: Colors.brown.shade700),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 12),
               LiveMapTrackingView(request: request),
               const SizedBox(height: 8),

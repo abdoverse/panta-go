@@ -383,12 +383,6 @@ plan-61 | planned | medium | medium | none | Partnerships with Local Recycling C
   Why:
   This increases the app's value as a trusted source of information and can help to ensure that materials are recycled correctly.
 
-plan-65 | planned | medium | medium | none | "I'm at the Door" Button for Helpers
-  Goal:
-  A button for the helper to press when they have arrived at the pickup location. This would send a notification to the user.
-  Why:
-  This provides a clear signal to the user that the helper has arrived and is ready for the pickup.
-
 plan-66 | planned | medium | large | none | Geofenced Pick-up/Drop-off Confirmation
   Goal:
   Automatically confirm pickup and drop-off at the recycling center when the helper's GPS location enters and leaves a predefined geographical area (geofence).
