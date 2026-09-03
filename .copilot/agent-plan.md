@@ -347,12 +347,6 @@ plan-53 | planned | medium | medium | none | Dynamic Pricing based on Supply and
   Why:
   This would help to ensure that there are always enough helpers available to meet the demand, and it can also increase earnings for helpers during peak times.
 
-plan-54 | planned | medium | medium | none | Gamified Recycling Streaks & Achievements
-  Goal:
-  Encourage consistent recycling by rewarding users with badges and achievements for maintaining recycling "streaks".
-  Why:
-  Gamification can make recycling more engaging and fun, leading to higher user retention and more recycling.
-
 plan-55 | planned | medium | medium | none | Community Recycling Goals
   Goal:
   Allow users to join or create local community groups with collective recycling goals.

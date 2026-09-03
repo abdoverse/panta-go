@@ -119,7 +119,51 @@ class _ImpactDashboardViewState extends State<ImpactDashboardView> {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
+
+              // Recycling Streak Banner
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.orange.shade200),
+                ),
+                child: Row(
+                  children: [
+                    const Text('🔥', style: TextStyle(fontSize: 28)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            summary.streak.currentStreakWeeks > 0
+                                ? '${summary.streak.currentStreakWeeks} Week Recycling Streak!'
+                                : 'Start your Recycling Streak!',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: Colors.orange.shade900,
+                            ),
+                          ),
+                          Text(
+                            summary.streak.currentStreakWeeks > 0
+                                ? 'Keep recycling weekly to maintain your flame & earn streak badges.'
+                                : 'Complete a pickup this week to ignite your recycling flame!',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.orange.shade800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
 
               // 4 Core Impact Metrics
               Row(
@@ -168,6 +212,79 @@ class _ImpactDashboardViewState extends State<ImpactDashboardView> {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 24),
+
+              // Badges and Achievements
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Eco Badges & Milestones',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  Text(
+                    '${summary.badges.where((b) => b.isUnlocked).length} / ${summary.badges.length} Unlocked',
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                height: 130,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: summary.badges.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  itemBuilder: (context, index) {
+                    final badge = summary.badges[index];
+                    return Container(
+                      width: 140,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: badge.isUnlocked ? Colors.amber.shade50 : Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: badge.isUnlocked ? Colors.amber.shade400 : Colors.grey.shade300,
+                          width: badge.isUnlocked ? 1.5 : 1.0,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(badge.icon, style: const TextStyle(fontSize: 24)),
+                              if (badge.isUnlocked)
+                                const Icon(Icons.check_circle, color: Colors.amber, size: 18)
+                              else
+                                Text(
+                                  '${(badge.progress * 100).toInt()}%',
+                                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontWeight: FontWeight.bold),
+                                ),
+                            ],
+                          ),
+                          const Spacer(),
+                          Text(
+                            badge.title,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            badge.description,
+                            style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
               ),
               const SizedBox(height: 24),
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math"
 	"strings"
 	"time"
@@ -105,6 +106,23 @@ type ImpactActivityItem struct {
 	CO2SavedKg    float64 `json:"co2SavedKg"`
 }
 
+type StreakData struct {
+	CurrentStreakWeeks int  `json:"currentStreakWeeks"`
+	LongestStreakWeeks int  `json:"longestStreakWeeks"`
+	IsActive           bool `json:"isActive"`
+}
+
+type EcoBadge struct {
+	ID          string  `json:"id"`
+	Title       string  `json:"title"`
+	Description string  `json:"description"`
+	Icon        string  `json:"icon"`
+	IsUnlocked  bool    `json:"isUnlocked"`
+	Progress    float64 `json:"progress"`
+	Current     int     `json:"current"`
+	Target      int     `json:"target"`
+}
+
 type ImpactSummary struct {
 	TotalPickups       int                  `json:"totalPickups"`
 	TotalReceiptAmount float64              `json:"totalReceiptAmount"`
@@ -112,7 +130,114 @@ type ImpactSummary struct {
 	ContainersRecycled int                  `json:"containersRecycled"`
 	CO2SavedKg         float64              `json:"co2SavedKg"`
 	TreesEquivalent    float64              `json:"treesEquivalent"`
+	Streak             StreakData           `json:"streak"`
+	Badges             []EcoBadge           `json:"badges"`
 	RecentActivity     []ImpactActivityItem `json:"recentActivity"`
+}
+
+func computeStreak(dates []time.Time) StreakData {
+	if len(dates) == 0 {
+		return StreakData{CurrentStreakWeeks: 0, LongestStreakWeeks: 0, IsActive: false}
+	}
+	weekMap := make(map[string]bool)
+	for _, d := range dates {
+		y, w := d.ISOWeek()
+		weekMap[fmt.Sprintf("%d-%02d", y, w)] = true
+	}
+	distinctWeeks := len(weekMap)
+	if distinctWeeks == 0 {
+		return StreakData{CurrentStreakWeeks: 0, LongestStreakWeeks: 0, IsActive: false}
+	}
+
+	return StreakData{
+		CurrentStreakWeeks: distinctWeeks,
+		LongestStreakWeeks: distinctWeeks,
+		IsActive:           true,
+	}
+}
+
+func computeBadges(completedPickups int, containers int, co2Saved float64, totalEarned float64, streakWeeks int) []EcoBadge {
+	badgesDef := []struct {
+		ID          string
+		Title       string
+		Description string
+		Icon        string
+		Current     int
+		Target      int
+	}{
+		{
+			ID:          "first_step",
+			Title:       "First Step",
+			Description: "Complete your first pant pickup",
+			Icon:        "🌱",
+			Current:     completedPickups,
+			Target:      1,
+		},
+		{
+			ID:          "centurion",
+			Title:       "Centurion Recycler",
+			Description: "Recycle 100+ cans & bottles",
+			Icon:        "🥫",
+			Current:     containers,
+			Target:      100,
+		},
+		{
+			ID:          "carbon_crusher",
+			Title:       "Carbon Crusher",
+			Description: "Offset at least 10 kg of CO₂",
+			Icon:        "🌍",
+			Current:     int(co2Saved),
+			Target:      10,
+		},
+		{
+			ID:          "streak_master",
+			Title:       "Streak Master",
+			Description: "Maintain a 3-week recycling streak",
+			Icon:        "🔥",
+			Current:     streakWeeks,
+			Target:      3,
+		},
+		{
+			ID:          "pant_legend",
+			Title:       "Pant Legend",
+			Description: "Complete 10+ recycling pickups",
+			Icon:        "🏆",
+			Current:     completedPickups,
+			Target:      10,
+		},
+		{
+			ID:          "eco_champion",
+			Title:       "Eco Champion",
+			Description: "Earn/refund over 500 SEK in pant",
+			Icon:        "⚡",
+			Current:     int(totalEarned),
+			Target:      500,
+		},
+	}
+
+	result := make([]EcoBadge, len(badgesDef))
+	for i, b := range badgesDef {
+		cur := b.Current
+		if cur < 0 {
+			cur = 0
+		}
+		unlocked := cur >= b.Target
+		var progress float64 = 1.0
+		if !unlocked && b.Target > 0 {
+			progress = math.Round((float64(cur)/float64(b.Target))*100) / 100
+		}
+		result[i] = EcoBadge{
+			ID:          b.ID,
+			Title:       b.Title,
+			Description: b.Description,
+			Icon:        b.Icon,
+			IsUnlocked:  unlocked,
+			Progress:    progress,
+			Current:     cur,
+			Target:      b.Target,
+		}
+	}
+	return result
 }
 
 func CalculateImpact(requests []RecyclingRequest, isHelper bool) ImpactSummary {
@@ -120,6 +245,7 @@ func CalculateImpact(requests []RecyclingRequest, isHelper bool) ImpactSummary {
 	var totalEarned float64
 	completedCount := 0
 	recent := make([]ImpactActivityItem, 0)
+	pickupDates := make([]time.Time, 0)
 
 	for _, req := range requests {
 		if req.Status != "pickedUp" {
@@ -147,8 +273,10 @@ func CalculateImpact(requests []RecyclingRequest, isHelper bool) ImpactSummary {
 		completedAt := ""
 		if req.ReceiptScannedAt != nil {
 			completedAt = req.ReceiptScannedAt.UTC().Format(time.RFC3339)
+			pickupDates = append(pickupDates, *req.ReceiptScannedAt)
 		} else {
 			completedAt = req.ScheduledTo.UTC().Format(time.RFC3339)
+			pickupDates = append(pickupDates, req.ScheduledTo)
 		}
 
 		itemCO2 := math.Round(req.ReceiptAmount*0.08*100) / 100
@@ -170,6 +298,9 @@ func CalculateImpact(requests []RecyclingRequest, isHelper bool) ImpactSummary {
 	co2Saved := math.Round(float64(containers)*0.09*100) / 100
 	treesEquiv := math.Round((co2Saved/21.0)*100) / 100
 
+	streak := computeStreak(pickupDates)
+	badges := computeBadges(completedCount, containers, co2Saved, totalEarned, streak.CurrentStreakWeeks)
+
 	return ImpactSummary{
 		TotalPickups:       completedCount,
 		TotalReceiptAmount: math.Round(totalReceipt*100) / 100,
@@ -177,6 +308,8 @@ func CalculateImpact(requests []RecyclingRequest, isHelper bool) ImpactSummary {
 		ContainersRecycled: containers,
 		CO2SavedKg:         co2Saved,
 		TreesEquivalent:    treesEquiv,
+		Streak:             streak,
+		Badges:             badges,
 		RecentActivity:     recent,
 	}
 }

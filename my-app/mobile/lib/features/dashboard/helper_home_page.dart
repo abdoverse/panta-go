@@ -155,6 +155,30 @@ class _MarketplaceView extends StatelessWidget {
             backgroundColor: AppTheme.primaryGreen,
             pinned: true,
             actions: [
+              if (provider.helperImpactSummary.streak.currentStreakWeeks > 0)
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade700,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('🔥', style: TextStyle(fontSize: 12)),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${provider.helperImpactSummary.streak.currentStreakWeeks}w',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               IconButton(
                 onPressed: () => Navigator.push(
                   context,

@@ -244,5 +244,29 @@ func TestCalculateImpact(t *testing.T) {
 	if helperImpact.TotalEarnings != 72.0 {
 		t.Fatalf("expected 72.0 helper earnings, got %f", helperImpact.TotalEarnings)
 	}
+
+	// Verify streaks and badges
+	if recyclerImpact.Streak.CurrentStreakWeeks == 0 {
+		t.Fatalf("expected active streak, got %+v", recyclerImpact.Streak)
+	}
+	if len(recyclerImpact.Badges) == 0 {
+		t.Fatalf("expected badges list, got empty")
+	}
+
+	// first_step and centurion should be unlocked (240 SEK pant > 100 containers)
+	firstStepUnlocked := false
+	centurionUnlocked := false
+	for _, b := range recyclerImpact.Badges {
+		if b.ID == "first_step" && b.IsUnlocked {
+			firstStepUnlocked = true
+		}
+		if b.ID == "centurion" && b.IsUnlocked {
+			centurionUnlocked = true
+		}
+	}
+	if !firstStepUnlocked || !centurionUnlocked {
+		t.Fatalf("expected first_step and centurion to be unlocked, got: %+v", recyclerImpact.Badges)
+	}
 }
+
 
