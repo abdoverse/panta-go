@@ -64,6 +64,13 @@ class RecyclingRequest {
   final bool isRated;
   final double? rating;
   final String? ratingComment;
+  final String? receiptImageUrl;
+  final double? receiptAmount;
+  final DateTime? receiptScannedAt;
+  final double? helperLatitude;
+  final double? helperLongitude;
+  final int? etaMinutes;
+  final String? milestone;
 
   RecyclingRequest({
     required this.id,
@@ -82,6 +89,13 @@ class RecyclingRequest {
     this.isRated = false,
     this.rating,
     this.ratingComment,
+    this.receiptImageUrl,
+    this.receiptAmount,
+    this.receiptScannedAt,
+    this.helperLatitude,
+    this.helperLongitude,
+    this.etaMinutes,
+    this.milestone,
   });
 
   RecyclingRequest copyWith({
@@ -95,6 +109,13 @@ class RecyclingRequest {
     double? reward,
     double? locationLatitude,
     double? locationLongitude,
+    String? receiptImageUrl,
+    double? receiptAmount,
+    DateTime? receiptScannedAt,
+    double? helperLatitude,
+    double? helperLongitude,
+    int? etaMinutes,
+    String? milestone,
   }) {
     return RecyclingRequest(
       id: id,
@@ -113,6 +134,13 @@ class RecyclingRequest {
       isRated: isRated ?? this.isRated,
       rating: rating ?? this.rating,
       ratingComment: ratingComment ?? this.ratingComment,
+      receiptImageUrl: receiptImageUrl ?? this.receiptImageUrl,
+      receiptAmount: receiptAmount ?? this.receiptAmount,
+      receiptScannedAt: receiptScannedAt ?? this.receiptScannedAt,
+      helperLatitude: helperLatitude ?? this.helperLatitude,
+      helperLongitude: helperLongitude ?? this.helperLongitude,
+      etaMinutes: etaMinutes ?? this.etaMinutes,
+      milestone: milestone ?? this.milestone,
     );
   }
 

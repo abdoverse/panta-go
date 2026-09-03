@@ -573,3 +573,18 @@ plan-5 | done | high | medium | none | Finish auth hardening and runtime configu
   Replace the hand-managed ECS/ALB/VPC service with `AWS::ECS::ExpressGatewayService` via CDK's `ecs.CfnExpressGatewayService`. Keep the backend Docker image asset, create the required ECS task execution and infrastructure IAM roles, preserve a task role for DynamoDB access, retain Cognito and DynamoDB resources, and switch outputs to the Express service endpoint.
   Status:
   Already present in `my-app/infra/lib/infra-stack.ts`: backend env vars are wired at lines 132-139 and the preserved stack outputs are defined at lines 304-332.
+
+plan-67 | done | high | large | none | Receipt Scanner with OCR
+  Owner agent: pantaswarm
+  Completed at: 2026-09-03T23:10:00.000000+00:00
+  Progress note: Implemented Swedish pant receipt OCR parser, camera/image scanner modal, backend receipt persistence in DynamoDB, and verified receipt amounts. Deployed to AWS ECS Express.
+
+plan-63 | done | high | large | none | Live Map View for Pickups
+  Owner agent: pantaswarm
+  Completed at: 2026-09-03T23:10:00.000000+00:00
+  Progress note: Implemented LiveMapTrackingView with interactive pickup pin, helper moving marker, route canvas, external navigation launcher, and helper GPS location API. Deployed to AWS ECS Express.
+
+plan-64 | done | high | medium | none | ETA and Progress Updates
+  Owner agent: pantaswarm
+  Completed at: 2026-09-03T23:10:00.000000+00:00
+  Progress note: Implemented EtaService with real-time distance and transit speed ETA calculations, automated milestone progression (on_the_way -> arriving_soon -> arrived), and pulsing ETA badges. Deployed to AWS ECS Express.

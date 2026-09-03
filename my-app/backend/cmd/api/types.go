@@ -27,6 +27,27 @@ type RecyclingRequest struct {
 	Rating             float64   `json:"rating,omitempty" dynamodbav:"rating,omitempty"`
 	RatingComment      string    `json:"ratingComment,omitempty" dynamodbav:"ratingComment,omitempty"`
 	CreatorDeviceToken string    `json:"creatorDeviceToken,omitempty" dynamodbav:"creatorDeviceToken,omitempty"`
+	ReceiptImageUrl    string    `json:"receiptImageUrl,omitempty" dynamodbav:"receiptImageUrl,omitempty"`
+	ReceiptAmount      float64   `json:"receiptAmount,omitempty" dynamodbav:"receiptAmount,omitempty"`
+	ReceiptScannedAt   *time.Time `json:"receiptScannedAt,omitempty" dynamodbav:"receiptScannedAt,omitempty"`
+	HelperLatitude     *float64  `json:"helperLatitude,omitempty" dynamodbav:"helperLatitude,omitempty"`
+	HelperLongitude    *float64  `json:"helperLongitude,omitempty" dynamodbav:"helperLongitude,omitempty"`
+	EtaMinutes         *int      `json:"etaMinutes,omitempty" dynamodbav:"etaMinutes,omitempty"`
+	Milestone          string    `json:"milestone,omitempty" dynamodbav:"milestone,omitempty"`
+}
+
+type UpdateLocationPayload struct {
+	ID              string   `json:"id"`
+	HelperLatitude  *float64 `json:"helperLatitude"`
+	HelperLongitude *float64 `json:"helperLongitude"`
+	EtaMinutes      *int     `json:"etaMinutes,omitempty"`
+	Milestone       string   `json:"milestone,omitempty"`
+}
+
+type CompleteRequestPayload struct {
+	ID              string  `json:"id"`
+	ReceiptImageUrl string  `json:"receiptImageUrl,omitempty"`
+	ReceiptAmount   float64 `json:"receiptAmount,omitempty"`
 }
 
 type SavedAddress struct {

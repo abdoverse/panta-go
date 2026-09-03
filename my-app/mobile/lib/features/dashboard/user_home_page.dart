@@ -14,6 +14,7 @@ import '../../core/constants/app_constants.dart';
 import 'package:flutter_animate/flutter_animate.dart'; // Ensure animate is imported
 import '../shared/widgets/loading_skeletons.dart'; // Import skeletons
 import '../shared/widgets/location_actions.dart';
+import '../tracking/live_map_tracking_view.dart';
 
 class UserHomePage extends StatefulWidget {
   const UserHomePage({super.key});
@@ -522,11 +523,41 @@ class _RequestCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 12),
                       LocationActions(address: request.location),
+                      if (request.receiptAmount != null && request.receiptAmount! > 0) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE8F5E9),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.green.shade300),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.receipt, size: 14, color: Colors.green),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Verified Pant: ${request.receiptAmount!.toStringAsFixed(2)} SEK',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
               ],
             ),
+            if (request.status == RequestStatus.accepted) ...[
+              const SizedBox(height: 12),
+              LiveMapTrackingView(request: request),
+            ],
             const SizedBox(height: 16),
             if (isInteractable)
               Wrap(

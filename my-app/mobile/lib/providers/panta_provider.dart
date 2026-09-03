@@ -652,18 +652,30 @@ class PantaProvider extends ChangeNotifier {
     return false;
   }
 
-  Future<bool> completeRequest(String id) async {
+  Future<bool> completeRequest(
+    String id, {
+    double? receiptAmount,
+    String? receiptImageUrl,
+  }) async {
     final token = await _authService.getToken();
     if (token == null) return false;
 
     try {
+      final bodyMap = <String, dynamic>{'id': id};
+      if (receiptAmount != null && receiptAmount > 0) {
+        bodyMap['receiptAmount'] = receiptAmount;
+      }
+      if (receiptImageUrl != null && receiptImageUrl.isNotEmpty) {
+        bodyMap['receiptImageUrl'] = receiptImageUrl;
+      }
+
       final response = await http.post(
         ApiConfig.apiUri('/api/v1/requests/complete'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-        body: json.encode({'id': id}),
+        body: json.encode(bodyMap),
       );
       if (response.statusCode == 200) {
         final payload = json.decode(response.body) as Map<String, dynamic>;
@@ -673,6 +685,45 @@ class PantaProvider extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('Error completing request: $e');
+    }
+    return false;
+  }
+
+  Future<bool> updateHelperLocation(
+    String requestId,
+    double lat,
+    double lng, {
+    int? etaMinutes,
+    String? milestone,
+  }) async {
+    final token = await _authService.getToken();
+    if (token == null) return false;
+
+    try {
+      final bodyMap = <String, dynamic>{
+        'id': requestId,
+        'helperLatitude': lat,
+        'helperLongitude': lng,
+      };
+      if (etaMinutes != null) bodyMap['etaMinutes'] = etaMinutes;
+      if (milestone != null) bodyMap['milestone'] = milestone;
+
+      final response = await http.post(
+        ApiConfig.apiUri('/api/v1/requests/location'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode(bodyMap),
+      );
+      if (response.statusCode == 200) {
+        final payload = json.decode(response.body) as Map<String, dynamic>;
+        _requestState.upsert(_fromJson(payload));
+        notifyListeners();
+        return true;
+      }
+    } catch (e) {
+      debugPrint('Error updating helper location: $e');
     }
     return false;
   }
@@ -758,6 +809,23 @@ class PantaProvider extends ChangeNotifier {
           ? double.tryParse(json['rating'].toString())
           : null,
       ratingComment: json['ratingComment'],
+      receiptImageUrl: json['receiptImageUrl']?.toString(),
+      receiptAmount: json['receiptAmount'] != null
+          ? double.tryParse(json['receiptAmount'].toString())
+          : null,
+      receiptScannedAt: json['receiptScannedAt'] != null
+          ? DateTime.tryParse(json['receiptScannedAt'].toString())
+          : null,
+      helperLatitude: json['helperLatitude'] != null
+          ? double.tryParse(json['helperLatitude'].toString())
+          : null,
+      helperLongitude: json['helperLongitude'] != null
+          ? double.tryParse(json['helperLongitude'].toString())
+          : null,
+      etaMinutes: json['etaMinutes'] != null
+          ? int.tryParse(json['etaMinutes'].toString())
+          : null,
+      milestone: json['milestone']?.toString(),
     );
   }
 

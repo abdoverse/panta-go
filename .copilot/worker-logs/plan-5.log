@@ -1,0 +1,119 @@
+I’ve got the relevant auth/runtime surfaces narrowed down. Next I’m tracing the current session restore, logout, and backend origin/realtime handling so I can make one coherent hardening pass instead of piecemeal edits.
+
+I found the two main gaps: mobile auth never actually restores a cached session, and backend networking still trusts any origin in both HTTP and WebSocket paths. I’m reading the startup/logout surfaces now so the fix covers app boot, sign-out, and realtime consistently.
+
+The mobile fix needs one more detail: whether the Cognito package supports reconstructing a session from stored token strings. I’m checking the local package metadata/signatures now so I can implement restore cleanly instead of guessing at the constructors.
+
+I’ve got the change set scoped now: mobile auth state restoration, logout cleanup, runtime config constants, and backend origin/JWT hardening. I’m running the existing mobile and backend validations once before editing so I can keep the delta honest.
+
+I’ve got the implementation path locked. I’m patching the mobile auth gate and provider state first, then I’ll tighten the backend’s token/origin policy around the same assumptions.
+
+I’m tightening the auth/runtime path now and keeping the initial pass focused on the likely mobile auth/config and backend socket/CORS surfaces.
+
+I found the core surfaces quickly; next I’m patching the mobile auth/config path and the backend socket origin handling together so the hardening lands consistently.
+
+I’ve got enough context to start the actual hardening. First patch is mobile-side: stricter session restore/logout cleanup plus removing the remaining hardcoded runtime secret assumption.
+
+The mobile/provider file already had a gap around restore/logout, so I’m fixing that while wiring the runtime cleanup through the config layer instead of leaving hardcoded production values in the request flow.
+
+The first hardening pass is in place. I’m doing one quick review sweep for any edge cases from those edits, then I’ll run the existing mobile/backend validation commands only on the touched surfaces.
+
+I found one backend edge case from the review: native/non-browser websocket clients may not send an `Origin`, so I’m preserving that path before running the repo’s normal analyzers/tests.
+
+Mobile analysis is only failing on pre-existing repo warnings, not on the auth/runtime edits. I’m tightening one last expired-session path, then I’ll re-run focused checks and confirm the backend toolchain constraint.
+
+I cleaned one stale warning from the touched provider file. I’m doing a final focused pass now so the remaining signal is limited to what’s truly outside this hardening change.
+
+The only remaining focused mobile analyzer hit is a local deprecation in the same provider file, so I’m clearing that too to leave the edited surface clean.
+
+The edited mobile surface is clean now. I’m checking the final file-level diff/status once more so the handoff is precise, especially since the backend Go toolchain isn’t available in this worker environment.
+
+I’ve got the main client config and auth service path; next I’m checking one auth file and one backend surface so I can start editing immediately.
+
+I found the likely backend entry points; I’m reading one server file now and then applying the first hardening pass across client config and auth handling.
+
+The client hardening edits are in; I’m checking the backend CORS/websocket path now to remove any remaining permissive runtime assumptions that are still wired in.
+
+The main hardening changes are in place. I’m just checking the existing app/backend commands so I can run the smallest relevant validation already defined by the repo.
+
+`flutter analyze` surfaced one issue from my new config helper, so I’m correcting that and then rerunning the relevant checks.
+
+Implemented **plan-5** with working-tree edits in the requested paths.
+
+**Changed**
+1. `my-app/mobile/lib/services/api_config.dart`: removed baked-in production API/Cognito defaults, switched the safe API fallback to local `127.0.0.1:8080`, and now require `COGNITO_USER_POOL_ID` / `COGNITO_CLIENT_ID` to be supplied explicitly at build time.
+2. `my-app/mobile/lib/services/auth_service.dart`: normalized confirmation emails, tightened logout to attempt Cognito `globalSignOut()` before clearing local state, and kept local cleanup guaranteed even when remote logout fails.
+3. `my-app/backend/cmd/api/http_helpers.go`: hardened CORS origin handling by normalizing configured/request origins, rejecting malformed origins with paths/query/userinfo, and matching same-origin checks against a normalized request host.
+
+**Validation**
+- `flutter analyze` still reports **47 pre-existing issues** elsewhere in the mobile app; it did not surface new errors in the edited files after the follow-up fix.
+- Backend `go test ./...` could not run in this environment because **`go` is not installed**.
+
+I’ve narrowed it to the three most likely surfaces and I’m editing from there instead of doing a wider sweep. Next I’m patching the first hardening fixes directly into those paths.
+
+I found two concrete gaps fast: the mobile config still falls back to localhost/default region in all builds, and auth cleanup only partially separates stale local state from remote sign-out. I’m tightening those now and then I’ll do a short follow-up scan for any connected runtime/CORS surface.
+
+The first pass exposed one more place worth checking on each side: origin policy is shared in `http_helpers.go`, and mobile restore/logout state is coordinated in `panta_provider.dart`. I’m doing that narrow follow-up before validation so I can close any wiring gaps instead of papering over one layer.
+
+The shared CORS helper already enforces explicit origins, so the websocket change is aligned rather than divergent. I’m formatting the touched files and running the project’s existing mobile/backend checks now.
+
+Mobile analysis is clean on the edited auth/config code; the analyzer only reported pre-existing warnings elsewhere. The backend toolchain looks incomplete in this environment, so I’m checking the touched diffs directly and trying a narrower Go availability check instead of claiming backend validation I couldn’t actually run.
+
+Implemented the auth/runtime hardening in the requested surfaces.
+
+**Changed**
+1. `my-app/mobile/lib/services/api_config.dart`: production builds now require explicit `API_BASE_URL` and `AWS_REGION` instead of silently falling back to localhost / the default region; development still keeps the local defaults.
+2. `my-app/mobile/lib/services/auth_service.dart`: stale or failed session restores now force a full local invalidation path, and logout clears in-memory auth state before remote sign-out so restored/expired sessions do not linger.
+3. `my-app/backend/cmd/api/websocket.go`: websocket upgrades now reject requests with a missing `Origin` header instead of allowing them through.
+
+**Validation**
+- `flutter analyze lib/services/api_config.dart lib/services/auth_service.dart lib/providers/panta_provider.dart` passed with no issues.
+- Backend Go validation could not be completed in this environment because the Go toolchain (`go` / `gofmt`) is not installed.
+
+I’ve narrowed it to the mobile auth/config path plus the backend websocket surface, and I’m editing next so the work starts landing immediately.
+
+The first hardening change is in: session restore now rejects half-restored Cognito state instead of treating any `isValid()` result as good enough. I’m checking the websocket/CORS side now to close the runtime config piece without wandering outside the target surfaces.
+
+I found one backend mismatch: normal HTTP CORS already tolerates requests with no `Origin`, but websocket upgrades currently reject them outright. I’m fixing that together with a config cleanup on the mobile side so websocket routing stops assuming it always shares the API base URL.
+
+I hit one config nuance while wiring the websocket override: the app should be able to fall back to `API_BASE_URL` for websockets in production too, instead of forcing a separate websocket env var. I’m tightening that before I run the repo’s existing checks.
+
+The edits are in place. I’m only pulling the repo’s already-available validation surfaces now: the backend Go test suite and the mobile analyzer/test surface if this Flutter app already has one.
+
+The mobile validation surfaced one type-safety issue from the new session guard, so I’m fixing that and rerunning the Flutter checks. The backend test command is present, but this environment doesn’t currently have `go` installed, so that part can only be validated up to compile-time review here.
+
+I found the main mobile auth surface and the runtime config helper, so I'm switching straight into a targeted fix pass on those before widening scope.
+
+I’ve narrowed it to the auth service plus one backend HTTP surface, and I’m making the first edit as part of this pass rather than doing a broad search.
+
+I’m keeping the initial read tight and moving straight into the auth/runtime surfaces that are most likely to need hardening.
+
+I found one clear auth gap right away: profile getters depend on `_session` being already populated, so restored sessions can look logged out until some other call hydrates state. I’m fixing that first, then I’ll tighten the runtime/websocket side.
+
+The remaining risk looks more like “unsafe defaults and silent normalization” than a deep auth bug, so I’m tightening config validation and the restored-session call sites together.
+
+I found a real CORS/websocket weakness: “same-origin” was only comparing host, so an `http://same-host` origin could be accepted against an `https://same-host` deployment. I’m tightening that check instead of adding a broader behavioral change.
+
+The app-wide Flutter analysis is already noisy with unrelated existing warnings, so I’m narrowing the signal to the files touched for this item and checking the final diff shape.
+
+**plan-5 is implemented in the working tree.** Session restore now rehydrates auth-derived identity from persisted Cognito state instead of depending on an already-populated in-memory session, so restored users won’t fall into a half-authenticated state. I updated the provider call sites to await those restored claims during login/session restore.
+
+I also tightened runtime handling in two places: `ApiConfig` now rejects base URLs with paths/query/userinfo fragments and requires an explicit `WS_BASE_URL` for production builds, and backend same-origin checks now compare full origin **scheme + host** instead of host alone, which hardens both CORS and websocket origin validation against mixed-scheme acceptance.
+
+I’ve narrowed it to the mobile auth/runtime path and am making the first fix now rather than broadening the search. After that I’ll run the existing Flutter tests to catch the exact remaining regression.
+
+The first auth fix is in place. I’m checking the targeted tests and the remaining runtime config surfaces now so I can close out the actual failure instead of guessing.
+
+The failing test is unrelated to the auth logic itself: `PantaApp` now expects a `PantaProvider` above it. I’m fixing that harness and then I’ll tighten one runtime edge in the auth/session path before rerunning the same test suite.
+
+The provider issue is fixed; the remaining test failure is just the harness waiting forever on app startup animations/background work. I’m tightening the test to assert the login shell without relying on `pumpAndSettle()`.
+
+I found the real runtime assumption: even a no-session startup path still tried to construct Cognito config just to clear local state. I’m removing that dependency so restore/logout can safely no-op when auth env isn’t configured, which also fixes the test environment.
+
+**Auth/session hardening and runtime cleanup are in place, and `cd my-app/mobile && flutter test` now passes.**
+
+I made three targeted fixes:
+1. `my-app/mobile/lib/services/auth_service.dart`: confirmation now accepts either the generated Cognito username or an email-derived identifier, and session restore/logout no longer require Cognito runtime config just to clear local state.
+2. `my-app/mobile/lib/services/api_config.dart`: added a non-throwing Cognito config presence check so startup/session cleanup can behave safely in unconfigured environments.
+3. `my-app/mobile/test/widget_test.dart`: updated the app harness to provide `PantaProvider`, initialize mock shared preferences, and avoid `pumpAndSettle()` hanging on startup work.
+

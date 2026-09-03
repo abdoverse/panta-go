@@ -62,3 +62,48 @@ func TestFilterHelperAssignedRequests(t *testing.T) {
 		t.Fatalf("filtered[0].ID = %q, want %q", filtered[0].ID, "accepted-self")
 	}
 }
+
+func TestCompleteRequestPayloadValidation(t *testing.T) {
+	t.Parallel()
+
+	payload := CompleteRequestPayload{
+		ID:              "req-101",
+		ReceiptImageUrl: "https://panta.s3.amazonaws.com/receipt.jpg",
+		ReceiptAmount:   55.50,
+	}
+
+	if payload.ID != "req-101" {
+		t.Fatalf("unexpected id %q", payload.ID)
+	}
+	if payload.ReceiptAmount != 55.50 {
+		t.Fatalf("unexpected receipt amount %f", payload.ReceiptAmount)
+	}
+}
+
+func TestUpdateLocationPayload(t *testing.T) {
+	t.Parallel()
+
+	lat := 59.3293
+	lng := 18.0686
+	eta := 8
+	milestone := "on_the_way"
+
+	payload := UpdateLocationPayload{
+		ID:              "req-202",
+		HelperLatitude:  &lat,
+		HelperLongitude: &lng,
+		EtaMinutes:      &eta,
+		Milestone:       milestone,
+	}
+
+	if *payload.HelperLatitude != 59.3293 || *payload.HelperLongitude != 18.0686 {
+		t.Fatalf("unexpected coordinates %f, %f", *payload.HelperLatitude, *payload.HelperLongitude)
+	}
+	if *payload.EtaMinutes != 8 {
+		t.Fatalf("unexpected eta %d", *payload.EtaMinutes)
+	}
+	if payload.Milestone != "on_the_way" {
+		t.Fatalf("unexpected milestone %q", payload.Milestone)
+	}
+}
+

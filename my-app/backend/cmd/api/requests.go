@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
@@ -46,6 +47,7 @@ func registerRequestRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/v1/requests/accept", authMiddleware(handleAcceptRequest))
 	mux.HandleFunc("/api/v1/requests/cancel", authMiddleware(handleCancelRequest))
 	mux.HandleFunc("/api/v1/requests/complete", authMiddleware(handleCompleteRequest))
+	mux.HandleFunc("/api/v1/requests/location", authMiddleware(handleUpdateLocation))
 	mux.HandleFunc("/api/v1/requests/rate", authMiddleware(handleRateRequest))
 }
 
@@ -561,10 +563,31 @@ func handleCompleteRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var payload requestIDPayload
+	var payload CompleteRequestPayload
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "Invalid payload"})
 		return
+	}
+
+	updateExpr := "SET #status = :pickedUp"
+	exprValues := map[string]types.AttributeValue{
+		":pickedUp": &types.AttributeValueMemberS{Value: "pickedUp"},
+		":accepted": &types.AttributeValueMemberS{Value: "accepted"},
+		":helperId": &types.AttributeValueMemberS{Value: claims.helperID()},
+	}
+
+	if payload.ReceiptAmount > 0 {
+		updateExpr += ", receiptAmount = :receiptAmount"
+		exprValues[":receiptAmount"] = &types.AttributeValueMemberN{Value: fmt.Sprintf("%.2f", payload.ReceiptAmount)}
+	}
+	if payload.ReceiptImageUrl != "" {
+		updateExpr += ", receiptImageUrl = :receiptImageUrl"
+		exprValues[":receiptImageUrl"] = &types.AttributeValueMemberS{Value: payload.ReceiptImageUrl}
+	}
+	if payload.ReceiptAmount > 0 || payload.ReceiptImageUrl != "" {
+		nowIso := time.Now().UTC().Format(time.RFC3339)
+		updateExpr += ", receiptScannedAt = :receiptScannedAt"
+		exprValues[":receiptScannedAt"] = &types.AttributeValueMemberS{Value: nowIso}
 	}
 
 	out, err := svc.UpdateItem(context.TODO(), &dynamodb.UpdateItemInput{
@@ -572,15 +595,11 @@ func handleCompleteRequest(w http.ResponseWriter, r *http.Request) {
 		Key: map[string]types.AttributeValue{
 			"id": &types.AttributeValueMemberS{Value: payload.ID},
 		},
-		UpdateExpression:         aws.String("SET #status = :pickedUp"),
+		UpdateExpression:         aws.String(updateExpr),
 		ConditionExpression:      aws.String("#status = :accepted AND helperId = :helperId"),
 		ExpressionAttributeNames: map[string]string{"#status": "status"},
-		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":pickedUp": &types.AttributeValueMemberS{Value: "pickedUp"},
-			":accepted": &types.AttributeValueMemberS{Value: "accepted"},
-			":helperId": &types.AttributeValueMemberS{Value: claims.helperID()},
-		},
-		ReturnValues: types.ReturnValueAllNew,
+		ExpressionAttributeValues: exprValues,
+		ReturnValues:             types.ReturnValueAllNew,
 	})
 	if err != nil {
 		log.Printf("Failed to complete request: %v", err)
@@ -601,6 +620,71 @@ func handleCompleteRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondWithUpdatedRequest(w, r, updatedReq, "completed")
+}
+
+func handleUpdateLocation(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	claims, ok := currentClaims(r)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	var payload UpdateLocationPayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "Invalid payload"})
+		return
+	}
+
+	if payload.ID == "" || payload.HelperLatitude == nil || payload.HelperLongitude == nil {
+		jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "id, helperLatitude and helperLongitude are required"})
+		return
+	}
+
+	expr := "SET helperLatitude = :lat, helperLongitude = :lng"
+	exprValues := map[string]types.AttributeValue{
+		":lat":      &types.AttributeValueMemberN{Value: fmt.Sprintf("%f", *payload.HelperLatitude)},
+		":lng":      &types.AttributeValueMemberN{Value: fmt.Sprintf("%f", *payload.HelperLongitude)},
+		":accepted": &types.AttributeValueMemberS{Value: "accepted"},
+		":helperId": &types.AttributeValueMemberS{Value: claims.helperID()},
+	}
+
+	if payload.EtaMinutes != nil {
+		expr += ", etaMinutes = :eta"
+		exprValues[":eta"] = &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", *payload.EtaMinutes)}
+	}
+	if payload.Milestone != "" {
+		expr += ", milestone = :milestone"
+		exprValues[":milestone"] = &types.AttributeValueMemberS{Value: payload.Milestone}
+	}
+
+	out, err := svc.UpdateItem(context.TODO(), &dynamodb.UpdateItemInput{
+		TableName: aws.String(tableName),
+		Key: map[string]types.AttributeValue{
+			"id": &types.AttributeValueMemberS{Value: payload.ID},
+		},
+		UpdateExpression:    aws.String(expr),
+		ConditionExpression: aws.String("status = :accepted AND helperId = :helperId"),
+		ExpressionAttributeValues: exprValues,
+		ReturnValues:        types.ReturnValueAllNew,
+	})
+	if err != nil {
+		log.Printf("Failed to update location: %v", err)
+		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "Failed to update location"})
+		return
+	}
+
+	var updatedReq RecyclingRequest
+	if err := attributevalue.UnmarshalMap(out.Attributes, &updatedReq); err != nil {
+		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "Failed to parse updated request"})
+		return
+	}
+
+	respondWithUpdatedRequest(w, r, updatedReq, "location_updated")
 }
 
 func handleRateRequest(w http.ResponseWriter, r *http.Request) {

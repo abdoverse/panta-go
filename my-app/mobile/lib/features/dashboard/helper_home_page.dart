@@ -16,6 +16,8 @@ import '../../services/api_config.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../shared/widgets/loading_skeletons.dart';
 import '../shared/widgets/location_actions.dart';
+import '../receipt/receipt_scanner_dialog.dart';
+import '../tracking/live_map_tracking_view.dart';
 
 String _formatRatingValue(double value) {
   return value == value.roundToDouble()
@@ -583,89 +585,122 @@ class _JobCard extends StatelessWidget {
                     ),
                   )
                 else
-                  Row(
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () async {
-                            final confirmed = await showDialog<bool>(
-                              context: context,
-                              builder: (dialogContext) => AlertDialog(
-                                title: Text(l10n.cancelPickupQuestion),
-                                content: Text(l10n.cancelPickupDescription),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.of(dialogContext).pop(false),
-                                    child: Text(l10n.keepJob),
-                                  ),
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.of(dialogContext).pop(true),
-                                    child: Text(l10n.cancelPickup),
-                                  ),
-                                ],
-                              ),
-                            );
-
-                            if (confirmed != true || !context.mounted) {
-                              return;
-                            }
-
-                            final cancelled = await context
-                                .read<PantaProvider>()
-                                .cancelRequest(job.id);
-                            if (!context.mounted) return;
-                            if (!cancelled) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(l10n.couldNotCancelPickup),
-                                ),
+                      LiveMapTrackingView(
+                        request: job,
+                        isHelperView: true,
+                        onLocationSimulated: (lat, lng, eta, milestone) {
+                          context.read<PantaProvider>().updateHelperLocation(
+                                job.id,
+                                lat,
+                                lng,
+                                etaMinutes: eta,
+                                milestone: milestone,
                               );
-                              return;
-                            }
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  l10n.pickupCancelledAvailableAgain,
-                                ),
-                              ),
-                            );
-                          },
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor:
-                                Theme.of(context).colorScheme.error,
-                          ),
-                          child: Text(l10n.cancelPickup),
-                        ),
+                        },
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () async {
-                            final completed = await context
-                                .read<PantaProvider>()
-                                .completeRequest(job.id);
-                            if (!context.mounted) return;
-                            if (!completed) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(l10n.couldNotCompletePickup),
-                                ),
-                              );
-                              return;
-                            }
-                            await _showCompletionCelebration(
-                                context, job.title);
-                            if (!context.mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(l10n.markedAsPickedUp),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () async {
+                                final confirmed = await showDialog<bool>(
+                                  context: context,
+                                  builder: (dialogContext) => AlertDialog(
+                                    title: Text(l10n.cancelPickupQuestion),
+                                    content: Text(l10n.cancelPickupDescription),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.of(dialogContext).pop(false),
+                                        child: Text(l10n.keepJob),
+                                      ),
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.of(dialogContext).pop(true),
+                                        child: Text(l10n.cancelPickup),
+                                      ),
+                                    ],
+                                  ),
+                                );
+
+                                if (confirmed != true || !context.mounted) {
+                                  return;
+                                }
+
+                                final cancelled = await context
+                                    .read<PantaProvider>()
+                                    .cancelRequest(job.id);
+                                if (!context.mounted) return;
+                                if (!cancelled) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(l10n.couldNotCancelPickup),
+                                    ),
+                                  );
+                                  return;
+                                }
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      l10n.pickupCancelledAvailableAgain,
+                                    ),
+                                  ),
+                                );
+                              },
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor:
+                                    Theme.of(context).colorScheme.error,
                               ),
-                            );
-                          },
-                          child: Text(l10n.markComplete),
-                        ),
+                              child: Text(l10n.cancelPickup),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: FilledButton.icon(
+                              onPressed: () async {
+                                final scanResult = await ReceiptScannerDialog.show(
+                                  context,
+                                  requestId: job.id,
+                                  requestTitle: job.title,
+                                );
+                                if (!context.mounted || scanResult == null) return;
+
+                                final completed = await context
+                                    .read<PantaProvider>()
+                                    .completeRequest(
+                                      job.id,
+                                      receiptAmount: scanResult.amount,
+                                      receiptImageUrl: scanResult.imageUrl,
+                                    );
+                                if (!context.mounted) return;
+                                if (!completed) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(l10n.couldNotCompletePickup),
+                                    ),
+                                  );
+                                  return;
+                                }
+                                await _showCompletionCelebration(
+                                    context, job.title);
+                                if (!context.mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Pickup marked complete! Verified: ${scanResult.amount.toStringAsFixed(2)} SEK',
+                                    ),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.receipt_long, size: 18),
+                              label: const Text('Scan & Complete'),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   )
