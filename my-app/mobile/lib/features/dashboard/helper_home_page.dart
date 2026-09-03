@@ -666,6 +666,7 @@ class _JobCard extends StatelessWidget {
                                   context,
                                   requestId: job.id,
                                   requestTitle: job.title,
+                                  splitPercentage: job.splitPercentage,
                                 );
                                 if (!context.mounted || scanResult == null) return;
 
@@ -675,6 +676,7 @@ class _JobCard extends StatelessWidget {
                                       job.id,
                                       receiptAmount: scanResult.amount,
                                       receiptImageUrl: scanResult.imageUrl,
+                                      splitPercentage: scanResult.splitPercentage,
                                     );
                                 if (!context.mounted) return;
                                 if (!completed) {
@@ -688,10 +690,11 @@ class _JobCard extends StatelessWidget {
                                 await _showCompletionCelebration(
                                     context, job.title);
                                 if (!context.mounted) return;
+                                final helperShare = (scanResult.amount * (100 - scanResult.splitPercentage)) / 100;
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                      'Pickup marked complete! Verified: ${scanResult.amount.toStringAsFixed(2)} SEK',
+                                      'Completed! Pant: ${scanResult.amount.toStringAsFixed(2)} SEK. Your payout: ${helperShare.toStringAsFixed(2)} SEK',
                                     ),
                                   ),
                                 );

@@ -71,6 +71,9 @@ class RecyclingRequest {
   final double? helperLongitude;
   final int? etaMinutes;
   final String? milestone;
+  final double splitPercentage;
+  final double? recyclerPayout;
+  final double? helperPayout;
 
   RecyclingRequest({
     required this.id,
@@ -96,6 +99,9 @@ class RecyclingRequest {
     this.helperLongitude,
     this.etaMinutes,
     this.milestone,
+    this.splitPercentage = 70.0,
+    this.recyclerPayout,
+    this.helperPayout,
   });
 
   RecyclingRequest copyWith({
@@ -116,6 +122,9 @@ class RecyclingRequest {
     double? helperLongitude,
     int? etaMinutes,
     String? milestone,
+    double? splitPercentage,
+    double? recyclerPayout,
+    double? helperPayout,
   }) {
     return RecyclingRequest(
       id: id,
@@ -141,6 +150,9 @@ class RecyclingRequest {
       helperLongitude: helperLongitude ?? this.helperLongitude,
       etaMinutes: etaMinutes ?? this.etaMinutes,
       milestone: milestone ?? this.milestone,
+      splitPercentage: splitPercentage ?? this.splitPercentage,
+      recyclerPayout: recyclerPayout ?? this.recyclerPayout,
+      helperPayout: helperPayout ?? this.helperPayout,
     );
   }
 

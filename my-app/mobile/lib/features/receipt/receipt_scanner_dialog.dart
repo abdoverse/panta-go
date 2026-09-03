@@ -10,29 +10,34 @@ class ReceiptScanResult {
   final String? imageUrl;
   final int totalContainers;
   final String? storeName;
+  final double splitPercentage;
 
   const ReceiptScanResult({
     required this.amount,
     this.imageUrl,
     this.totalContainers = 0,
     this.storeName,
+    this.splitPercentage = 70.0,
   });
 }
 
 class ReceiptScannerDialog extends StatefulWidget {
   final String requestId;
   final String requestTitle;
+  final double splitPercentage;
 
   const ReceiptScannerDialog({
     super.key,
     required this.requestId,
     required this.requestTitle,
+    this.splitPercentage = 70.0,
   });
 
   static Future<ReceiptScanResult?> show(
     BuildContext context, {
     required String requestId,
     required String requestTitle,
+    double splitPercentage = 70.0,
   }) {
     return showModalBottomSheet<ReceiptScanResult>(
       context: context,
@@ -41,6 +46,7 @@ class ReceiptScannerDialog extends StatefulWidget {
       builder: (ctx) => ReceiptScannerDialog(
         requestId: requestId,
         requestTitle: requestTitle,
+        splitPercentage: splitPercentage,
       ),
     );
   }
@@ -57,6 +63,14 @@ class _ReceiptScannerDialogState extends State<ReceiptScannerDialog> {
   XFile? _selectedImage;
   ReceiptOcrResult? _ocrResult;
   String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _amountController.addListener(() {
+      if (mounted) setState(() {});
+    });
+  }
 
   @override
   void dispose() {
@@ -142,6 +156,7 @@ class _ReceiptScannerDialogState extends State<ReceiptScannerDialog> {
         imageUrl: _selectedImage?.path,
         totalContainers: _ocrResult?.totalContainers ?? 0,
         storeName: _ocrResult?.storeName ?? 'Recycling Station',
+        splitPercentage: widget.splitPercentage,
       ),
     );
   }
@@ -314,6 +329,68 @@ class _ReceiptScannerDialogState extends State<ReceiptScannerDialog> {
                 suffixText: 'SEK',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
+            ),
+            Builder(
+              builder: (context) {
+                final raw = _amountController.text.replaceAll(',', '.').trim();
+                final currentAmount = double.tryParse(raw) ?? 0.0;
+                if (currentAmount <= 0) return const SizedBox.shrink();
+
+                final splitPct = widget.splitPercentage;
+                final recyclerShare = (currentAmount * splitPct) / 100.0;
+                final helperShare = (currentAmount * (100.0 - splitPct)) / 100.0;
+
+                return Container(
+                  margin: const EdgeInsets.only(top: 12),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF9FBE7),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.lime.shade600),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.calculate_outlined, size: 18, color: Color(0xFF558B2F)),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Automated Pant Split (${splitPct.toInt()}% / ${(100 - splitPct).toInt()}%)',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              color: Color(0xFF33691E),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('💚 Recycler Share:', style: TextStyle(fontSize: 13)),
+                          Text(
+                            '${recyclerShare.toStringAsFixed(2)} SEK',
+                            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('🚴 Helper Earnings:', style: TextStyle(fontSize: 13)),
+                          Text(
+                            '${helperShare.toStringAsFixed(2)} SEK',
+                            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 16),
             Row(

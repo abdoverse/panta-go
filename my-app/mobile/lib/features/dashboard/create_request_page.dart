@@ -45,6 +45,7 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
   bool _saveAsTemplate = false;
   late bool _isQuickMode = widget.startInQuickMode;
   bool _didInitializeQuickDefaults = false;
+  double _splitPercentage = 70.0;
 
   @override
   void initState() {
@@ -81,6 +82,7 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
     _titleController.text = initialRequest.title;
     _descriptionController.text = initialRequest.description;
     _rewardController.text = _formatReward(initialRequest.reward ?? 0);
+    _splitPercentage = initialRequest.splitPercentage;
     _locationController.text = initialRequest.location;
     if (initialRequest.locationLatitude != null &&
         initialRequest.locationLongitude != null) {
@@ -516,6 +518,45 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                     return null;
                   },
                 ),
+                const SizedBox(height: 20),
+                Text(
+                  'Pant Refund Split',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'How would you like to split the scanned recycling receipt?',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.grey[600],
+                      ),
+                ),
+                const SizedBox(height: 10),
+                SegmentedButton<double>(
+                  segments: const [
+                    ButtonSegment(
+                      value: 70.0,
+                      label: Text('70% Me / 30% Helper'),
+                      icon: Icon(Icons.star_outline, size: 16),
+                    ),
+                    ButtonSegment(
+                      value: 50.0,
+                      label: Text('50% / 50%'),
+                    ),
+                    ButtonSegment(
+                      value: 0.0,
+                      label: Text('100% Helper'),
+                      icon: Icon(Icons.volunteer_activism_outlined, size: 16),
+                    ),
+                  ],
+                  selected: {_splitPercentage},
+                  onSelectionChanged: (set) {
+                    setState(() {
+                      _splitPercentage = set.first;
+                    });
+                  },
+                ),
                 const SizedBox(height: 16),
                 SwitchListTile.adaptive(
                   contentPadding: EdgeInsets.zero,
@@ -720,6 +761,7 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
     _titleController.text = request.title;
     _descriptionController.text = request.description;
     _rewardController.text = _formatReward(request.reward ?? 0);
+    _splitPercentage = request.splitPercentage;
     _locationController.text = request.location;
     if (request.locationLatitude != null && request.locationLongitude != null) {
       _selectedLocation = LocationSuggestion(
@@ -751,6 +793,7 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
       imageFileName: _selectedPhotoFileName,
       saveAddress: _saveAsAddress || _isQuickMode,
       saveTemplate: _saveAsTemplate,
+      splitPercentage: _splitPercentage,
     );
     if (success && mounted) {
       Navigator.pop(context);

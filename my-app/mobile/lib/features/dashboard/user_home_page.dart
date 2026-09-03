@@ -525,28 +525,57 @@ class _RequestCard extends StatelessWidget {
                       LocationActions(address: request.location),
                       if (request.receiptAmount != null && request.receiptAmount! > 0) ...[
                         const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE8F5E9),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.green.shade300),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.receipt, size: 14, color: Colors.green),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Verified Pant: ${request.receiptAmount!.toStringAsFixed(2)} SEK',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.green,
-                                ),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE8F5E9),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.green.shade300),
                               ),
-                            ],
-                          ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.receipt, size: 14, color: Colors.green),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Verified Pant: ${request.receiptAmount!.toStringAsFixed(2)} SEK',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.green,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE0F2F1),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.teal.shade300),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.account_balance_wallet, size: 14, color: Colors.teal),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Your Payout: ${(request.recyclerPayout ?? (request.receiptAmount! * request.splitPercentage / 100)).toStringAsFixed(2)} SEK',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.teal,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ],

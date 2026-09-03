@@ -1,6 +1,7 @@
 package main
 
 import (
+	"math"
 	"strings"
 	"time"
 
@@ -27,13 +28,50 @@ type RecyclingRequest struct {
 	Rating             float64   `json:"rating,omitempty" dynamodbav:"rating,omitempty"`
 	RatingComment      string    `json:"ratingComment,omitempty" dynamodbav:"ratingComment,omitempty"`
 	CreatorDeviceToken string    `json:"creatorDeviceToken,omitempty" dynamodbav:"creatorDeviceToken,omitempty"`
-	ReceiptImageUrl    string    `json:"receiptImageUrl,omitempty" dynamodbav:"receiptImageUrl,omitempty"`
-	ReceiptAmount      float64   `json:"receiptAmount,omitempty" dynamodbav:"receiptAmount,omitempty"`
+	ReceiptImageUrl    string     `json:"receiptImageUrl,omitempty" dynamodbav:"receiptImageUrl,omitempty"`
+	ReceiptAmount      float64    `json:"receiptAmount,omitempty" dynamodbav:"receiptAmount,omitempty"`
 	ReceiptScannedAt   *time.Time `json:"receiptScannedAt,omitempty" dynamodbav:"receiptScannedAt,omitempty"`
-	HelperLatitude     *float64  `json:"helperLatitude,omitempty" dynamodbav:"helperLatitude,omitempty"`
-	HelperLongitude    *float64  `json:"helperLongitude,omitempty" dynamodbav:"helperLongitude,omitempty"`
-	EtaMinutes         *int      `json:"etaMinutes,omitempty" dynamodbav:"etaMinutes,omitempty"`
-	Milestone          string    `json:"milestone,omitempty" dynamodbav:"milestone,omitempty"`
+	SplitPercentage    float64    `json:"splitPercentage,omitempty" dynamodbav:"splitPercentage,omitempty"`
+	RecyclerPayout     *float64   `json:"recyclerPayout,omitempty" dynamodbav:"recyclerPayout,omitempty"`
+	HelperPayout       *float64   `json:"helperPayout,omitempty" dynamodbav:"helperPayout,omitempty"`
+	HelperLatitude     *float64   `json:"helperLatitude,omitempty" dynamodbav:"helperLatitude,omitempty"`
+	HelperLongitude    *float64   `json:"helperLongitude,omitempty" dynamodbav:"helperLongitude,omitempty"`
+	EtaMinutes         *int       `json:"etaMinutes,omitempty" dynamodbav:"etaMinutes,omitempty"`
+	Milestone          string     `json:"milestone,omitempty" dynamodbav:"milestone,omitempty"`
+}
+
+type PayoutBreakdown struct {
+	ReceiptAmount     float64 `json:"receiptAmount"`
+	SplitPercentage   float64 `json:"splitPercentage"`
+	RecyclerShare     float64 `json:"recyclerShare"`
+	HelperShare       float64 `json:"helperShare"`
+	HelperBaseReward  float64 `json:"helperBaseReward"`
+	TotalHelperEarned float64 `json:"totalHelperEarned"`
+}
+
+func CalculatePayout(receiptAmount float64, splitPercentage float64, baseReward float64) PayoutBreakdown {
+	if splitPercentage <= 0 || splitPercentage > 100 {
+		splitPercentage = 70.0 // Default to 70% to recycler
+	}
+	if receiptAmount < 0 {
+		receiptAmount = 0
+	}
+	if baseReward < 0 {
+		baseReward = 0
+	}
+
+	recyclerShare := (receiptAmount * splitPercentage) / 100.0
+	helperShare := (receiptAmount * (100.0 - splitPercentage)) / 100.0
+	totalHelper := helperShare + baseReward
+
+	return PayoutBreakdown{
+		ReceiptAmount:     math.Round(receiptAmount*100) / 100,
+		SplitPercentage:   splitPercentage,
+		RecyclerShare:     math.Round(recyclerShare*100) / 100,
+		HelperShare:       math.Round(helperShare*100) / 100,
+		HelperBaseReward:  math.Round(baseReward*100) / 100,
+		TotalHelperEarned: math.Round(totalHelper*100) / 100,
+	}
 }
 
 type UpdateLocationPayload struct {
@@ -48,6 +86,7 @@ type CompleteRequestPayload struct {
 	ID              string  `json:"id"`
 	ReceiptImageUrl string  `json:"receiptImageUrl,omitempty"`
 	ReceiptAmount   float64 `json:"receiptAmount,omitempty"`
+	SplitPercentage float64 `json:"splitPercentage,omitempty"`
 }
 
 type SavedAddress struct {

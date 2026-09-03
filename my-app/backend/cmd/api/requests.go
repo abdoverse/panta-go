@@ -392,6 +392,9 @@ func handleCreateRequest(w http.ResponseWriter, r *http.Request) {
 		}
 		req.ImageUrl = imageReference
 	}
+	if req.SplitPercentage <= 0 || req.SplitPercentage > 100 {
+		req.SplitPercentage = 70.0
+	}
 	req.Status = "pending"
 
 	item, err := attributevalue.MarshalMap(req)
@@ -579,6 +582,16 @@ func handleCompleteRequest(w http.ResponseWriter, r *http.Request) {
 	if payload.ReceiptAmount > 0 {
 		updateExpr += ", receiptAmount = :receiptAmount"
 		exprValues[":receiptAmount"] = &types.AttributeValueMemberN{Value: fmt.Sprintf("%.2f", payload.ReceiptAmount)}
+
+		splitPct := payload.SplitPercentage
+		if splitPct <= 0 || splitPct > 100 {
+			splitPct = 70.0
+		}
+		payout := CalculatePayout(payload.ReceiptAmount, splitPct, 0)
+		updateExpr += ", splitPercentage = :splitPercentage, recyclerPayout = :recyclerPayout, helperPayout = :helperPayout"
+		exprValues[":splitPercentage"] = &types.AttributeValueMemberN{Value: fmt.Sprintf("%.2f", payout.SplitPercentage)}
+		exprValues[":recyclerPayout"] = &types.AttributeValueMemberN{Value: fmt.Sprintf("%.2f", payout.RecyclerShare)}
+		exprValues[":helperPayout"] = &types.AttributeValueMemberN{Value: fmt.Sprintf("%.2f", payout.TotalHelperEarned)}
 	}
 	if payload.ReceiptImageUrl != "" {
 		updateExpr += ", receiptImageUrl = :receiptImageUrl"

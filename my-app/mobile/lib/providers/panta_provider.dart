@@ -427,6 +427,7 @@ class PantaProvider extends ChangeNotifier {
     String? addressLabel,
     bool saveTemplate = false,
     String? templateName,
+    double splitPercentage = 70.0,
   }) async {
     final token = await _authService.getToken();
     if (token == null) return false;
@@ -491,6 +492,7 @@ class PantaProvider extends ChangeNotifier {
       'locationLongitude': locationLongitude,
       'description': description, // Add description
       'reward': reward, // Add reward
+      'splitPercentage': splitPercentage,
       'imageUrl': null,
       'imageUploadKey': imageUploadKey,
       'isRated': false,
@@ -656,6 +658,7 @@ class PantaProvider extends ChangeNotifier {
     String id, {
     double? receiptAmount,
     String? receiptImageUrl,
+    double? splitPercentage,
   }) async {
     final token = await _authService.getToken();
     if (token == null) return false;
@@ -667,6 +670,9 @@ class PantaProvider extends ChangeNotifier {
       }
       if (receiptImageUrl != null && receiptImageUrl.isNotEmpty) {
         bodyMap['receiptImageUrl'] = receiptImageUrl;
+      }
+      if (splitPercentage != null && splitPercentage > 0) {
+        bodyMap['splitPercentage'] = splitPercentage;
       }
 
       final response = await http.post(
@@ -826,6 +832,15 @@ class PantaProvider extends ChangeNotifier {
           ? int.tryParse(json['etaMinutes'].toString())
           : null,
       milestone: json['milestone']?.toString(),
+      splitPercentage: json['splitPercentage'] != null
+          ? double.tryParse(json['splitPercentage'].toString()) ?? 70.0
+          : 70.0,
+      recyclerPayout: json['recyclerPayout'] != null
+          ? double.tryParse(json['recyclerPayout'].toString())
+          : null,
+      helperPayout: json['helperPayout'] != null
+          ? double.tryParse(json['helperPayout'].toString())
+          : null,
     );
   }
 

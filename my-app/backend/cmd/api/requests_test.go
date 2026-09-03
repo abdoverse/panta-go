@@ -107,3 +107,31 @@ func TestUpdateLocationPayload(t *testing.T) {
 	}
 }
 
+func TestCalculatePayout(t *testing.T) {
+	t.Parallel()
+
+	// 1. Standard 70/30 split
+	p1 := CalculatePayout(100.0, 70.0, 0.0)
+	if p1.RecyclerShare != 70.0 || p1.HelperShare != 30.0 || p1.TotalHelperEarned != 30.0 {
+		t.Fatalf("unexpected standard payout: %+v", p1)
+	}
+
+	// 2. Custom 50/50 split with base reward
+	p2 := CalculatePayout(80.0, 50.0, 20.0)
+	if p2.RecyclerShare != 40.0 || p2.HelperShare != 40.0 || p2.TotalHelperEarned != 60.0 {
+		t.Fatalf("unexpected 50/50 payout with reward: %+v", p2)
+	}
+
+	// 3. Default fallback for invalid split percentage
+	p3 := CalculatePayout(50.0, 0.0, 0.0)
+	if p3.SplitPercentage != 70.0 || p3.RecyclerShare != 35.0 || p3.HelperShare != 15.0 {
+		t.Fatalf("unexpected default split fallback: %+v", p3)
+	}
+
+	// 4. Zero receipt amount
+	p4 := CalculatePayout(0.0, 70.0, 25.0)
+	if p4.RecyclerShare != 0.0 || p4.HelperShare != 0.0 || p4.TotalHelperEarned != 25.0 {
+		t.Fatalf("unexpected zero receipt payout: %+v", p4)
+	}
+}
+
