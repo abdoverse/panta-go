@@ -38,6 +38,10 @@ type RecyclingRequest struct {
 	HelperLongitude    *float64   `json:"helperLongitude,omitempty" dynamodbav:"helperLongitude,omitempty"`
 	EtaMinutes         *int       `json:"etaMinutes,omitempty" dynamodbav:"etaMinutes,omitempty"`
 	Milestone          string     `json:"milestone,omitempty" dynamodbav:"milestone,omitempty"`
+	LeaveAtDoor        bool       `json:"leaveAtDoor" dynamodbav:"leaveAtDoor"`
+	DoorInstructions   string     `json:"doorInstructions,omitempty" dynamodbav:"doorInstructions,omitempty"`
+	DropoffPhotoUrl    string     `json:"dropoffPhotoUrl,omitempty" dynamodbav:"dropoffPhotoUrl,omitempty"`
+	DropoffConfirmedAt *time.Time `json:"dropoffConfirmedAt,omitempty" dynamodbav:"dropoffConfirmedAt,omitempty"`
 }
 
 type PayoutBreakdown struct {
@@ -87,6 +91,7 @@ type CompleteRequestPayload struct {
 	ReceiptImageUrl string  `json:"receiptImageUrl,omitempty"`
 	ReceiptAmount   float64 `json:"receiptAmount,omitempty"`
 	SplitPercentage float64 `json:"splitPercentage,omitempty"`
+	DropoffPhotoUrl string  `json:"dropoffPhotoUrl,omitempty"`
 }
 
 type SavedAddress struct {

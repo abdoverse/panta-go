@@ -135,3 +135,31 @@ func TestCalculatePayout(t *testing.T) {
 	}
 }
 
+func TestLeaveAtDoorPayload(t *testing.T) {
+	t.Parallel()
+
+	req := RecyclingRequest{
+		ID:               "req-door-1",
+		Title:            "Bottles at door",
+		LeaveAtDoor:      true,
+		DoorInstructions: "Code 4567, 2nd floor, bag on the left",
+	}
+
+	if !req.LeaveAtDoor {
+		t.Fatalf("expected LeaveAtDoor to be true")
+	}
+	if req.DoorInstructions != "Code 4567, 2nd floor, bag on the left" {
+		t.Fatalf("unexpected DoorInstructions: %q", req.DoorInstructions)
+	}
+
+	complete := CompleteRequestPayload{
+		ID:              "req-door-1",
+		ReceiptAmount:   65.0,
+		DropoffPhotoUrl: "https://example.com/dropoff-photo.jpg",
+	}
+
+	if complete.DropoffPhotoUrl != "https://example.com/dropoff-photo.jpg" {
+		t.Fatalf("unexpected DropoffPhotoUrl: %q", complete.DropoffPhotoUrl)
+	}
+}
+

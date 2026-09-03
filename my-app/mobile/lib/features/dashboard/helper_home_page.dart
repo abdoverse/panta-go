@@ -601,6 +601,53 @@ class _JobCard extends StatelessWidget {
                               );
                         },
                       ),
+                      if (job.leaveAtDoor) ...[
+                        const SizedBox(height: 10),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFF8E1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.amber.shade600),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.door_front_door_outlined,
+                                color: Colors.orange,
+                                size: 22,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Contactless Pickup (Leave at Door)',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                        color: Colors.brown,
+                                      ),
+                                    ),
+                                    if (job.doorInstructions != null &&
+                                        job.doorInstructions!.isNotEmpty) ...[
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        job.doorInstructions!,
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 12),
                       Row(
                         children: [
@@ -667,6 +714,8 @@ class _JobCard extends StatelessWidget {
                                   requestId: job.id,
                                   requestTitle: job.title,
                                   splitPercentage: job.splitPercentage,
+                                  leaveAtDoor: job.leaveAtDoor,
+                                  doorInstructions: job.doorInstructions,
                                 );
                                 if (!context.mounted || scanResult == null) return;
 
@@ -677,6 +726,7 @@ class _JobCard extends StatelessWidget {
                                       receiptAmount: scanResult.amount,
                                       receiptImageUrl: scanResult.imageUrl,
                                       splitPercentage: scanResult.splitPercentage,
+                                      dropoffPhotoUrl: scanResult.dropoffPhotoUrl,
                                     );
                                 if (!context.mounted) return;
                                 if (!completed) {

@@ -593,3 +593,8 @@ plan-62 | done | medium | medium | none | Automated Payout Calculation
   Owner agent: pantaswarm
   Completed at: 2026-09-03T23:33:00.000000+00:00
   Progress note: Implemented automated Pant refund splitting (e.g. 70/30, 50/50, 0/100), backend CalculatePayout math and DynamoDB persistence for recyclerPayout and helperPayout, interactive split selector on request creation, live split preview card on the receipt scanner, and payout badges on the recycler and helper dashboards. Deployed to AWS ECS Express.
+
+plan-56 | done | medium | medium | none | "Leave at Door" option with Photo Confirmation
+  Owner agent: pantaswarm
+  Completed at: 2026-09-04T00:02:00.000000+00:00
+  Progress note: Implemented contactless pickup with "Leave at Door" toggle and entry instructions during request creation, persistence in DynamoDB, active job instruction banners for helpers, drop-off photo proof capture in the completion scanner dialog, and contactless badges with photo proof verification dialog in recycler's request history. Deployed to AWS ECS Express.

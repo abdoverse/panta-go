@@ -428,6 +428,8 @@ class PantaProvider extends ChangeNotifier {
     bool saveTemplate = false,
     String? templateName,
     double splitPercentage = 70.0,
+    bool leaveAtDoor = false,
+    String? doorInstructions,
   }) async {
     final token = await _authService.getToken();
     if (token == null) return false;
@@ -493,6 +495,8 @@ class PantaProvider extends ChangeNotifier {
       'description': description, // Add description
       'reward': reward, // Add reward
       'splitPercentage': splitPercentage,
+      'leaveAtDoor': leaveAtDoor,
+      'doorInstructions': doorInstructions,
       'imageUrl': null,
       'imageUploadKey': imageUploadKey,
       'isRated': false,
@@ -659,6 +663,7 @@ class PantaProvider extends ChangeNotifier {
     double? receiptAmount,
     String? receiptImageUrl,
     double? splitPercentage,
+    String? dropoffPhotoUrl,
   }) async {
     final token = await _authService.getToken();
     if (token == null) return false;
@@ -673,6 +678,9 @@ class PantaProvider extends ChangeNotifier {
       }
       if (splitPercentage != null && splitPercentage > 0) {
         bodyMap['splitPercentage'] = splitPercentage;
+      }
+      if (dropoffPhotoUrl != null && dropoffPhotoUrl.isNotEmpty) {
+        bodyMap['dropoffPhotoUrl'] = dropoffPhotoUrl;
       }
 
       final response = await http.post(
@@ -840,6 +848,12 @@ class PantaProvider extends ChangeNotifier {
           : null,
       helperPayout: json['helperPayout'] != null
           ? double.tryParse(json['helperPayout'].toString())
+          : null,
+      leaveAtDoor: json['leaveAtDoor'] == true,
+      doorInstructions: json['doorInstructions']?.toString(),
+      dropoffPhotoUrl: json['dropoffPhotoUrl']?.toString(),
+      dropoffConfirmedAt: json['dropoffConfirmedAt'] != null
+          ? DateTime.tryParse(json['dropoffConfirmedAt'].toString())
           : null,
     );
   }

@@ -46,6 +46,8 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
   late bool _isQuickMode = widget.startInQuickMode;
   bool _didInitializeQuickDefaults = false;
   double _splitPercentage = 70.0;
+  bool _leaveAtDoor = false;
+  final _doorInstructionsController = TextEditingController();
 
   @override
   void initState() {
@@ -83,6 +85,8 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
     _descriptionController.text = initialRequest.description;
     _rewardController.text = _formatReward(initialRequest.reward ?? 0);
     _splitPercentage = initialRequest.splitPercentage;
+    _leaveAtDoor = initialRequest.leaveAtDoor;
+    _doorInstructionsController.text = initialRequest.doorInstructions ?? '';
     _locationController.text = initialRequest.location;
     if (initialRequest.locationLatitude != null &&
         initialRequest.locationLongitude != null) {
@@ -132,6 +136,7 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
     _descriptionController.dispose();
     _rewardController.dispose();
     _locationController.dispose();
+    _doorInstructionsController.dispose();
     super.dispose();
   }
 
@@ -560,6 +565,40 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                 const SizedBox(height: 16),
                 SwitchListTile.adaptive(
                   contentPadding: EdgeInsets.zero,
+                  value: _leaveAtDoor,
+                  secondary: const Icon(
+                    Icons.door_front_door_outlined,
+                    color: AppTheme.primaryGreen,
+                  ),
+                  title: const Text('Leave at Door (Contactless Pickup)'),
+                  subtitle: const Text(
+                    'Helper will pick up bags outside your door and take a photo confirmation.',
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      _leaveAtDoor = value;
+                    });
+                  },
+                ),
+                if (_leaveAtDoor) ...[
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _doorInstructionsController,
+                    decoration: InputDecoration(
+                      labelText: 'Door & Access Instructions',
+                      hintText:
+                          'e.g. Door code 1234, 3rd floor, bag is outside door 12B',
+                      prefixIcon: const Icon(Icons.notes_rounded),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    maxLines: 2,
+                  ),
+                ],
+                const SizedBox(height: 16),
+                SwitchListTile.adaptive(
+                  contentPadding: EdgeInsets.zero,
                   value: _saveAsAddress,
                   title: const Text('Save this address for later'),
                   subtitle:
@@ -762,6 +801,8 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
     _descriptionController.text = request.description;
     _rewardController.text = _formatReward(request.reward ?? 0);
     _splitPercentage = request.splitPercentage;
+    _leaveAtDoor = request.leaveAtDoor;
+    _doorInstructionsController.text = request.doorInstructions ?? '';
     _locationController.text = request.location;
     if (request.locationLatitude != null && request.locationLongitude != null) {
       _selectedLocation = LocationSuggestion(
@@ -794,6 +835,8 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
       saveAddress: _saveAsAddress || _isQuickMode,
       saveTemplate: _saveAsTemplate,
       splitPercentage: _splitPercentage,
+      leaveAtDoor: _leaveAtDoor,
+      doorInstructions: _doorInstructionsController.text.trim(),
     );
     if (success && mounted) {
       Navigator.pop(context);

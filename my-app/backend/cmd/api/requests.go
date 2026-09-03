@@ -602,6 +602,12 @@ func handleCompleteRequest(w http.ResponseWriter, r *http.Request) {
 		updateExpr += ", receiptScannedAt = :receiptScannedAt"
 		exprValues[":receiptScannedAt"] = &types.AttributeValueMemberS{Value: nowIso}
 	}
+	if payload.DropoffPhotoUrl != "" {
+		nowIso := time.Now().UTC().Format(time.RFC3339)
+		updateExpr += ", dropoffPhotoUrl = :dropoffPhotoUrl, dropoffConfirmedAt = :dropoffConfirmedAt"
+		exprValues[":dropoffPhotoUrl"] = &types.AttributeValueMemberS{Value: payload.DropoffPhotoUrl}
+		exprValues[":dropoffConfirmedAt"] = &types.AttributeValueMemberS{Value: nowIso}
+	}
 
 	out, err := svc.UpdateItem(context.TODO(), &dynamodb.UpdateItemInput{
 		TableName: aws.String(tableName),

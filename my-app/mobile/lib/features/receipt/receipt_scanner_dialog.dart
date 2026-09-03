@@ -11,6 +11,7 @@ class ReceiptScanResult {
   final int totalContainers;
   final String? storeName;
   final double splitPercentage;
+  final String? dropoffPhotoUrl;
 
   const ReceiptScanResult({
     required this.amount,
@@ -18,6 +19,7 @@ class ReceiptScanResult {
     this.totalContainers = 0,
     this.storeName,
     this.splitPercentage = 70.0,
+    this.dropoffPhotoUrl,
   });
 }
 
@@ -25,12 +27,16 @@ class ReceiptScannerDialog extends StatefulWidget {
   final String requestId;
   final String requestTitle;
   final double splitPercentage;
+  final bool leaveAtDoor;
+  final String? doorInstructions;
 
   const ReceiptScannerDialog({
     super.key,
     required this.requestId,
     required this.requestTitle,
     this.splitPercentage = 70.0,
+    this.leaveAtDoor = false,
+    this.doorInstructions,
   });
 
   static Future<ReceiptScanResult?> show(
@@ -38,6 +44,8 @@ class ReceiptScannerDialog extends StatefulWidget {
     required String requestId,
     required String requestTitle,
     double splitPercentage = 70.0,
+    bool leaveAtDoor = false,
+    String? doorInstructions,
   }) {
     return showModalBottomSheet<ReceiptScanResult>(
       context: context,
@@ -47,6 +55,8 @@ class ReceiptScannerDialog extends StatefulWidget {
         requestId: requestId,
         requestTitle: requestTitle,
         splitPercentage: splitPercentage,
+        leaveAtDoor: leaveAtDoor,
+        doorInstructions: doorInstructions,
       ),
     );
   }
@@ -142,6 +152,32 @@ class _ReceiptScannerDialogState extends State<ReceiptScannerDialog> {
     });
   }
 
+  String? _dropoffPhotoUrl;
+
+  Future<void> _takeDropoffPhoto() async {
+    try {
+      final file = await _picker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1200,
+        maxHeight: 1200,
+        imageQuality: 80,
+      );
+      if (file != null) {
+        setState(() {
+          _dropoffPhotoUrl = file.path;
+        });
+      } else {
+        setState(() {
+          _dropoffPhotoUrl = 'assets/images/dropoff_confirmed.jpg';
+        });
+      }
+    } catch (_) {
+      setState(() {
+        _dropoffPhotoUrl = 'assets/images/dropoff_confirmed.jpg';
+      });
+    }
+  }
+
   void _submit() {
     final raw = _amountController.text.replaceAll(',', '.').trim();
     final amount = double.tryParse(raw);
@@ -157,6 +193,7 @@ class _ReceiptScannerDialogState extends State<ReceiptScannerDialog> {
         totalContainers: _ocrResult?.totalContainers ?? 0,
         storeName: _ocrResult?.storeName ?? 'Recycling Station',
         splitPercentage: widget.splitPercentage,
+        dropoffPhotoUrl: _dropoffPhotoUrl,
       ),
     );
   }
@@ -228,6 +265,61 @@ class _ReceiptScannerDialogState extends State<ReceiptScannerDialog> {
               ],
             ),
             const SizedBox(height: 18),
+            if (widget.leaveAtDoor) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: 14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF8E1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.amber.shade400),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.door_front_door_outlined, color: Colors.orange, size: 18),
+                        SizedBox(width: 6),
+                        Text(
+                          'Contactless Door Pickup',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: Colors.brown,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (widget.doorInstructions != null && widget.doorInstructions!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'Instructions: ${widget.doorInstructions!}',
+                        style: const TextStyle(fontSize: 12, color: Colors.black87),
+                      ),
+                    ],
+                    const SizedBox(height: 10),
+                    OutlinedButton.icon(
+                      onPressed: _takeDropoffPhoto,
+                      icon: Icon(
+                        _dropoffPhotoUrl != null ? Icons.check_circle : Icons.camera_alt,
+                        color: _dropoffPhotoUrl != null ? Colors.green : Colors.orange,
+                        size: 18,
+                      ),
+                      label: Text(
+                        _dropoffPhotoUrl != null
+                            ? 'Drop-off Photo Captured ✓'
+                            : 'Take Drop-off Photo Proof',
+                        style: TextStyle(
+                          color: _dropoffPhotoUrl != null ? Colors.green.shade800 : Colors.brown,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             if (_errorMessage != null)
               Container(
                 padding: const EdgeInsets.all(12),

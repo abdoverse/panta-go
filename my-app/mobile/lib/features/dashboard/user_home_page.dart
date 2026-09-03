@@ -578,6 +578,119 @@ class _RequestCard extends StatelessWidget {
                           ],
                         ),
                       ],
+                      if (request.leaveAtDoor) ...[
+                        const SizedBox(height: 6),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFF8E1),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: Colors.amber.shade300),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.door_front_door_outlined, size: 12, color: Colors.orange),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Leave at Door',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.brown,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (request.dropoffPhotoUrl != null &&
+                                request.dropoffPhotoUrl!.isNotEmpty)
+                              InkWell(
+                                onTap: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (ctx) => AlertDialog(
+                                      title: const Row(
+                                        children: [
+                                          Icon(Icons.photo_camera, color: Colors.green),
+                                          SizedBox(width: 8),
+                                          Text('Drop-off Photo Proof'),
+                                        ],
+                                      ),
+                                      content: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Text(
+                                            'Helper confirmed pickup at door:',
+                                            style: TextStyle(fontSize: 13),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          Container(
+                                            height: 160,
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey.shade100,
+                                              borderRadius: BorderRadius.circular(12),
+                                              border: Border.all(color: Colors.grey.shade300),
+                                            ),
+                                            child: const Center(
+                                              child: Column(
+                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                children: [
+                                                  Icon(Icons.check_circle, size: 40, color: Colors.green),
+                                                  SizedBox(height: 8),
+                                                  Text(
+                                                    'Photo Verified by Helper',
+                                                    style: TextStyle(
+                                                      fontWeight: FontWeight.bold,
+                                                      color: Colors.green,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(ctx),
+                                          child: const Text('Close'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFE8F5E9),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(color: Colors.green.shade300),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.photo_camera, size: 12, color: Colors.green),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        'View Photo Proof ✓',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.green,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
                 ),

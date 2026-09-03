@@ -74,6 +74,10 @@ class RecyclingRequest {
   final double splitPercentage;
   final double? recyclerPayout;
   final double? helperPayout;
+  final bool leaveAtDoor;
+  final String? doorInstructions;
+  final String? dropoffPhotoUrl;
+  final DateTime? dropoffConfirmedAt;
 
   RecyclingRequest({
     required this.id,
@@ -102,6 +106,10 @@ class RecyclingRequest {
     this.splitPercentage = 70.0,
     this.recyclerPayout,
     this.helperPayout,
+    this.leaveAtDoor = false,
+    this.doorInstructions,
+    this.dropoffPhotoUrl,
+    this.dropoffConfirmedAt,
   });
 
   RecyclingRequest copyWith({
@@ -125,6 +133,10 @@ class RecyclingRequest {
     double? splitPercentage,
     double? recyclerPayout,
     double? helperPayout,
+    bool? leaveAtDoor,
+    String? doorInstructions,
+    String? dropoffPhotoUrl,
+    DateTime? dropoffConfirmedAt,
   }) {
     return RecyclingRequest(
       id: id,
@@ -153,6 +165,10 @@ class RecyclingRequest {
       splitPercentage: splitPercentage ?? this.splitPercentage,
       recyclerPayout: recyclerPayout ?? this.recyclerPayout,
       helperPayout: helperPayout ?? this.helperPayout,
+      leaveAtDoor: leaveAtDoor ?? this.leaveAtDoor,
+      doorInstructions: doorInstructions ?? this.doorInstructions,
+      dropoffPhotoUrl: dropoffPhotoUrl ?? this.dropoffPhotoUrl,
+      dropoffConfirmedAt: dropoffConfirmedAt ?? this.dropoffConfirmedAt,
     );
   }
 

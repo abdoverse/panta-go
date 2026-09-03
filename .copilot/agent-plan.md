@@ -359,12 +359,6 @@ plan-55 | planned | medium | medium | none | Community Recycling Goals
   Why:
   This fosters a sense of community and friendly competition, which can be a powerful motivator for users to recycle more.
 
-plan-56 | planned | medium | medium | none | "Leave at Door" option with Photo Confirmation
-  Goal:
-  Allow users to select a "leave at door" option for their pickups, with helpers providing a photo confirmation.
-  Why:
-  This adds convenience for users who may not be home during the pickup window and provides peace of mind that the pickup was completed.
-
 plan-57 | planned | medium | medium | none | Instant Quote for Unusual Items
   Goal:
   Allow users to take a photo of an unusual item and get an instant quote from helpers for the pickup.
