@@ -1,3 +1,5 @@
+import 'chat_message.dart';
+
 enum RequestStatus { pending, accepted, pickedUp }
 
 class SavedAddress {
@@ -78,6 +80,7 @@ class RecyclingRequest {
   final String? doorInstructions;
   final String? dropoffPhotoUrl;
   final DateTime? dropoffConfirmedAt;
+  final List<ChatMessage> messages;
 
   RecyclingRequest({
     required this.id,
@@ -110,6 +113,7 @@ class RecyclingRequest {
     this.doorInstructions,
     this.dropoffPhotoUrl,
     this.dropoffConfirmedAt,
+    this.messages = const [],
   });
 
   RecyclingRequest copyWith({
@@ -137,6 +141,7 @@ class RecyclingRequest {
     String? doorInstructions,
     String? dropoffPhotoUrl,
     DateTime? dropoffConfirmedAt,
+    List<ChatMessage>? messages,
   }) {
     return RecyclingRequest(
       id: id,
@@ -169,6 +174,7 @@ class RecyclingRequest {
       doorInstructions: doorInstructions ?? this.doorInstructions,
       dropoffPhotoUrl: dropoffPhotoUrl ?? this.dropoffPhotoUrl,
       dropoffConfirmedAt: dropoffConfirmedAt ?? this.dropoffConfirmedAt,
+      messages: messages ?? this.messages,
     );
   }
 

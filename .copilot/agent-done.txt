@@ -598,3 +598,8 @@ plan-56 | done | medium | medium | none | "Leave at Door" option with Photo Conf
   Owner agent: pantaswarm
   Completed at: 2026-09-04T00:02:00.000000+00:00
   Progress note: Implemented contactless pickup with "Leave at Door" toggle and entry instructions during request creation, persistence in DynamoDB, active job instruction banners for helpers, drop-off photo proof capture in the completion scanner dialog, and contactless badges with photo proof verification dialog in recycler's request history. Deployed to AWS ECS Express.
+
+plan-69 | done | medium | medium | none | In-app Chat with Pre-defined Messages
+  Owner agent: pantaswarm
+  Completed at: 2026-09-04T00:22:00.000000+00:00
+  Progress note: Implemented real-time in-app chat between recycler and helper, backed by Gorilla WebSockets and DynamoDB atomic message list append, with preset quick-communication chips for both roles (door codes, arrival updates, receipts) in a modern bottom sheet modal. Deployed to AWS ECS Express.

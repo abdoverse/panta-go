@@ -15,6 +15,7 @@ import 'package:flutter_animate/flutter_animate.dart'; // Ensure animate is impo
 import '../shared/widgets/loading_skeletons.dart'; // Import skeletons
 import '../shared/widgets/location_actions.dart';
 import '../tracking/live_map_tracking_view.dart';
+import '../chat/chat_bottom_sheet.dart';
 
 class UserHomePage extends StatefulWidget {
   const UserHomePage({super.key});
@@ -699,6 +700,19 @@ class _RequestCard extends StatelessWidget {
             if (request.status == RequestStatus.accepted) ...[
               const SizedBox(height: 12),
               LiveMapTrackingView(request: request),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: OutlinedButton.icon(
+                  onPressed: () => ChatBottomSheet.show(
+                    context,
+                    request: request,
+                    isHelper: false,
+                  ),
+                  icon: const Icon(Icons.chat_bubble_outline, size: 16),
+                  label: const Text('Chat with Helper'),
+                ),
+              ),
             ],
             const SizedBox(height: 16),
             if (isInteractable)

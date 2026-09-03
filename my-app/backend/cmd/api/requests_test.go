@@ -163,3 +163,32 @@ func TestLeaveAtDoorPayload(t *testing.T) {
 	}
 }
 
+func TestChatMessagePayload(t *testing.T) {
+	t.Parallel()
+
+	msg := ChatMessage{
+		ID:         "msg-1",
+		RequestID:  "req-1",
+		SenderID:   "user-1",
+		SenderRole: "user",
+		SenderName: "Recycler",
+		Text:       "Entrance door code is 4321",
+		IsPreset:   true,
+		CreatedAt:  "2026-09-04T00:00:00Z",
+	}
+
+	if msg.ID != "msg-1" || msg.SenderRole != "user" || !msg.IsPreset {
+		t.Fatalf("unexpected chat message: %+v", msg)
+	}
+
+	payload := SendChatMessagePayload{
+		RequestID: "req-1",
+		Text:      "I am outside your door",
+		IsPreset:  true,
+	}
+
+	if payload.RequestID != "req-1" || payload.Text != "I am outside your door" || !payload.IsPreset {
+		t.Fatalf("unexpected send payload: %+v", payload)
+	}
+}
+

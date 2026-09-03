@@ -407,12 +407,6 @@ plan-68 | planned | medium | medium | none | "Pant" History and Analytics
   Why:
   This helps users to track their earnings and see the positive impact of their recycling efforts.
 
-plan-69 | planned | medium | medium | none | In-app Chat with Pre-defined Messages
-  Goal:
-  An in-app chat feature to allow communication between the recycler and the helper, with pre-defined messages for common scenarios.
-  Why:
-  This makes it easy for users to communicate with each other without having to share their personal contact information.
-
 plan-70 | planned | medium | medium | none | Helper Ratings and Reviews with "Pant" Specifics
   Goal:
   A rating system where recyclers can rate helpers on things like punctuality and communication, and reviews can include information about "Pant" earnings.

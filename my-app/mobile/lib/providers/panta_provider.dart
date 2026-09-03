@@ -9,6 +9,7 @@ import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/localization/app_localizations.dart';
+import '../models/chat_message.dart';
 import '../models/request_model.dart';
 import '../services/api_config.dart';
 import '../services/auth_service.dart';
@@ -101,6 +102,18 @@ class PantaProvider extends ChangeNotifier {
   }
 
   void handleRealtimeMessage(String rawMessage) {
+    try {
+      final decoded = json.decode(rawMessage);
+      if (decoded is Map<String, dynamic> && decoded['type'] == 'chat-message') {
+        final messageJson = decoded['message'];
+        if (messageJson is Map<String, dynamic>) {
+          final newMsg = ChatMessage.fromJson(messageJson);
+          _appendChatMessage(newMsg);
+          return;
+        }
+      }
+    } catch (_) {}
+
     _requestState.handleRealtimeMessage(
       rawMessage,
       fromJson: _fromJson,
@@ -703,6 +716,82 @@ class PantaProvider extends ChangeNotifier {
     return false;
   }
 
+  Future<bool> sendChatMessage(
+    String requestId,
+    String text, {
+    bool isPreset = false,
+  }) async {
+    final token = await _authService.getToken();
+    if (token == null) return false;
+
+    try {
+      final response = await http.post(
+        ApiConfig.apiUri('/api/v1/chat'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode({
+          'requestId': requestId,
+          'text': text,
+          'isPreset': isPreset,
+        }),
+      );
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final payload = json.decode(response.body) as Map<String, dynamic>;
+        final message = ChatMessage.fromJson(payload);
+        _appendChatMessage(message);
+        return true;
+      }
+    } catch (e) {
+      debugPrint('Error sending chat message: $e');
+    }
+    return false;
+  }
+
+  Future<List<ChatMessage>> fetchChatMessages(String requestId) async {
+    final token = await _authService.getToken();
+    if (token == null) return [];
+
+    try {
+      final response = await http.get(
+        ApiConfig.apiUri('/api/v1/chat', queryParameters: {'requestId': requestId}),
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
+      );
+      if (response.statusCode == 200) {
+        final payload = json.decode(response.body) as Map<String, dynamic>;
+        final list = (payload['messages'] as List<dynamic>?)
+                ?.map((m) => ChatMessage.fromJson(m as Map<String, dynamic>))
+                .toList() ??
+            [];
+        final index = _requestState.requests.indexWhere((r) => r.id == requestId);
+        if (index != -1) {
+          _requestState.requests[index] =
+              _requestState.requests[index].copyWith(messages: list);
+          notifyListeners();
+        }
+        return list;
+      }
+    } catch (e) {
+      debugPrint('Error fetching chat messages: $e');
+    }
+    return [];
+  }
+
+  void _appendChatMessage(ChatMessage msg) {
+    final index = _requestState.requests.indexWhere((r) => r.id == msg.requestId);
+    if (index != -1) {
+      final req = _requestState.requests[index];
+      if (!req.messages.any((m) => m.id == msg.id)) {
+        final updated = List<ChatMessage>.from(req.messages)..add(msg);
+        _requestState.requests[index] = req.copyWith(messages: updated);
+        notifyListeners();
+      }
+    }
+  }
+
   Future<bool> updateHelperLocation(
     String requestId,
     double lat,
@@ -855,6 +944,10 @@ class PantaProvider extends ChangeNotifier {
       dropoffConfirmedAt: json['dropoffConfirmedAt'] != null
           ? DateTime.tryParse(json['dropoffConfirmedAt'].toString())
           : null,
+      messages: (json['messages'] as List<dynamic>?)
+              ?.map((m) => ChatMessage.fromJson(m as Map<String, dynamic>))
+              .toList() ??
+          const [],
     );
   }
 

@@ -18,6 +18,7 @@ import '../shared/widgets/loading_skeletons.dart';
 import '../shared/widgets/location_actions.dart';
 import '../receipt/receipt_scanner_dialog.dart';
 import '../tracking/live_map_tracking_view.dart';
+import '../chat/chat_bottom_sheet.dart';
 
 String _formatRatingValue(double value) {
   return value == value.roundToDouble()
@@ -648,6 +649,16 @@ class _JobCard extends StatelessWidget {
                           ),
                         ),
                       ],
+                      const SizedBox(height: 10),
+                      OutlinedButton.icon(
+                        onPressed: () => ChatBottomSheet.show(
+                          context,
+                          request: job,
+                          isHelper: true,
+                        ),
+                        icon: const Icon(Icons.chat_bubble_outline, size: 16),
+                        label: const Text('Chat with Recycler'),
+                      ),
                       const SizedBox(height: 12),
                       Row(
                         children: [

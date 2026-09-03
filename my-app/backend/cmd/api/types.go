@@ -40,8 +40,26 @@ type RecyclingRequest struct {
 	Milestone          string     `json:"milestone,omitempty" dynamodbav:"milestone,omitempty"`
 	LeaveAtDoor        bool       `json:"leaveAtDoor" dynamodbav:"leaveAtDoor"`
 	DoorInstructions   string     `json:"doorInstructions,omitempty" dynamodbav:"doorInstructions,omitempty"`
-	DropoffPhotoUrl    string     `json:"dropoffPhotoUrl,omitempty" dynamodbav:"dropoffPhotoUrl,omitempty"`
-	DropoffConfirmedAt *time.Time `json:"dropoffConfirmedAt,omitempty" dynamodbav:"dropoffConfirmedAt,omitempty"`
+	DropoffPhotoUrl    string        `json:"dropoffPhotoUrl,omitempty" dynamodbav:"dropoffPhotoUrl,omitempty"`
+	DropoffConfirmedAt *time.Time    `json:"dropoffConfirmedAt,omitempty" dynamodbav:"dropoffConfirmedAt,omitempty"`
+	Messages           []ChatMessage `json:"messages,omitempty" dynamodbav:"messages,omitempty"`
+}
+
+type ChatMessage struct {
+	ID         string `json:"id" dynamodbav:"id"`
+	RequestID  string `json:"requestId" dynamodbav:"requestId"`
+	SenderID   string `json:"senderId" dynamodbav:"senderId"`
+	SenderRole string `json:"senderRole" dynamodbav:"senderRole"` // "user" or "helper"
+	SenderName string `json:"senderName" dynamodbav:"senderName"`
+	Text       string `json:"text" dynamodbav:"text"`
+	IsPreset   bool   `json:"isPreset" dynamodbav:"isPreset"`
+	CreatedAt  string `json:"createdAt" dynamodbav:"createdAt"`
+}
+
+type SendChatMessagePayload struct {
+	RequestID string `json:"requestId"`
+	Text      string `json:"text"`
+	IsPreset  bool   `json:"isPreset"`
 }
 
 type PayoutBreakdown struct {
