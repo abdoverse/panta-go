@@ -401,12 +401,6 @@ plan-66 | planned | medium | large | none | Geofenced Pick-up/Drop-off Confirmat
   Why:
   This automates the tracking process and adds a layer of trust to the system.
 
-plan-68 | planned | medium | medium | none | "Pant" History and Analytics
-  Goal:
-  A section in the app where both recyclers and helpers can see their "Pant" earnings over time, with charts and graphs to visualize their impact.
-  Why:
-  This helps users to track their earnings and see the positive impact of their recycling efforts.
-
 plan-70 | planned | medium | medium | none | Helper Ratings and Reviews with "Pant" Specifics
   Goal:
   A rating system where recyclers can rate helpers on things like punctuality and communication, and reviews can include information about "Pant" earnings.

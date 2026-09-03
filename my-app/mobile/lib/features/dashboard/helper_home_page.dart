@@ -19,6 +19,7 @@ import '../shared/widgets/location_actions.dart';
 import '../receipt/receipt_scanner_dialog.dart';
 import '../tracking/live_map_tracking_view.dart';
 import '../chat/chat_bottom_sheet.dart';
+import '../analytics/impact_dashboard_view.dart';
 
 String _formatRatingValue(double value) {
   return value == value.roundToDouble()
@@ -153,6 +154,18 @@ class _MarketplaceView extends StatelessWidget {
             expandedHeight: 120,
             backgroundColor: AppTheme.primaryGreen,
             pinned: true,
+            actions: [
+              IconButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ImpactDashboardView(isHelper: true),
+                  ),
+                ),
+                icon: const Icon(Icons.insights, color: Colors.white),
+                tooltip: 'Earnings & Impact',
+              ),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
               title: Text(
@@ -314,7 +327,21 @@ class _HistoryView extends StatelessWidget {
     final l10n = context.l10n;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.pickupHistory)),
+      appBar: AppBar(
+        title: Text(l10n.pickupHistory),
+        actions: [
+          TextButton.icon(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const ImpactDashboardView(isHelper: true),
+              ),
+            ),
+            icon: const Icon(Icons.insights),
+            label: const Text('Earnings'),
+          ),
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: () async {
           await context.read<PantaProvider>().fetchRequests();

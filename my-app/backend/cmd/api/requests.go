@@ -49,6 +49,30 @@ func registerRequestRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/v1/requests/complete", authMiddleware(handleCompleteRequest))
 	mux.HandleFunc("/api/v1/requests/location", authMiddleware(handleUpdateLocation))
 	mux.HandleFunc("/api/v1/requests/rate", authMiddleware(handleRateRequest))
+	mux.HandleFunc("/api/v1/analytics", authMiddleware(handleAnalytics))
+}
+
+func handleAnalytics(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	claims, ok := currentClaims(r)
+	if !ok || claims == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	requests, err := listRequestsForClaims(r.Context(), claims)
+	if err != nil {
+		log.Printf("Failed to load requests for analytics: %v", err)
+		http.Error(w, "Failed to load analytics", http.StatusInternalServerError)
+		return
+	}
+
+	summary := CalculateImpact(requests, claims.isHelper())
+	jsonResponse(w, http.StatusOK, summary)
 }
 
 func handleRequests(w http.ResponseWriter, r *http.Request) {

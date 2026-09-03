@@ -16,6 +16,7 @@ import '../shared/widgets/loading_skeletons.dart'; // Import skeletons
 import '../shared/widgets/location_actions.dart';
 import '../tracking/live_map_tracking_view.dart';
 import '../chat/chat_bottom_sheet.dart';
+import '../analytics/impact_dashboard_view.dart';
 
 class UserHomePage extends StatefulWidget {
   const UserHomePage({super.key});
@@ -162,6 +163,18 @@ class _DashboardView extends StatelessWidget {
             expandedHeight: 180,
             backgroundColor: AppTheme.primaryGreen,
             pinned: true,
+            actions: [
+              IconButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ImpactDashboardView(isHelper: false),
+                  ),
+                ),
+                icon: const Icon(Icons.insights, color: Colors.white),
+                tooltip: 'Pant History & Eco Impact',
+              ),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
               title: Text(
@@ -249,7 +262,21 @@ class _HistoryView extends StatelessWidget {
     final l10n = context.l10n;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.userHistoryTitle)),
+      appBar: AppBar(
+        title: Text(l10n.userHistoryTitle),
+        actions: [
+          TextButton.icon(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const ImpactDashboardView(isHelper: false),
+              ),
+            ),
+            icon: const Icon(Icons.eco),
+            label: const Text('Impact'),
+          ),
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: () async {
           await context.read<PantaProvider>().fetchRequests();

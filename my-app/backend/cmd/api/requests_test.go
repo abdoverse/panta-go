@@ -192,3 +192,57 @@ func TestChatMessagePayload(t *testing.T) {
 	}
 }
 
+func TestCalculateImpact(t *testing.T) {
+	t.Parallel()
+
+	r1 := RecyclingRequest{
+		ID:              "req-1",
+		Title:           "3 ICA bags of cans",
+		Status:          "pickedUp",
+		ReceiptAmount:   150.0,
+		SplitPercentage: 70.0,
+	}
+	r2 := RecyclingRequest{
+		ID:              "req-2",
+		Title:           "Coop bottles",
+		Status:          "pickedUp",
+		ReceiptAmount:   90.0,
+		SplitPercentage: 70.0,
+	}
+	r3 := RecyclingRequest{
+		ID:              "req-3",
+		Title:           "Pending pickup",
+		Status:          "pending",
+		ReceiptAmount:   0.0,
+		SplitPercentage: 70.0,
+	}
+
+	requests := []RecyclingRequest{r1, r2, r3}
+
+	// Recycler impact
+	recyclerImpact := CalculateImpact(requests, false)
+	if recyclerImpact.TotalPickups != 2 {
+		t.Fatalf("expected 2 pickups, got %d", recyclerImpact.TotalPickups)
+	}
+	if recyclerImpact.TotalReceiptAmount != 240.0 {
+		t.Fatalf("expected 240.0 total receipt, got %f", recyclerImpact.TotalReceiptAmount)
+	}
+	// 70% of 240 = 168.0
+	if recyclerImpact.TotalEarnings != 168.0 {
+		t.Fatalf("expected 168.0 earnings, got %f", recyclerImpact.TotalEarnings)
+	}
+	if recyclerImpact.ContainersRecycled <= 0 || recyclerImpact.CO2SavedKg <= 0 {
+		t.Fatalf("expected positive ecological metrics, got %+v", recyclerImpact)
+	}
+
+	// Helper impact
+	helperImpact := CalculateImpact(requests, true)
+	if helperImpact.TotalPickups != 2 {
+		t.Fatalf("expected 2 pickups, got %d", helperImpact.TotalPickups)
+	}
+	// 30% of 240 = 72.0
+	if helperImpact.TotalEarnings != 72.0 {
+		t.Fatalf("expected 72.0 helper earnings, got %f", helperImpact.TotalEarnings)
+	}
+}
+

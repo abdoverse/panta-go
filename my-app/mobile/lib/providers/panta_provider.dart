@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/localization/app_localizations.dart';
 import '../models/chat_message.dart';
+import '../models/impact_summary.dart';
 import '../models/request_model.dart';
 import '../services/api_config.dart';
 import '../services/auth_service.dart';
@@ -131,6 +132,12 @@ class PantaProvider extends ChangeNotifier {
   List<RecyclingRequest> get previousRequests => _requestState.requests
       .where((r) => r.status == RequestStatus.pickedUp)
       .toList();
+
+  ImpactSummary get userImpactSummary =>
+      ImpactSummary.fromRequests(_requestState.requests, isHelper: false);
+
+  ImpactSummary get helperImpactSummary =>
+      ImpactSummary.fromRequests(_requestState.requests, isHelper: true);
 
   // For Helper Dashboard
   List<RecyclingRequest> get availableJobs => _requestState.availableJobs(
@@ -790,6 +797,27 @@ class PantaProvider extends ChangeNotifier {
         notifyListeners();
       }
     }
+  }
+
+  Future<ImpactSummary?> fetchImpactAnalytics() async {
+    final token = await _authService.getToken();
+    if (token == null) return null;
+
+    try {
+      final response = await http.get(
+        ApiConfig.apiUri('/api/v1/analytics'),
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
+      );
+      if (response.statusCode == 200) {
+        final payload = json.decode(response.body) as Map<String, dynamic>;
+        return ImpactSummary.fromJson(payload);
+      }
+    } catch (e) {
+      debugPrint('Error fetching impact analytics: $e');
+    }
+    return null;
   }
 
   Future<bool> updateHelperLocation(

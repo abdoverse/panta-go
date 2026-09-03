@@ -96,6 +96,91 @@ func CalculatePayout(receiptAmount float64, splitPercentage float64, baseReward 
 	}
 }
 
+type ImpactActivityItem struct {
+	ID            string  `json:"id"`
+	Title         string  `json:"title"`
+	CompletedAt   string  `json:"completedAt"`
+	ReceiptAmount float64 `json:"receiptAmount"`
+	Earnings      float64 `json:"earnings"`
+	CO2SavedKg    float64 `json:"co2SavedKg"`
+}
+
+type ImpactSummary struct {
+	TotalPickups       int                  `json:"totalPickups"`
+	TotalReceiptAmount float64              `json:"totalReceiptAmount"`
+	TotalEarnings      float64              `json:"totalEarnings"`
+	ContainersRecycled int                  `json:"containersRecycled"`
+	CO2SavedKg         float64              `json:"co2SavedKg"`
+	TreesEquivalent    float64              `json:"treesEquivalent"`
+	RecentActivity     []ImpactActivityItem `json:"recentActivity"`
+}
+
+func CalculateImpact(requests []RecyclingRequest, isHelper bool) ImpactSummary {
+	var totalReceipt float64
+	var totalEarned float64
+	completedCount := 0
+	recent := make([]ImpactActivityItem, 0)
+
+	for _, req := range requests {
+		if req.Status != "pickedUp" {
+			continue
+		}
+		completedCount++
+		totalReceipt += req.ReceiptAmount
+
+		var earnings float64
+		if isHelper {
+			if req.HelperPayout != nil {
+				earnings = *req.HelperPayout
+			} else {
+				earnings = req.ReceiptAmount * (100.0 - req.SplitPercentage) / 100.0
+			}
+		} else {
+			if req.RecyclerPayout != nil {
+				earnings = *req.RecyclerPayout
+			} else {
+				earnings = req.ReceiptAmount * req.SplitPercentage / 100.0
+			}
+		}
+		totalEarned += earnings
+
+		completedAt := ""
+		if req.ReceiptScannedAt != nil {
+			completedAt = req.ReceiptScannedAt.UTC().Format(time.RFC3339)
+		} else {
+			completedAt = req.ScheduledTo.UTC().Format(time.RFC3339)
+		}
+
+		itemCO2 := math.Round(req.ReceiptAmount*0.08*100) / 100
+
+		recent = append(recent, ImpactActivityItem{
+			ID:            req.ID,
+			Title:         req.Title,
+			CompletedAt:   completedAt,
+			ReceiptAmount: req.ReceiptAmount,
+			Earnings:      math.Round(earnings*100) / 100,
+			CO2SavedKg:    itemCO2,
+		})
+	}
+
+	containers := int(math.Round(totalReceipt / 1.5))
+	if containers == 0 && totalReceipt > 0 {
+		containers = int(totalReceipt)
+	}
+	co2Saved := math.Round(float64(containers)*0.09*100) / 100
+	treesEquiv := math.Round((co2Saved/21.0)*100) / 100
+
+	return ImpactSummary{
+		TotalPickups:       completedCount,
+		TotalReceiptAmount: math.Round(totalReceipt*100) / 100,
+		TotalEarnings:      math.Round(totalEarned*100) / 100,
+		ContainersRecycled: containers,
+		CO2SavedKg:         co2Saved,
+		TreesEquivalent:    treesEquiv,
+		RecentActivity:     recent,
+	}
+}
+
 type UpdateLocationPayload struct {
 	ID              string   `json:"id"`
 	HelperLatitude  *float64 `json:"helperLatitude"`
