@@ -1,20 +1,21 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart'; // Add this for kIsWeb
+import 'package:flutter/foundation.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:http/http.dart' as http;
-import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/localization/app_localizations.dart';
 import '../models/chat_message.dart';
 import '../models/impact_summary.dart';
 import '../models/request_model.dart';
+import '../services/analytics_api_service.dart';
 import '../services/api_config.dart';
 import '../services/auth_service.dart';
+import '../services/chat_api_service.dart';
 import '../services/panta_state_services.dart' as panta_state;
+import '../services/request_api_service.dart';
 
 double? calculateHelperReliabilityRating({
   required int completedJobs,
@@ -41,20 +42,35 @@ List<RecyclingRequest> sortRequestsByDistance(
 class PantaProvider extends ChangeNotifier {
   static const _languagePreferenceKey = 'app_language_code';
 
-  final AuthService _authService = AuthService();
+  final AuthService _authService;
+  final RequestApiService _requestApiService;
+  final ChatApiService _chatApiService;
+  final AnalyticsApiService _analyticsApiService;
+
   final panta_state.PantaAuthState _authState = panta_state.PantaAuthState();
   final panta_state.PantaRequestState _requestState =
       panta_state.PantaRequestState();
   final panta_state.PantaHelperLocationState _locationState =
       panta_state.PantaHelperLocationState();
+
   List<SavedAddress> _savedAddresses = const [];
   List<RequestTemplate> _requestTemplates = const [];
   bool _isRestoringSession = true;
   Locale _locale = AppLocalizations.supportedLocales.first;
 
-  PantaProvider() {
+  PantaProvider({
+    AuthService? authService,
+    RequestApiService? requestApiService,
+    ChatApiService? chatApiService,
+    AnalyticsApiService? analyticsApiService,
+  })  : _authService = authService ?? AuthService(),
+        _requestApiService = requestApiService ?? RequestApiService(),
+        _chatApiService = chatApiService ?? ChatApiService(),
+        _analyticsApiService = analyticsApiService ?? AnalyticsApiService() {
     _initialize();
   }
+
+  // --- Getters ---
 
   bool get isHelper => _authState.isHelper;
   bool get isAuthenticated => _authState.isAuthenticated;
@@ -66,72 +82,12 @@ class PantaProvider extends ChangeNotifier {
   String? get currentUserDisplayName => _authState.currentUserDisplayName;
   Locale get locale => _locale;
 
-  Future<void> setLocale(Locale locale) async {
-    if (_locale == locale) {
-      return;
-    }
-
-    _locale = locale;
-    notifyListeners();
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_languagePreferenceKey, locale.languageCode);
-  }
-
-  Future<void> _loadSavedLocale() async {
-    final prefs = await SharedPreferences.getInstance();
-    final languageCode = prefs.getString(_languagePreferenceKey);
-    if (languageCode == null) {
-      return;
-    }
-
-    final savedLocale = AppLocalizations.supportedLocales.firstWhere(
-      (locale) => locale.languageCode == languageCode,
-      orElse: () => AppLocalizations.supportedLocales.first,
-    );
-    if (_locale == savedLocale) {
-      return;
-    }
-
-    _locale = savedLocale;
-    notifyListeners();
-  }
-
-  Future<void> _initialize() async {
-    await _loadSavedLocale();
-    await restoreSession();
-  }
-
-  void handleRealtimeMessage(String rawMessage) {
-    try {
-      final decoded = json.decode(rawMessage);
-      if (decoded is Map<String, dynamic> && decoded['type'] == 'chat-message') {
-        final messageJson = decoded['message'];
-        if (messageJson is Map<String, dynamic>) {
-          final newMsg = ChatMessage.fromJson(messageJson);
-          _appendChatMessage(newMsg);
-          return;
-        }
-      }
-    } catch (_) {}
-
-    _requestState.handleRealtimeMessage(
-      rawMessage,
-      fromJson: _fromJson,
-      onRefreshRequested: () => fetchRequests(silent: true),
-    );
-    notifyListeners();
-  }
-
   // For User Dashboard
-  List<RecyclingRequest> get myRequests =>
-      _requestState.requests; // In real app, filter by userId
-  List<RecyclingRequest> get ongoingRequests => _requestState.requests
-      .where((r) => r.status != RequestStatus.pickedUp)
-      .toList();
-  List<RecyclingRequest> get previousRequests => _requestState.requests
-      .where((r) => r.status == RequestStatus.pickedUp)
-      .toList();
+  List<RecyclingRequest> get myRequests => _requestState.requests;
+  List<RecyclingRequest> get ongoingRequests =>
+      _requestState.requests.where((r) => r.status != RequestStatus.pickedUp).toList();
+  List<RecyclingRequest> get previousRequests =>
+      _requestState.requests.where((r) => r.status == RequestStatus.pickedUp).toList();
 
   ImpactSummary get userImpactSummary =>
       ImpactSummary.fromRequests(_requestState.requests, isHelper: false);
@@ -150,6 +106,7 @@ class PantaProvider extends ChangeNotifier {
 
   List<RecyclingRequest> get completedJobs =>
       _requestState.completedJobs(_authState.currentUserId);
+
   bool get isResolvingHelperLocation => _locationState.isResolving;
   bool get isSortingJobsByDistance => _locationState.isSortingJobsByDistance;
   String get helperLocationSortingMessage =>
@@ -163,10 +120,64 @@ class PantaProvider extends ChangeNotifier {
         canceledPickups: helperCancellationCount,
       );
 
+  // --- Localization ---
+
+  Future<void> setLocale(Locale locale) async {
+    if (_locale == locale) return;
+    _locale = locale;
+    notifyListeners();
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_languagePreferenceKey, locale.languageCode);
+  }
+
+  Future<void> _loadSavedLocale() async {
+    final prefs = await SharedPreferences.getInstance();
+    final languageCode = prefs.getString(_languagePreferenceKey);
+    if (languageCode == null) return;
+
+    final savedLocale = AppLocalizations.supportedLocales.firstWhere(
+      (locale) => locale.languageCode == languageCode,
+      orElse: () => AppLocalizations.supportedLocales.first,
+    );
+    if (_locale == savedLocale) return;
+
+    _locale = savedLocale;
+    notifyListeners();
+  }
+
+  Future<void> _initialize() async {
+    await _loadSavedLocale();
+    await restoreSession();
+  }
+
+  // --- Realtime WebSocket Messaging ---
+
+  void handleRealtimeMessage(String rawMessage) {
+    try {
+      final decoded = json.decode(rawMessage);
+      if (decoded is Map<String, dynamic> && decoded['type'] == 'chat-message') {
+        final messageJson = decoded['message'];
+        if (messageJson is Map<String, dynamic>) {
+          final newMsg = ChatMessage.fromJson(messageJson);
+          _appendChatMessage(newMsg);
+          return;
+        }
+      }
+    } catch (_) {}
+
+    _requestState.handleRealtimeMessage(
+      rawMessage,
+      fromJson: RequestApiService.parseRecyclingRequest,
+      onRefreshRequested: () => fetchRequests(silent: true),
+    );
+    notifyListeners();
+  }
+
+  // --- Helper Location ---
+
   Future<void> refreshHelperLocation() async {
-    if (_locationState.isResolving) {
-      return;
-    }
+    if (_locationState.isResolving) return;
 
     _locationState.isResolving = true;
     notifyListeners();
@@ -206,6 +217,8 @@ class PantaProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  // --- Authentication ---
 
   Future<String?> login(String email, String password, bool asHelper) async {
     final error = await _authService.login(email, password);
@@ -257,71 +270,6 @@ class PantaProvider extends ChangeNotifier {
     _clearAuthenticatedState();
   }
 
-  Future<void> fetchRequestAssets({bool silent = false}) async {
-    final token = await _authService.getToken();
-    if (token == null) {
-      _clearAuthenticatedState();
-      return;
-    }
-
-    try {
-      final responses = await Future.wait([
-        http.get(
-          ApiConfig.apiUri('/api/v1/requests/saved-addresses'),
-          headers: {'Authorization': 'Bearer $token'},
-        ),
-        http.get(
-          ApiConfig.apiUri('/api/v1/requests/templates'),
-          headers: {'Authorization': 'Bearer $token'},
-        ),
-      ]);
-
-      final addressesResponse = responses[0];
-      final templatesResponse = responses[1];
-      if (addressesResponse.statusCode == 200) {
-        final payload =
-            json.decode(addressesResponse.body) as Map<String, dynamic>;
-        final items = payload['savedAddresses'] as List<dynamic>? ?? const [];
-        _savedAddresses = items
-            .whereType<Map>()
-            .map(
-              (item) => _savedAddressFromJson(
-                item.map((key, value) => MapEntry(key.toString(), value)),
-              ),
-            )
-            .toList(growable: false);
-      } else if (!silent) {
-        debugPrint(
-          'Failed to load saved addresses: ${addressesResponse.statusCode}',
-        );
-      }
-
-      if (templatesResponse.statusCode == 200) {
-        final payload =
-            json.decode(templatesResponse.body) as Map<String, dynamic>;
-        final items = payload['templates'] as List<dynamic>? ?? const [];
-        _requestTemplates = items
-            .whereType<Map>()
-            .map(
-              (item) => _requestTemplateFromJson(
-                item.map((key, value) => MapEntry(key.toString(), value)),
-              ),
-            )
-            .toList(growable: false);
-      } else if (!silent) {
-        debugPrint(
-          'Failed to load request templates: ${templatesResponse.statusCode}',
-        );
-      }
-    } catch (e) {
-      if (!silent) {
-        debugPrint('Error loading request assets: $e');
-      }
-    } finally {
-      notifyListeners();
-    }
-  }
-
   Future<String?> signUp({
     required String email,
     required String password,
@@ -357,6 +305,8 @@ class PantaProvider extends ChangeNotifier {
     return error;
   }
 
+  // --- Requests & Assets API Integration ---
+
   Future<void> fetchRequests({bool silent = false}) async {
     final token = await _authService.getToken();
     if (token == null) {
@@ -370,21 +320,8 @@ class PantaProvider extends ChangeNotifier {
     }
 
     try {
-      final response = await http.get(
-        ApiConfig.apiUri('/api/v1/requests'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        _requestState.replaceAll(data.map((json) => _fromJson(json)).toList());
-      } else {
-        debugPrint('Failed to load requests: ${response.statusCode}');
-      }
-    } catch (e) {
-      debugPrint('Error fetching requests: $e');
+      final list = await _requestApiService.fetchRequests(token: token);
+      _requestState.replaceAll(list);
     } finally {
       if (!silent) {
         _setLoading(false);
@@ -393,42 +330,27 @@ class PantaProvider extends ChangeNotifier {
     }
   }
 
-  Future<String?> _uploadRequestImage(
-    Uint8List imageBytes, {
-    required String fileName,
-    required String mimeType,
-  }) async {
+  Future<void> fetchRequestAssets({bool silent = false}) async {
     final token = await _authService.getToken();
-    if (token == null) return null;
-
-    final request = http.MultipartRequest(
-      'POST',
-      ApiConfig.apiUri('/api/v1/uploads/request-image'),
-    );
-    request.headers['Authorization'] = 'Bearer $token';
-    request.files.add(
-      http.MultipartFile.fromBytes(
-        'file',
-        imageBytes,
-        filename: fileName,
-        contentType: MediaType.parse(mimeType),
-      ),
-    );
-
-    try {
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-      if (response.statusCode == 201) {
-        final payload = json.decode(response.body) as Map<String, dynamic>;
-        return payload['uploadKey'] as String?;
-      }
-      debugPrint(
-          'Failed to upload request image: ${response.statusCode} ${response.body}');
-    } catch (e) {
-      debugPrint('Error uploading request image: $e');
+    if (token == null) {
+      _clearAuthenticatedState();
+      return;
     }
 
-    return null;
+    try {
+      final results = await Future.wait([
+        _requestApiService.fetchSavedAddresses(token: token),
+        _requestApiService.fetchRequestTemplates(token: token),
+      ]);
+      _savedAddresses = results[0] as List<SavedAddress>;
+      _requestTemplates = results[1] as List<RequestTemplate>;
+    } catch (e) {
+      if (!silent) {
+        debugPrint('Error loading request assets: $e');
+      }
+    } finally {
+      notifyListeners();
+    }
   }
 
   Future<bool> createRequest(
@@ -457,12 +379,9 @@ class PantaProvider extends ChangeNotifier {
     _setLoading(true);
     notifyListeners();
 
-    // Try to get FCM Token
     String? fcmToken;
     try {
-      // Request permission primarily for iOS/Web
-      NotificationSettings settings =
-          await FirebaseMessaging.instance.requestPermission(
+      final settings = await FirebaseMessaging.instance.requestPermission(
         alert: true,
         badge: true,
         sound: true,
@@ -471,17 +390,9 @@ class PantaProvider extends ChangeNotifier {
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
         final vapidKey = kIsWeb ? ApiConfig.firebaseWebVapidKey : null;
         if (kIsWeb && vapidKey == null) {
-          debugPrint(
-            'Skipping web push token because FIREBASE_WEB_VAPID_KEY is not configured.',
-          );
+          debugPrint('Skipping web push token: FIREBASE_WEB_VAPID_KEY unset.');
         }
-
-        fcmToken = await FirebaseMessaging.instance.getToken(
-          vapidKey: vapidKey,
-        );
-        debugPrint("FCM Token: $fcmToken");
-      } else {
-        debugPrint('User declined or has not accepted permission');
+        fcmToken = await FirebaseMessaging.instance.getToken(vapidKey: vapidKey);
       }
     } catch (e) {
       debugPrint("Failed to get FCM token: $e");
@@ -493,8 +404,9 @@ class PantaProvider extends ChangeNotifier {
         imageFileName.isNotEmpty &&
         imageMimeType != null &&
         imageMimeType.isNotEmpty) {
-      imageUploadKey = await _uploadRequestImage(
-        imageBytes,
+      imageUploadKey = await _requestApiService.uploadRequestImage(
+        token: token,
+        imageBytes: imageBytes,
         fileName: imageFileName,
         mimeType: imageMimeType,
       );
@@ -505,35 +417,25 @@ class PantaProvider extends ChangeNotifier {
       }
     }
 
-    final body = json.encode({
-      'title': title,
-      'scheduledFrom': from.toUtc().toIso8601String(),
-      'scheduledTo': to.toUtc().toIso8601String(),
-      'location': location,
-      'locationLatitude': locationLatitude,
-      'locationLongitude': locationLongitude,
-      'description': description, // Add description
-      'reward': reward, // Add reward
-      'splitPercentage': splitPercentage,
-      'leaveAtDoor': leaveAtDoor,
-      'doorInstructions': doorInstructions,
-      'imageUrl': null,
-      'imageUploadKey': imageUploadKey,
-      'isRated': false,
-      'creatorDeviceToken': fcmToken, // Send token
-    });
-
     try {
-      final response = await http.post(
-        ApiConfig.apiUri('/api/v1/requests'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: body,
+      final success = await _requestApiService.createRequest(
+        token: token,
+        title: title,
+        from: from,
+        to: to,
+        location: location,
+        locationLatitude: locationLatitude,
+        locationLongitude: locationLongitude,
+        description: description,
+        reward: reward,
+        splitPercentage: splitPercentage,
+        leaveAtDoor: leaveAtDoor,
+        doorInstructions: doorInstructions,
+        imageUploadKey: imageUploadKey,
+        fcmToken: fcmToken,
       );
 
-      if (response.statusCode == 201) {
+      if (success) {
         if (saveAddress) {
           await saveAddressEntry(
             SavedAddress(
@@ -556,14 +458,9 @@ class PantaProvider extends ChangeNotifier {
             silent: true,
           );
         }
-        // Refresh list
         await fetchRequests();
         return true;
       }
-      debugPrint("API Error: ${response.statusCode} - ${response.body}");
-      return false;
-    } catch (e) {
-      debugPrint('Error creating request: $e');
       return false;
     } finally {
       _setLoading(false);
@@ -575,18 +472,21 @@ class PantaProvider extends ChangeNotifier {
     SavedAddress address, {
     bool silent = false,
   }) async {
+    final token = await _authService.getToken();
+    if (token == null) {
+      _clearAuthenticatedState();
+      return false;
+    }
+
     final updated = [
       address,
       ..._savedAddresses.where(
         (item) => item.location.toLowerCase() != address.location.toLowerCase(),
       ),
     ];
-    final success = await _putCollection(
-      path: '/api/v1/requests/saved-addresses',
-      body: {
-        'savedAddresses':
-            updated.map((item) => item.toJson()).toList(growable: false),
-      },
+    final success = await _requestApiService.saveSavedAddresses(
+      token: token,
+      addresses: updated,
     );
     if (success) {
       _savedAddresses = updated;
@@ -603,18 +503,21 @@ class PantaProvider extends ChangeNotifier {
     RequestTemplate template, {
     bool silent = false,
   }) async {
+    final token = await _authService.getToken();
+    if (token == null) {
+      _clearAuthenticatedState();
+      return false;
+    }
+
     final updated = [
       template,
       ..._requestTemplates.where(
         (item) => item.name.toLowerCase() != template.name.toLowerCase(),
       ),
     ];
-    final success = await _putCollection(
-      path: '/api/v1/requests/templates',
-      body: {
-        'templates':
-            updated.map((item) => item.toJson()).toList(growable: false),
-      },
+    final success = await _requestApiService.saveRequestTemplates(
+      token: token,
+      templates: updated,
     );
     if (success) {
       _requestTemplates = updated;
@@ -627,53 +530,15 @@ class PantaProvider extends ChangeNotifier {
     return false;
   }
 
-  Future<bool> _putCollection({
-    required String path,
-    required Map<String, dynamic> body,
-  }) async {
-    final token = await _authService.getToken();
-    if (token == null) {
-      _clearAuthenticatedState();
-      return false;
-    }
-
-    try {
-      final response = await http.put(
-        ApiConfig.apiUri(path),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: json.encode(body),
-      );
-      return response.statusCode == 200;
-    } catch (e) {
-      debugPrint('Error updating $path: $e');
-      return false;
-    }
-  }
-
   Future<bool> acceptRequest(String id) async {
     final token = await _authService.getToken();
     if (token == null) return false;
 
-    try {
-      final response = await http.post(
-        ApiConfig.apiUri('/api/v1/requests/accept'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: json.encode({'id': id}),
-      );
-      if (response.statusCode == 200) {
-        final payload = json.decode(response.body) as Map<String, dynamic>;
-        _requestState.upsert(_fromJson(payload));
-        notifyListeners();
-        return true;
-      }
-    } catch (e) {
-      debugPrint('Error accepting request: $e');
+    final updated = await _requestApiService.acceptRequest(token: token, id: id);
+    if (updated != null) {
+      _requestState.upsert(updated);
+      notifyListeners();
+      return true;
     }
     return false;
   }
@@ -688,159 +553,47 @@ class PantaProvider extends ChangeNotifier {
     final token = await _authService.getToken();
     if (token == null) return false;
 
-    try {
-      final bodyMap = <String, dynamic>{'id': id};
-      if (receiptAmount != null && receiptAmount > 0) {
-        bodyMap['receiptAmount'] = receiptAmount;
-      }
-      if (receiptImageUrl != null && receiptImageUrl.isNotEmpty) {
-        bodyMap['receiptImageUrl'] = receiptImageUrl;
-      }
-      if (splitPercentage != null && splitPercentage > 0) {
-        bodyMap['splitPercentage'] = splitPercentage;
-      }
-      if (dropoffPhotoUrl != null && dropoffPhotoUrl.isNotEmpty) {
-        bodyMap['dropoffPhotoUrl'] = dropoffPhotoUrl;
-      }
-
-      final response = await http.post(
-        ApiConfig.apiUri('/api/v1/requests/complete'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: json.encode(bodyMap),
-      );
-      if (response.statusCode == 200) {
-        final payload = json.decode(response.body) as Map<String, dynamic>;
-        _requestState.upsert(_fromJson(payload));
-        notifyListeners();
-        return true;
-      }
-    } catch (e) {
-      debugPrint('Error completing request: $e');
+    final updated = await _requestApiService.completeRequest(
+      token: token,
+      id: id,
+      receiptAmount: receiptAmount,
+      receiptImageUrl: receiptImageUrl,
+      splitPercentage: splitPercentage,
+      dropoffPhotoUrl: dropoffPhotoUrl,
+    );
+    if (updated != null) {
+      _requestState.upsert(updated);
+      notifyListeners();
+      return true;
     }
     return false;
   }
 
-  Future<bool> sendChatMessage(
-    String requestId,
-    String text, {
-    bool isPreset = false,
-  }) async {
+  Future<bool> cancelRequest(String id) async {
     final token = await _authService.getToken();
     if (token == null) return false;
 
-    try {
-      final response = await http.post(
-        ApiConfig.apiUri('/api/v1/chat'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: json.encode({
-          'requestId': requestId,
-          'text': text,
-          'isPreset': isPreset,
-        }),
-      );
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        final payload = json.decode(response.body) as Map<String, dynamic>;
-        final message = ChatMessage.fromJson(payload);
-        _appendChatMessage(message);
-        return true;
-      }
-    } catch (e) {
-      debugPrint('Error sending chat message: $e');
+    final updated = await _requestApiService.cancelRequest(token: token, id: id);
+    if (updated != null) {
+      _requestState.upsert(updated);
+      notifyListeners();
+      return true;
     }
     return false;
-  }
-
-  Future<List<ChatMessage>> fetchChatMessages(String requestId) async {
-    final token = await _authService.getToken();
-    if (token == null) return [];
-
-    try {
-      final response = await http.get(
-        ApiConfig.apiUri('/api/v1/chat', queryParameters: {'requestId': requestId}),
-        headers: {
-          'Authorization': 'Bearer $token',
-        },
-      );
-      if (response.statusCode == 200) {
-        final payload = json.decode(response.body) as Map<String, dynamic>;
-        final list = (payload['messages'] as List<dynamic>?)
-                ?.map((m) => ChatMessage.fromJson(m as Map<String, dynamic>))
-                .toList() ??
-            [];
-        final index = _requestState.requests.indexWhere((r) => r.id == requestId);
-        if (index != -1) {
-          _requestState.requests[index] =
-              _requestState.requests[index].copyWith(messages: list);
-          notifyListeners();
-        }
-        return list;
-      }
-    } catch (e) {
-      debugPrint('Error fetching chat messages: $e');
-    }
-    return [];
-  }
-
-  void _appendChatMessage(ChatMessage msg) {
-    final index = _requestState.requests.indexWhere((r) => r.id == msg.requestId);
-    if (index != -1) {
-      final req = _requestState.requests[index];
-      if (!req.messages.any((m) => m.id == msg.id)) {
-        final updated = List<ChatMessage>.from(req.messages)..add(msg);
-        _requestState.requests[index] = req.copyWith(messages: updated);
-        notifyListeners();
-      }
-    }
-  }
-
-  Future<ImpactSummary?> fetchImpactAnalytics() async {
-    final token = await _authService.getToken();
-    if (token == null) return null;
-
-    try {
-      final response = await http.get(
-        ApiConfig.apiUri('/api/v1/analytics'),
-        headers: {
-          'Authorization': 'Bearer $token',
-        },
-      );
-      if (response.statusCode == 200) {
-        final payload = json.decode(response.body) as Map<String, dynamic>;
-        return ImpactSummary.fromJson(payload);
-      }
-    } catch (e) {
-      debugPrint('Error fetching impact analytics: $e');
-    }
-    return null;
   }
 
   Future<bool> markArrivedAtDoor(String requestId) async {
     final token = await _authService.getToken();
     if (token == null) return false;
 
-    try {
-      final response = await http.post(
-        ApiConfig.apiUri('/api/v1/requests/arrived'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: json.encode({'id': requestId}),
-      );
-      if (response.statusCode == 200) {
-        final payload = json.decode(response.body) as Map<String, dynamic>;
-        _requestState.upsert(_fromJson(payload));
-        notifyListeners();
-        return true;
-      }
-    } catch (e) {
-      debugPrint('Error marking arrived at door: $e');
+    final updated = await _requestApiService.markArrivedAtDoor(
+      token: token,
+      id: requestId,
+    );
+    if (updated != null) {
+      _requestState.upsert(updated);
+      notifyListeners();
+      return true;
     }
     return false;
   }
@@ -855,56 +608,18 @@ class PantaProvider extends ChangeNotifier {
     final token = await _authService.getToken();
     if (token == null) return false;
 
-    try {
-      final bodyMap = <String, dynamic>{
-        'id': requestId,
-        'helperLatitude': lat,
-        'helperLongitude': lng,
-      };
-      if (etaMinutes != null) bodyMap['etaMinutes'] = etaMinutes;
-      if (milestone != null) bodyMap['milestone'] = milestone;
-
-      final response = await http.post(
-        ApiConfig.apiUri('/api/v1/requests/location'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: json.encode(bodyMap),
-      );
-      if (response.statusCode == 200) {
-        final payload = json.decode(response.body) as Map<String, dynamic>;
-        _requestState.upsert(_fromJson(payload));
-        notifyListeners();
-        return true;
-      }
-    } catch (e) {
-      debugPrint('Error updating helper location: $e');
-    }
-    return false;
-  }
-
-  Future<bool> cancelRequest(String id) async {
-    final token = await _authService.getToken();
-    if (token == null) return false;
-
-    try {
-      final response = await http.post(
-        ApiConfig.apiUri('/api/v1/requests/cancel'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: json.encode({'id': id}),
-      );
-      if (response.statusCode == 200) {
-        final payload = json.decode(response.body) as Map<String, dynamic>;
-        _requestState.upsert(_fromJson(payload));
-        notifyListeners();
-        return true;
-      }
-    } catch (e) {
-      debugPrint('Error canceling request: $e');
+    final updated = await _requestApiService.updateHelperLocation(
+      token: token,
+      id: requestId,
+      lat: lat,
+      lng: lng,
+      etaMinutes: etaMinutes,
+      milestone: milestone,
+    );
+    if (updated != null) {
+      _requestState.upsert(updated);
+      notifyListeners();
+      return true;
     }
     return false;
   }
@@ -913,144 +628,78 @@ class PantaProvider extends ChangeNotifier {
     final token = await _authService.getToken();
     if (token == null) return;
 
-    try {
-      final response = await http.post(
-        ApiConfig.apiUri('/api/v1/requests/rate'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: json.encode({
-          'id': id,
-          'rating': rating,
-          'comment': comment ?? '', // Pass comment field
-        }),
-      );
-      if (response.statusCode == 200) {
-        await fetchRequests();
+    final success = await _requestApiService.rateHelper(
+      token: token,
+      id: id,
+      rating: rating,
+      comment: comment,
+    );
+    if (success) {
+      await fetchRequests();
+    }
+  }
+
+  // --- In-App Chat Integration ---
+
+  Future<bool> sendChatMessage(
+    String requestId,
+    String text, {
+    bool isPreset = false,
+  }) async {
+    final token = await _authService.getToken();
+    if (token == null) return false;
+
+    final message = await _chatApiService.sendChatMessage(
+      token: token,
+      requestId: requestId,
+      text: text,
+      isPreset: isPreset,
+    );
+    if (message != null) {
+      _appendChatMessage(message);
+      return true;
+    }
+    return false;
+  }
+
+  Future<List<ChatMessage>> fetchChatMessages(String requestId) async {
+    final token = await _authService.getToken();
+    if (token == null) return [];
+
+    final list = await _chatApiService.fetchChatMessages(
+      token: token,
+      requestId: requestId,
+    );
+    final index = _requestState.requests.indexWhere((r) => r.id == requestId);
+    if (index != -1) {
+      _requestState.requests[index] =
+          _requestState.requests[index].copyWith(messages: list);
+      notifyListeners();
+    }
+    return list;
+  }
+
+  void _appendChatMessage(ChatMessage msg) {
+    final index = _requestState.requests.indexWhere((r) => r.id == msg.requestId);
+    if (index != -1) {
+      final req = _requestState.requests[index];
+      if (!req.messages.any((m) => m.id == msg.id)) {
+        final updated = List<ChatMessage>.from(req.messages)..add(msg);
+        _requestState.requests[index] = req.copyWith(messages: updated);
+        notifyListeners();
       }
-    } catch (e) {
-      debugPrint('Error rating helper: $e');
     }
   }
 
-  // --- Helpers ---
+  // --- Analytics Integration ---
 
-  RecyclingRequest _fromJson(Map<String, dynamic> json) {
-    return RecyclingRequest(
-      id: json['id'],
-      title: json['title'],
-      imageUrl: _parseImageUrl(json['imageUrl']),
-      scheduledFrom: DateTime.parse(json['scheduledFrom']),
-      scheduledTo: DateTime.parse(json['scheduledTo']),
-      location: json['location'],
-      locationLatitude: json['locationLatitude'] != null
-          ? double.tryParse(json['locationLatitude'].toString())
-          : null,
-      locationLongitude: json['locationLongitude'] != null
-          ? double.tryParse(json['locationLongitude'].toString())
-          : null,
-      description: json['description'] ?? '',
-      reward: json['reward'] != null
-          ? double.tryParse(json['reward'].toString()) ?? 0.0
-          : 0.0,
-      status: _parseStatus(json['status']),
-      helperId: json['helperId'],
-      canceledHelperIds: (json['canceledHelperIds'] as List<dynamic>?)
-              ?.map((item) => item.toString())
-              .toList(growable: false) ??
-          const [],
-      isRated: json['isRated'] ?? false,
-      rating: json['rating'] != null
-          ? double.tryParse(json['rating'].toString())
-          : null,
-      ratingComment: json['ratingComment'],
-      receiptImageUrl: json['receiptImageUrl']?.toString(),
-      receiptAmount: json['receiptAmount'] != null
-          ? double.tryParse(json['receiptAmount'].toString())
-          : null,
-      receiptScannedAt: json['receiptScannedAt'] != null
-          ? DateTime.tryParse(json['receiptScannedAt'].toString())
-          : null,
-      helperLatitude: json['helperLatitude'] != null
-          ? double.tryParse(json['helperLatitude'].toString())
-          : null,
-      helperLongitude: json['helperLongitude'] != null
-          ? double.tryParse(json['helperLongitude'].toString())
-          : null,
-      etaMinutes: json['etaMinutes'] != null
-          ? int.tryParse(json['etaMinutes'].toString())
-          : null,
-      milestone: json['milestone']?.toString(),
-      splitPercentage: json['splitPercentage'] != null
-          ? double.tryParse(json['splitPercentage'].toString()) ?? 70.0
-          : 70.0,
-      recyclerPayout: json['recyclerPayout'] != null
-          ? double.tryParse(json['recyclerPayout'].toString())
-          : null,
-      helperPayout: json['helperPayout'] != null
-          ? double.tryParse(json['helperPayout'].toString())
-          : null,
-      leaveAtDoor: json['leaveAtDoor'] == true,
-      doorInstructions: json['doorInstructions']?.toString(),
-      dropoffPhotoUrl: json['dropoffPhotoUrl']?.toString(),
-      dropoffConfirmedAt: json['dropoffConfirmedAt'] != null
-          ? DateTime.tryParse(json['dropoffConfirmedAt'].toString())
-          : null,
-      arrivedAtDoor: json['arrivedAtDoor'] != null
-          ? DateTime.tryParse(json['arrivedAtDoor'].toString())
-          : null,
-      messages: (json['messages'] as List<dynamic>?)
-              ?.map((m) => ChatMessage.fromJson(m as Map<String, dynamic>))
-              .toList() ??
-          const [],
-    );
+  Future<ImpactSummary?> fetchImpactAnalytics() async {
+    final token = await _authService.getToken();
+    if (token == null) return null;
+    return _analyticsApiService.fetchImpactAnalytics(token: token);
   }
 
-  RequestStatus _parseStatus(String status) {
-    switch (status) {
-      case 'accepted':
-        return RequestStatus.accepted;
-      case 'pickedUp':
-        return RequestStatus.pickedUp;
-      default:
-        return RequestStatus.pending;
-    }
-  }
-
-  String? _parseImageUrl(dynamic value) {
-    final imageUrl = value?.toString().trim();
-    if (imageUrl == null ||
-        imageUrl.isEmpty ||
-        imageUrl == 'assets/images/generic.png') {
-      return null;
-    }
-    return imageUrl;
-  }
-
-  SavedAddress _savedAddressFromJson(Map<String, dynamic> json) {
-    return SavedAddress(
-      label: (json['label'] ?? json['location'] ?? '').toString(),
-      location: (json['location'] ?? '').toString(),
-      latitude: json['latitude'] != null
-          ? double.tryParse(json['latitude'].toString())
-          : null,
-      longitude: json['longitude'] != null
-          ? double.tryParse(json['longitude'].toString())
-          : null,
-    );
-  }
-
-  RequestTemplate _requestTemplateFromJson(Map<String, dynamic> json) {
-    return RequestTemplate(
-      name: (json['name'] ?? json['title'] ?? '').toString(),
-      title: (json['title'] ?? '').toString(),
-      description: (json['description'] ?? '').toString(),
-      reward: json['reward'] != null
-          ? double.tryParse(json['reward'].toString()) ?? 0.0
-          : 0.0,
-    );
-  }
+  // --- Private Helpers ---
 
   String _normalizeLabel(String? value, {required String fallback}) {
     final trimmed = value?.trim();

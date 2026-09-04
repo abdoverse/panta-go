@@ -103,13 +103,16 @@ class _ChatBottomSheetState extends State<ChatBottomSheet> {
         ? ChatMessage.helperPresets
         : ChatMessage.recyclerPresets;
 
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.75,
-      padding: EdgeInsets.fromLTRB(16, 12, 16, 16 + bottomInset),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 640),
+        child: Container(
+          height: MediaQuery.of(context).size.height * 0.75,
+          padding: EdgeInsets.fromLTRB(16, 12, 16, 16 + bottomInset),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
       child: Column(
         children: [
           // Drag handle
@@ -305,6 +308,8 @@ class _ChatBottomSheetState extends State<ChatBottomSheet> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  ),
+);
+}
 }

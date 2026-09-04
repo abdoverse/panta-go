@@ -389,7 +389,7 @@ class _LoginPageState extends State<LoginPage> {
 
     if (error != null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.loginFailed(error ?? ''))),
+          SnackBar(content: Text(context.l10n.loginFailed(error))),
         );
       }
   }
@@ -485,7 +485,7 @@ class _LoginPageState extends State<LoginPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              context.l10n.loginFailedAfterConfirmation(loginError ?? ''),
+              context.l10n.loginFailedAfterConfirmation(loginError),
             ),
           ),
         );

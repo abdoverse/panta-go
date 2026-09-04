@@ -11,6 +11,7 @@ import '../../services/location_service.dart';
 import 'package:intl/intl.dart';
 import 'package:dotted_border/dotted_border.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/widgets/responsive_layout.dart';
 import '../../models/request_model.dart';
 
 class CreateRequestPage extends StatefulWidget {
@@ -150,8 +151,9 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
         title: Text(l10n.newPickupRequest),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Form(
+        child: ResponsiveContainer(
+          maxWidth: 680,
+          child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -659,8 +661,9 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Future<void> _pickPhoto() async {
     try {

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/responsive_layout.dart';
 import '../../providers/panta_provider.dart';
 
 String _formatRating(double value) {
@@ -35,8 +36,11 @@ class ProfileScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.profileTitle)),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+      body: ResponsiveContainer(
+        maxWidth: 680,
+        padding: EdgeInsets.zero,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
         children: [
           Card(
             child: Padding(
@@ -246,8 +250,9 @@ class ProfileScreen extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Future<void> _showLanguagePicker(
     BuildContext context,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/responsive_layout.dart';
 import '../../models/impact_summary.dart';
 import '../../providers/panta_provider.dart';
 
@@ -53,8 +54,10 @@ class _ImpactDashboardViewState extends State<ImpactDashboardView> {
         onRefresh: _loadData,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16),
-          child: Column(
+          child: ResponsiveContainer(
+            maxWidth: 840,
+            padding: const EdgeInsets.all(16),
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Sustainability Eco Hero Card
@@ -398,8 +401,9 @@ class _ImpactDashboardViewState extends State<ImpactDashboardView> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 class _MetricCard extends StatelessWidget {
