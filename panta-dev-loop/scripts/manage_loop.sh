@@ -92,6 +92,10 @@ show_logs() {
 }
 
 case "$1" in
+    local|app)
+        shift
+        exec "$PROJECT_ROOT/panta-dev-loop/scripts/run_local.sh" "${1:-start}"
+        ;;
     start)
         start_loop
         ;;
@@ -111,7 +115,7 @@ case "$1" in
         show_logs
         ;;
     *)
-        echo "Usage: $0 {start|stop|status|recover|diagnose|logs}"
+        echo "Usage: $0 {local [start|stop|status|seed|browse]|start|stop|status|recover|diagnose|logs}"
         exit 1
         ;;
 esac

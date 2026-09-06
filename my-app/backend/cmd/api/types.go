@@ -358,8 +358,9 @@ type RequestPreferences struct {
 }
 
 type LoginRequest struct {
-	Role string `json:"role"`
-	Name string `json:"username"`
+	Role     string `json:"role"`
+	Username string `json:"username,omitempty"`
+	Name     string `json:"name,omitempty"`
 }
 
 type LoginResponse struct {

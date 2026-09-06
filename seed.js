@@ -1,66 +1,53 @@
 const http = require('http');
+const https = require('https');
 
-const BASE_URL = 'http://InfraS-Panta-ANti8qT1Cybj-1735811194.eu-north-1.elb.amazonaws.com';
+const BASE_URL = process.env.API_BASE_URL || process.env.BASE_URL || 'http://localhost:8080';
 
-async function post(path, data) {
+async function post(urlStr, data = {}) {
     return new Promise((resolve, reject) => {
-        const req = http.request(`${BASE_URL}${path}`, {
+        const parsed = new URL(urlStr);
+        const transport = parsed.protocol === 'https:' ? https : http;
+        const payload = JSON.stringify(data);
+
+        const req = transport.request(parsed, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(payload)
+            }
         }, (res) => {
             let body = '';
             res.on('data', chunk => body += chunk);
             res.on('end', () => {
                 if (res.statusCode >= 200 && res.statusCode < 300) {
-                    resolve(JSON.parse(body));
+                    try {
+                        resolve(JSON.parse(body));
+                    } catch (_) {
+                        resolve(body);
+                    }
                 } else {
                     reject(new Error(`Status ${res.statusCode}: ${body}`));
                 }
             });
         });
+
         req.on('error', reject);
-        req.write(JSON.stringify(data));
+        req.write(payload);
         req.end();
     });
 }
 
 async function seed() {
-    console.log("Seeding data...");
-
+    console.log(`🌱 Seeding Panta demo data to: ${BASE_URL}...`);
     try {
-        // 1. Pending Request
-        console.log("Creating Pending Request...");
-        await post('/api/v1/requests', {
-            title: 'Glass Jars & Electronics',
-            location: '456 Solar Ave, Eco City',
-            scheduledFrom: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
-            scheduledTo: new Date(Date.now() + 90000000).toISOString()
-        });
-
-        // 2. Accepted Request
-        console.log("Creating Accepted Request...");
-        const req2 = await post('/api/v1/requests', {
-            title: 'Old Cardboard Boxes',
-            location: '123 Green St, Eco City',
-            scheduledFrom: new Date().toISOString(),
-            scheduledTo: new Date(Date.now() + 3600000).toISOString()
-        });
-        await post('/api/v1/requests/accept', { id: req2.id });
-
-        // 3. Picked Up Request
-        console.log("Creating Picked Up Request...");
-        const req3 = await post('/api/v1/requests', {
-            title: 'Collection of Plastic Bottles',
-            location: '123 Green St, Eco City',
-            scheduledFrom: new Date(Date.now() - 86400000).toISOString(), // Yesterday
-            scheduledTo: new Date(Date.now() - 80000000).toISOString()
-        });
-        await post('/api/v1/requests/accept', { id: req3.id });
-        await post('/api/v1/requests/complete', { id: req3.id });
-
-        console.log("Seed complete!");
+        const seedResult = await post(`${BASE_URL}/api/v1/demo/seed`);
+        console.log(`✅ Demo data seeded successfully! Created ${(seedResult.requests || []).length} sample requests:`);
+        for (const req of (seedResult.requests || [])) {
+            console.log(`   - [${req.status.toUpperCase()}] ${req.title} (${req.location})`);
+        }
     } catch (e) {
-        console.error("Seeding failed:", e.message);
+        console.error("❌ Seeding failed:", e.message);
+        process.exit(1);
     }
 }
 

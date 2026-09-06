@@ -378,6 +378,131 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 16),
+                    Card(
+                      color: const Color(0xFFF1F8E9),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        side: const BorderSide(color: Color(0xFFAED581), width: 1.5),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.primaryGreen.withOpacity(0.15),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.bolt, color: AppTheme.primaryGreen, size: 22),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Local Testing / 1-Click Demo',
+                                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                              color: const Color(0xFF2E7D32),
+                                            ),
+                                      ),
+                                      Text(
+                                        'Bypass Cognito and enter with pre-seeded data:',
+                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                              color: AppTheme.textSecondary,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    key: const Key('demo_recycler_button'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppTheme.primaryGreen,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(vertical: 12),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                    onPressed: _isLoading
+                                        ? null
+                                        : () async {
+                                            setState(() => _isLoading = true);
+                                            final error = await context.read<PantaProvider>().loginDirect(
+                                                  role: 'user',
+                                                  username: 'Anna Recycler',
+                                                );
+                                            if (mounted) {
+                                              setState(() => _isLoading = false);
+                                              if (error != null) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  SnackBar(content: Text(error)),
+                                                );
+                                              }
+                                            }
+                                          },
+                                    icon: const Icon(Icons.eco, size: 18),
+                                    label: const Text(
+                                      'Anna (Recycler)',
+                                      style: TextStyle(fontWeight: FontWeight.w600),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    key: const Key('demo_helper_button'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF235971),
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(vertical: 12),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                    onPressed: _isLoading
+                                        ? null
+                                        : () async {
+                                            setState(() => _isLoading = true);
+                                            final error = await context.read<PantaProvider>().loginDirect(
+                                                  role: 'helper',
+                                                  username: 'Erik Helper',
+                                                );
+                                            if (mounted) {
+                                              setState(() => _isLoading = false);
+                                              if (error != null) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  SnackBar(content: Text(error)),
+                                                );
+                                              }
+                                            }
+                                          },
+                                    icon: const Icon(Icons.local_shipping, size: 18),
+                                    label: const Text(
+                                      'Erik (Helper)',
+                                      style: TextStyle(fontWeight: FontWeight.w600),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 20),
                     if (isWideLayout)
                       Text(

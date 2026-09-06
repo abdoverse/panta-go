@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:amazon_cognito_identity_dart_2/cognito.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'api_config.dart';
 
@@ -68,6 +69,33 @@ class AuthService {
   bool get isBankIdVerified => _customJwtPayload?['bankIdVerified'] == true;
   String? get bankIdPersonalNumber => _customJwtPayload?['bankIdPersonalNumber']?.toString();
   String? get bankIdVerifiedAt => _customJwtPayload?['bankIdVerifiedAt']?.toString();
+
+  // Direct / Demo Login via backend /api/v1/login
+  Future<String?> loginDirect({
+    required String role,
+    required String username,
+  }) async {
+    try {
+      final uri = ApiConfig.apiUri('/api/v1/login');
+      final res = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'role': role, 'username': username}),
+      );
+      if (res.statusCode >= 200 && res.statusCode < 300) {
+        final data = json.decode(res.body);
+        final token = data['token']?.toString();
+        if (token != null && token.isNotEmpty) {
+          await setCustomToken(token);
+          return null;
+        }
+        return 'Server did not return a session token';
+      }
+      return 'Login failed (${res.statusCode}): ${res.body}';
+    } catch (e) {
+      return 'Connection failed: $e';
+    }
+  }
 
   // Login
   Future<String?> login(String email, String password) async {

@@ -291,6 +291,58 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
+          Text(
+            'Demo & Local Testing Tools',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 12),
+          Card(
+            color: const Color(0xFFF1F8E9),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: const BorderSide(color: Color(0xFFAED581), width: 1.2),
+            ),
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.swap_horiz_rounded, color: AppTheme.primaryGreen),
+                  title: Text(isHelper ? 'Switch to Recycler (Anna)' : 'Switch to Helper (Erik)'),
+                  subtitle: const Text('Switch role in 1 click to test marketplace interaction'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () async {
+                    await provider.switchDemoRole();
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            isHelper ? 'Switched to Recycler (Anna)' : 'Switched to Helper (Erik)',
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.refresh_rounded, color: Color(0xFF235971)),
+                  title: const Text('Re-seed Sample Requests'),
+                  subtitle: const Text('Populate pending, accepted, and completed requests with chat & photos'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () async {
+                    final ok = await provider.seedDemoData();
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(ok ? 'Sample requests re-seeded!' : 'Failed to seed requests'),
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
           Card(
             child: _ProfileItem(
               icon: Icons.logout_rounded,

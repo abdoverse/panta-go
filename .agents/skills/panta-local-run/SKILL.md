@@ -1,5 +1,5 @@
 ---
-name: panta-dev-loop
+name: panta-local-run
 description: Orchestrates running the full Panta application stack locally (Go backend, Flutter Web, demo data seeding) for browser testing, and manages the multi-agent development loop. Use when the user asks to run, test, start, or verify the app locally in the browser.
 ---
 

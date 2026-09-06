@@ -510,4 +510,21 @@ class RequestApiService {
           : 0.0,
     );
   }
+
+  Future<bool> seedDemoData({String? token}) async {
+    try {
+      final headers = <String, String>{'Content-Type': 'application/json'};
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+      final response = await _client.post(
+        ApiConfig.apiUri('/api/v1/demo/seed'),
+        headers: headers,
+      );
+      return response.statusCode >= 200 && response.statusCode < 300;
+    } catch (e) {
+      debugPrint('Error seeding demo data: $e');
+      return false;
+    }
+  }
 }

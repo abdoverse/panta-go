@@ -227,6 +227,66 @@ class PantaProvider extends ChangeNotifier {
 
   // --- Authentication ---
 
+  Future<String?> loginDirect({
+    required String role,
+    required String username,
+    bool seedIfEmpty = true,
+  }) async {
+    _setLoading(true);
+    notifyListeners();
+    try {
+      final error = await _authService.loginDirect(
+        role: role,
+        username: username,
+      );
+      if (error != null) {
+        return error;
+      }
+
+      await _refreshAuthState(helperOverride: role.toLowerCase() == 'helper');
+      notifyListeners();
+
+      if (seedIfEmpty) {
+        final token = await _authService.getToken();
+        await _requestApiService.seedDemoData(token: token);
+      }
+
+      await Future.wait([
+        fetchRequests(),
+        fetchRequestAssets(),
+      ]);
+      return null;
+    } finally {
+      _setLoading(false);
+      notifyListeners();
+    }
+  }
+
+  Future<bool> seedDemoData() async {
+    _setLoading(true);
+    notifyListeners();
+    try {
+      final token = await _authService.getToken();
+      final success = await _requestApiService.seedDemoData(token: token);
+      if (success) {
+        await Future.wait([
+          fetchRequests(),
+          fetchRequestAssets(),
+        ]);
+      }
+      return success;
+    } finally {
+      _setLoading(false);
+      notifyListeners();
+    }
+  }
+
+  Future<void> switchDemoRole() async {
+    final nextRole = isHelper ? 'user' : 'helper';
+    final nextUsername = isHelper ? 'Anna Recycler' : 'Erik Helper';
+    await loginDirect(role: nextRole, username: nextUsername, seedIfEmpty: false);
+  }
+
   Future<String?> login(String email, String password, bool asHelper) async {
     final error = await _authService.login(email, password);
     if (error == null) {
