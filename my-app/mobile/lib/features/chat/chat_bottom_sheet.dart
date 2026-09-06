@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -40,6 +42,7 @@ class _ChatBottomSheetState extends State<ChatBottomSheet> {
   final _textController = TextEditingController();
   final _scrollController = ScrollController();
   bool _isSending = false;
+  Timer? _pollingTimer;
 
   @override
   void initState() {
@@ -48,10 +51,17 @@ class _ChatBottomSheetState extends State<ChatBottomSheet> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<PantaProvider>().fetchChatMessages(widget.request.id);
     });
+    // Fallback polling every 3 seconds while chat sheet is open
+    _pollingTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (mounted) {
+        context.read<PantaProvider>().fetchChatMessages(widget.request.id);
+      }
+    });
   }
 
   @override
   void dispose() {
+    _pollingTimer?.cancel();
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -93,11 +103,12 @@ class _ChatBottomSheetState extends State<ChatBottomSheet> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<PantaProvider>();
+    final cachedMessages = provider.getChatMessages(widget.request.id);
     final currentReq = provider.myRequests.firstWhere(
       (r) => r.id == widget.request.id,
       orElse: () => widget.request,
     );
-    final messages = currentReq.messages;
+    final messages = cachedMessages.isNotEmpty ? cachedMessages : currentReq.messages;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     final presets = widget.isHelper
         ? ChatMessage.helperPresets

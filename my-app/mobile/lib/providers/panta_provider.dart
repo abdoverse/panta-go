@@ -57,6 +57,7 @@ class PantaProvider extends ChangeNotifier {
 
   List<SavedAddress> _savedAddresses = const [];
   List<RequestTemplate> _requestTemplates = const [];
+  final Map<String, List<ChatMessage>> _chatByRequestId = {};
   bool _isRestoringSession = true;
   Locale _locale = AppLocalizations.supportedLocales.first;
 
@@ -804,6 +805,16 @@ class PantaProvider extends ChangeNotifier {
     return false;
   }
 
+  List<ChatMessage> getChatMessages(String requestId) {
+    if (_chatByRequestId.containsKey(requestId)) {
+      return _chatByRequestId[requestId]!;
+    }
+    for (final r in _requestState.requests) {
+      if (r.id == requestId) return r.messages;
+    }
+    return const [];
+  }
+
   Future<List<ChatMessage>> fetchChatMessages(String requestId) async {
     final token = await _authService.getToken();
     if (token == null) return [];
@@ -812,25 +823,31 @@ class PantaProvider extends ChangeNotifier {
       token: token,
       requestId: requestId,
     );
+    _chatByRequestId[requestId] = list;
     final index = _requestState.requests.indexWhere((r) => r.id == requestId);
     if (index != -1) {
       _requestState.requests[index] =
           _requestState.requests[index].copyWith(messages: list);
-      notifyListeners();
     }
+    notifyListeners();
     return list;
   }
 
   void _appendChatMessage(ChatMessage msg) {
+    final existing = _chatByRequestId[msg.requestId] ?? [];
+    if (!existing.any((m) => m.id == msg.id)) {
+      _chatByRequestId[msg.requestId] = List<ChatMessage>.from(existing)..add(msg);
+    }
+
     final index = _requestState.requests.indexWhere((r) => r.id == msg.requestId);
     if (index != -1) {
       final req = _requestState.requests[index];
       if (!req.messages.any((m) => m.id == msg.id)) {
         final updated = List<ChatMessage>.from(req.messages)..add(msg);
         _requestState.requests[index] = req.copyWith(messages: updated);
-        notifyListeners();
       }
     }
+    notifyListeners();
   }
 
   // --- Analytics Integration ---
