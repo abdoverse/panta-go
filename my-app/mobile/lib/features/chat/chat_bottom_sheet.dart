@@ -47,14 +47,18 @@ class _ChatBottomSheetState extends State<ChatBottomSheet> {
   @override
   void initState() {
     super.initState();
-    // Fetch initial chat messages
+    // Fetch initial chat messages and mark read
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<PantaProvider>().fetchChatMessages(widget.request.id);
+      if (mounted) {
+        context.read<PantaProvider>().fetchChatMessages(widget.request.id);
+        context.read<PantaProvider>().markChatAsRead(widget.request.id);
+      }
     });
     // Fallback polling every 3 seconds while chat sheet is open
     _pollingTimer = Timer.periodic(const Duration(seconds: 3), (_) {
       if (mounted) {
         context.read<PantaProvider>().fetchChatMessages(widget.request.id);
+        context.read<PantaProvider>().markChatAsRead(widget.request.id);
       }
     });
   }
@@ -95,6 +99,7 @@ class _ChatBottomSheetState extends State<ChatBottomSheet> {
     if (mounted) {
       setState(() => _isSending = false);
       if (ok) {
+        context.read<PantaProvider>().markChatAsRead(widget.request.id);
         _scrollToBottom();
       }
     }

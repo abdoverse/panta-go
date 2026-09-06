@@ -38,6 +38,7 @@ class HelperJobCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final provider = context.watch<PantaProvider>();
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       clipBehavior: Clip.antiAlias,
@@ -387,21 +388,175 @@ class HelperJobCard extends StatelessWidget {
                           ),
                         ),
                       ],
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () => ChatBottomSheet.show(
-                                context,
-                                request: job,
-                                isHelper: true,
-                              ),
-                              icon: const Icon(Icons.chat_bubble_outline, size: 16),
-                              label: const Text('Chat'),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
+                      Builder(
+                        builder: (context) {
+                          final hasUnread = provider.hasUnreadChat(job.id);
+                          final unreadCount = provider.getUnreadChatCount(job.id);
+                          final messages = provider.getChatMessages(job.id);
+                          final latestMsg =
+                              messages.isNotEmpty ? messages.last : null;
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (hasUnread && latestMsg != null) ...[
+                                Container(
+                                  margin: const EdgeInsets.only(
+                                    top: 8,
+                                    bottom: 8,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 10,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.primaryGreen.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(
+                                      color: AppTheme.primaryGreen.withOpacity(0.4),
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: InkWell(
+                                    onTap: () {
+                                      provider.markChatAsRead(job.id);
+                                      ChatBottomSheet.show(
+                                        context,
+                                        request: job,
+                                        isHelper: true,
+                                      );
+                                    },
+                                    borderRadius: BorderRadius.circular(14),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(6),
+                                          decoration: const BoxDecoration(
+                                            color: AppTheme.primaryGreen,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(
+                                            Icons.mark_chat_unread_rounded,
+                                            size: 16,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Text(
+                                                    latestMsg.senderName,
+                                                    style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 13,
+                                                      color:
+                                                          AppTheme.primaryGreen,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                  Container(
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                      horizontal: 6,
+                                                      vertical: 2,
+                                                    ),
+                                                    decoration: BoxDecoration(
+                                                      color:
+                                                          Colors.orange.shade700,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              8),
+                                                    ),
+                                                    child: Text(
+                                                      '$unreadCount NEW',
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 10,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                latestMsg.text,
+                                                style: const TextStyle(
+                                                  fontSize: 13,
+                                                  color: Colors.black87,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const Icon(
+                                          Icons.chevron_right_rounded,
+                                          color: AppTheme.primaryGreen,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: hasUnread
+                                        ? FilledButton.icon(
+                                            style: FilledButton.styleFrom(
+                                              backgroundColor:
+                                                  AppTheme.primaryGreen,
+                                              foregroundColor: Colors.white,
+                                              elevation: 2,
+                                            ),
+                                            onPressed: () {
+                                              provider.markChatAsRead(job.id);
+                                              ChatBottomSheet.show(
+                                                context,
+                                                request: job,
+                                                isHelper: true,
+                                              );
+                                            },
+                                            icon: const Icon(
+                                              Icons.mark_chat_unread_rounded,
+                                              size: 16,
+                                            ),
+                                            label: Text(
+                                              'Chat ($unreadCount NEW)',
+                                            ),
+                                          )
+                                        : OutlinedButton.icon(
+                                            onPressed: () {
+                                              provider.markChatAsRead(job.id);
+                                              ChatBottomSheet.show(
+                                                context,
+                                                request: job,
+                                                isHelper: true,
+                                              );
+                                            },
+                                            icon: const Icon(
+                                              Icons.chat_bubble_outline,
+                                              size: 16,
+                                            ),
+                                            label: Text(
+                                              messages.isNotEmpty
+                                                  ? 'Chat (${messages.length})'
+                                                  : 'Chat',
+                                            ),
+                                          ),
+                                  ),
+                                  const SizedBox(width: 8),
                           Expanded(
                             child: job.arrivedAtDoor != null
                                 ? Container(
@@ -465,6 +620,10 @@ class HelperJobCard extends StatelessWidget {
                                   ),
                           ),
                         ],
+                      ),
+                            ],
+                          );
+                        },
                       ),
                       const SizedBox(height: 12),
                       Row(

@@ -7,6 +7,7 @@ import 'core/localization/app_localizations.dart';
 import 'features/dashboard/helper_home_page.dart';
 import 'features/dashboard/user_home_page.dart';
 import 'features/auth/login_page.dart';
+import 'features/chat/chat_notification_banner.dart';
 import 'providers/panta_provider.dart';
 
 class PantaApp extends StatefulWidget {
@@ -100,6 +101,8 @@ class _AuthGate extends StatelessWidget {
       return const LoginPage();
     }
 
-    return provider.isHelper ? const HelperHomePage() : const UserHomePage();
+    final home =
+        provider.isHelper ? const HelperHomePage() : const UserHomePage();
+    return ChatNotificationListener(child: home);
   }
 }

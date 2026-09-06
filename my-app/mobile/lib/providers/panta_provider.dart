@@ -58,6 +58,9 @@ class PantaProvider extends ChangeNotifier {
   List<SavedAddress> _savedAddresses = const [];
   List<RequestTemplate> _requestTemplates = const [];
   final Map<String, List<ChatMessage>> _chatByRequestId = {};
+  final Set<String> _unreadChatRequestIds = {};
+  final Map<String, int> _unreadChatCounts = {};
+  ChatMessage? _lastIncomingChatMessage;
   bool _isRestoringSession = true;
   Locale _locale = AppLocalizations.supportedLocales.first;
 
@@ -99,6 +102,39 @@ class PantaProvider extends ChangeNotifier {
   int get activeRequestsCount => ongoingRequests.length;
   int get maxActiveRequests => 5;
   bool get canCreateRequest => activeRequestsCount < maxActiveRequests;
+
+  // --- In-App Chat Notifications & Badges ---
+  String? get currentUserId => _authState.currentUserId;
+  ChatMessage? get lastIncomingChatMessage => _lastIncomingChatMessage;
+  bool hasUnreadChat(String requestId) => _unreadChatRequestIds.contains(requestId);
+  int getUnreadChatCount(String requestId) => _unreadChatCounts[requestId] ?? 0;
+  int get totalUnreadChatCount =>
+      _unreadChatCounts.values.fold(0, (sum, count) => sum + count);
+
+  void markChatAsRead(String requestId) {
+    bool changed = false;
+    if (_unreadChatRequestIds.remove(requestId)) {
+      changed = true;
+    }
+    if ((_unreadChatCounts[requestId] ?? 0) > 0) {
+      _unreadChatCounts[requestId] = 0;
+      changed = true;
+    }
+    if (_lastIncomingChatMessage?.requestId == requestId) {
+      _lastIncomingChatMessage = null;
+      changed = true;
+    }
+    if (changed) {
+      notifyListeners();
+    }
+  }
+
+  void clearLastIncomingChatMessage() {
+    if (_lastIncomingChatMessage != null) {
+      _lastIncomingChatMessage = null;
+      notifyListeners();
+    }
+  }
 
   ImpactSummary get userImpactSummary =>
       ImpactSummary.fromRequests(_requestState.requests, isHelper: false);
@@ -480,6 +516,7 @@ class PantaProvider extends ChangeNotifier {
 
     try {
       final list = await _requestApiService.fetchRequests(token: token);
+      _syncIncomingMessagesFromList(list);
       _requestState.replaceAll(list);
     } finally {
       if (!silent) {
@@ -849,9 +886,14 @@ class PantaProvider extends ChangeNotifier {
     return list;
   }
 
+  void handleIncomingChatMessage(ChatMessage msg) {
+    _appendChatMessage(msg);
+  }
+
   void _appendChatMessage(ChatMessage msg) {
     final existing = _chatByRequestId[msg.requestId] ?? [];
-    if (!existing.any((m) => m.id == msg.id)) {
+    final isNew = !existing.any((m) => m.id == msg.id);
+    if (isNew) {
       _chatByRequestId[msg.requestId] = List<ChatMessage>.from(existing)..add(msg);
     }
 
@@ -863,7 +905,33 @@ class PantaProvider extends ChangeNotifier {
         _requestState.requests[index] = req.copyWith(messages: updated);
       }
     }
+
+    // Determine if this message is from the other party (incoming notification)
+    final isFromOtherUser = msg.senderId.isNotEmpty &&
+        (msg.senderId != _authState.currentUserId ||
+         msg.senderRole != (_authState.isHelper ? 'helper' : 'user'));
+
+    if (isNew && isFromOtherUser) {
+      _unreadChatRequestIds.add(msg.requestId);
+      _unreadChatCounts[msg.requestId] =
+          (_unreadChatCounts[msg.requestId] ?? 0) + 1;
+      _lastIncomingChatMessage = msg;
+    }
+
     notifyListeners();
+  }
+
+  void _syncIncomingMessagesFromList(List<RecyclingRequest> list) {
+    for (final req in list) {
+      if (req.messages.isNotEmpty) {
+        for (final msg in req.messages) {
+          final existing = _chatByRequestId[msg.requestId] ?? [];
+          if (!existing.any((m) => m.id == msg.id)) {
+            _appendChatMessage(msg);
+          }
+        }
+      }
+    }
   }
 
   // --- Analytics Integration ---
@@ -924,6 +992,9 @@ class PantaProvider extends ChangeNotifier {
     _authState.clearSession();
     _requestState.clear();
     _locationState.clear();
+    _unreadChatRequestIds.clear();
+    _unreadChatCounts.clear();
+    _lastIncomingChatMessage = null;
     _savedAddresses = const [];
     _requestTemplates = const [];
 
