@@ -1,7 +1,14 @@
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:panta/core/localization/app_localizations.dart';
+import 'package:panta/features/shared/profile_screen.dart';
 import 'package:panta/models/request_model.dart';
+import 'package:panta/providers/panta_provider.dart';
 import 'package:panta/services/auth_service.dart';
 import 'package:panta/services/bankid_service.dart';
 import 'package:panta/services/panta_state_services.dart';
@@ -123,6 +130,55 @@ void main() {
       authState.clearSession();
       expect(authState.bankIdVerified, isFalse);
       expect(authState.bankIdPersonalNumber, isNull);
+    });
+
+    testWidgets('ProfileScreen renders BankID verified badge without personal number (plan-72)', (WidgetTester tester) async {
+      final claims = {
+        'nickname': 'user',
+        'name': 'Sven Svensson',
+        'bankIdVerified': true,
+        'bankIdPersonalNumber': '19850512-****',
+        'bankIdVerifiedAt': '2026-09-06T10:00:00Z',
+        'exp': DateTime.now().add(const Duration(hours: 1)).millisecondsSinceEpoch ~/ 1000,
+      };
+      final headerBase64 = base64Url.encode(utf8.encode(json.encode({'alg': 'HS256'})));
+      final payloadBase64 = base64Url.encode(utf8.encode(json.encode(claims)));
+      final signatureBase64 = base64Url.encode(utf8.encode('signature'));
+      final token = '$headerBase64.$payloadBase64.$signatureBase64';
+
+      SharedPreferences.setMockInitialValues({'panta_custom_jwt': token});
+
+      final authService = AuthService();
+      await authService.setCustomToken(token);
+      final provider = PantaProvider(authService: authService);
+      await provider.restoreSession();
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider.value(
+          value: provider,
+          child: const MaterialApp(
+            localizationsDelegates: [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(body: ProfileScreen(isHelper: false)),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.verified_rounded), findsOneWidget);
+      expect(
+        find.byWidgetPredicate(
+          (w) => w is Text && (w.data == 'Verifierad med BankID' || w.data == 'Verified with BankID'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining('19850512'), findsNothing);
+      expect(find.textContaining('****'), findsNothing);
     });
   });
 }

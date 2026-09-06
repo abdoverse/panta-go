@@ -113,18 +113,6 @@ class ProfileScreen extends StatelessWidget {
                                   fontWeight: FontWeight.w700,
                                 ),
                           ),
-                          if (provider.bankIdPersonalNumber != null) ...[
-                            const SizedBox(width: 6),
-                            Text(
-                              '(${provider.bankIdPersonalNumber})',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelSmall
-                                  ?.copyWith(
-                                    color: AppTheme.textSecondary,
-                                  ),
-                            ),
-                          ],
                         ],
                       ),
                     ),
