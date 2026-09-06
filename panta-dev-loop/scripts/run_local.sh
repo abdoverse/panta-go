@@ -119,18 +119,23 @@ start_frontend() {
         return 0
     fi
 
-    echo "🚀 Starting Flutter web server on port $FRONTEND_PORT..."
-    cd "$FRONTEND_DIR"
-    nohup flutter run -d web-server \
-        --web-port="$FRONTEND_PORT" \
-        --web-hostname=0.0.0.0 \
-        --dart-define=API_BASE_URL="http://localhost:$BACKEND_PORT" \
+    local web_build_dir="$FRONTEND_DIR/build/web"
+    if [ ! -f "$web_build_dir/main.dart.js" ]; then
+        echo "🔨 Building optimized Flutter web release bundle..."
+        cd "$FRONTEND_DIR"
+        flutter build web --release --dart-define=API_BASE_URL="http://localhost:$BACKEND_PORT"
+        cd "$PROJECT_ROOT"
+    fi
+
+    echo "🚀 Starting fast Flutter web server on port $FRONTEND_PORT..."
+    nohup python3 -m http.server "$FRONTEND_PORT" \
+        --directory "$web_build_dir" \
+        --bind 0.0.0.0 \
         > "$FRONTEND_LOG" 2>&1 &
 
     local f_pid=$!
     echo "$f_pid" > "$FRONTEND_PID_FILE"
     echo "Flutter web started with PID $f_pid (logs: $FRONTEND_LOG)"
-    cd "$PROJECT_ROOT"
 }
 
 stop_all() {
