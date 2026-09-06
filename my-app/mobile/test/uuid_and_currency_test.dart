@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:panta/core/constants/app_constants.dart';
 import 'package:panta/models/request_model.dart';
 import 'package:panta/providers/panta_provider.dart';
 import 'package:panta/services/auth_service.dart';

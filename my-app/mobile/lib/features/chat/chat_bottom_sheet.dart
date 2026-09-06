@@ -218,8 +218,8 @@ class _ChatBottomSheetState extends State<ChatBottomSheet> {
                   CircleAvatar(
                     radius: 20,
                     backgroundColor: widget.isHelper
-                        ? AppTheme.primaryGreen.withOpacity(0.15)
-                        : Colors.blue.withOpacity(0.15),
+                        ? AppTheme.primaryGreen.withValues(alpha: 0.15)
+                        : Colors.blue.withValues(alpha: 0.15),
                     child: Icon(
                       widget.isHelper ? Icons.person : Icons.recycling,
                       color:
@@ -374,9 +374,9 @@ class _ChatBottomSheetState extends State<ChatBottomSheet> {
                     final preset = presets[index];
                     return ActionChip(
                       label: Text(preset, style: const TextStyle(fontSize: 12)),
-                      backgroundColor: AppTheme.primaryGreen.withOpacity(0.08),
+                      backgroundColor: AppTheme.primaryGreen.withValues(alpha: 0.08),
                       side: BorderSide(
-                          color: AppTheme.primaryGreen.withOpacity(0.3)),
+                          color: AppTheme.primaryGreen.withValues(alpha: 0.3)),
                       onPressed: () {
                         if (preset.endsWith(': ')) {
                           _textController.text = preset;

@@ -389,12 +389,13 @@ class _LoginPageState extends State<LoginPage> {
                                   onPressed: _isLoading
                                       ? null
                                       : () async {
+                                          final messenger = ScaffoldMessenger.of(context);
                                           setState(() => _isLoading = true);
                                           final error = await context.read<PantaProvider>().loginAdmin();
                                           if (mounted) {
                                             setState(() => _isLoading = false);
                                             if (error != null) {
-                                              ScaffoldMessenger.of(context).showSnackBar(
+                                              messenger.showSnackBar(
                                                 SnackBar(content: Text(error)),
                                               );
                                             }
@@ -429,7 +430,7 @@ class _LoginPageState extends State<LoginPage> {
                                 Container(
                                   padding: const EdgeInsets.all(6),
                                   decoration: BoxDecoration(
-                                    color: AppTheme.primaryGreen.withOpacity(0.15),
+                                    color: AppTheme.primaryGreen.withValues(alpha: 0.15),
                                     shape: BoxShape.circle,
                                   ),
                                   child: const Icon(Icons.bolt, color: AppTheme.primaryGreen, size: 22),
@@ -474,6 +475,7 @@ class _LoginPageState extends State<LoginPage> {
                                     onPressed: _isLoading
                                         ? null
                                         : () async {
+                                            final messenger = ScaffoldMessenger.of(context);
                                             setState(() => _isLoading = true);
                                             final error = await context.read<PantaProvider>().loginDirect(
                                                   role: 'user',
@@ -482,7 +484,7 @@ class _LoginPageState extends State<LoginPage> {
                                             if (mounted) {
                                               setState(() => _isLoading = false);
                                               if (error != null) {
-                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                messenger.showSnackBar(
                                                   SnackBar(content: Text(error)),
                                                 );
                                               }
@@ -510,6 +512,7 @@ class _LoginPageState extends State<LoginPage> {
                                     onPressed: _isLoading
                                         ? null
                                         : () async {
+                                            final messenger = ScaffoldMessenger.of(context);
                                             setState(() => _isLoading = true);
                                             final error = await context.read<PantaProvider>().loginDirect(
                                                   role: 'helper',
@@ -518,7 +521,7 @@ class _LoginPageState extends State<LoginPage> {
                                             if (mounted) {
                                               setState(() => _isLoading = false);
                                               if (error != null) {
-                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                messenger.showSnackBar(
                                                   SnackBar(content: Text(error)),
                                                 );
                                               }

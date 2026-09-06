@@ -135,8 +135,9 @@ class _MarketplaceView extends StatelessWidget {
 
     return RefreshIndicator(
       onRefresh: () async {
-        await context.read<PantaProvider>().refreshHelperLocation();
-        await context.read<PantaProvider>().fetchRequests();
+        final provider = context.read<PantaProvider>();
+        await provider.refreshHelperLocation();
+        await provider.fetchRequests();
       },
       child: CustomScrollView(
         slivers: [
@@ -191,7 +192,7 @@ class _MarketplaceView extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Icon(Icons.eco,
-                      size: 100, color: Colors.white.withOpacity(0.1)),
+                      size: 100, color: Colors.white.withValues(alpha: 0.1)),
                 ),
               ),
             ),

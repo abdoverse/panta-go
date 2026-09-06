@@ -36,6 +36,7 @@ class _PantaAppState extends State<PantaApp> {
       RemoteNotification? notification = message.notification;
 
       if (notification != null) {
+        if (!mounted) return;
         final l10n = context.l10n;
         debugPrint(
             'Message also contained a notification: ${notification.title}');

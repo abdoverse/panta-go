@@ -90,7 +90,7 @@ class ProfileScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: const Color(0xFFE8F5E9),
                         border: Border.all(
-                          color: AppTheme.primaryGreen.withOpacity(0.5),
+                          color: AppTheme.primaryGreen.withValues(alpha: 0.5),
                         ),
                         borderRadius: BorderRadius.circular(999),
                       ),
@@ -625,7 +625,7 @@ class _BankIdVerificationCard extends StatelessWidget {
       elevation: 1,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: const Color(0xFF235971).withOpacity(0.2)),
+        side: BorderSide(color: const Color(0xFF235971).withValues(alpha: 0.2)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),

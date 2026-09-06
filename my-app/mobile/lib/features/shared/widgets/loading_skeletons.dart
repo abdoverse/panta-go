@@ -25,7 +25,7 @@ class _SkeletonCard extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: Colors.grey.withOpacity(0.1)),
+        side: BorderSide(color: Colors.grey.withValues(alpha: 0.1)),
       ),
       child: Shimmer.fromColors(
         baseColor: Colors.grey[200]!,
@@ -94,7 +94,7 @@ class _MarketplaceSkeletonCard extends StatelessWidget {
       elevation: 0,
        shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: Colors.grey.withOpacity(0.1)),
+        side: BorderSide(color: Colors.grey.withValues(alpha: 0.1)),
       ),
       child: Shimmer.fromColors(
          baseColor: Colors.grey[200]!,

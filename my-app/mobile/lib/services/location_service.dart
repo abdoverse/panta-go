@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class LocationSuggestion {
@@ -105,7 +106,7 @@ class LocationService {
       }
       return [];
     } catch (e) {
-      print('Error fetching location suggestions: $e');
+      debugPrint('Error fetching location suggestions: $e');
       return [];
     }
   }

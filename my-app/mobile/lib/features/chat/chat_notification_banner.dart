@@ -201,7 +201,7 @@ class _ChatBannerCard extends StatelessWidget {
             ),
             boxShadow: [
               BoxShadow(
-                color: AppTheme.primaryGreen.withOpacity(0.35),
+                color: AppTheme.primaryGreen.withValues(alpha: 0.35),
                 blurRadius: 16,
                 spreadRadius: 2,
                 offset: const Offset(0, 4),
@@ -215,7 +215,7 @@ class _ChatBannerCard extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
+                  color: Colors.white.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                   border: Border.all(
                     color: Colors.white70,

@@ -45,7 +45,7 @@ class HelperJobCard extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: Colors.grey.withOpacity(0.1)),
+        side: BorderSide(color: Colors.grey.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -68,7 +68,7 @@ class HelperJobCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          Colors.black.withOpacity(0.4),
+                          Colors.black.withValues(alpha: 0.4),
                           Colors.transparent,
                         ],
                         begin: Alignment.bottomCenter,
@@ -119,7 +119,7 @@ class HelperJobCard extends StatelessWidget {
                                 color: const Color(0xFFE8F5E9),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: AppTheme.primaryGreen.withOpacity(0.4),
+                                  color: AppTheme.primaryGreen.withValues(alpha: 0.4),
                                 ),
                               ),
                               child: const Row(
@@ -248,10 +248,10 @@ class HelperJobCard extends StatelessWidget {
                             width: double.infinity,
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: Colors.amber.withOpacity(0.1),
+                              color: Colors.amber.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
-                                color: Colors.amber.withOpacity(0.3),
+                                color: Colors.amber.withValues(alpha: 0.3),
                               ),
                             ),
                             child: Column(
@@ -410,10 +410,10 @@ class HelperJobCard extends StatelessWidget {
                                     vertical: 10,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: AppTheme.primaryGreen.withOpacity(0.1),
+                                    color: AppTheme.primaryGreen.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(14),
                                     border: Border.all(
-                                      color: AppTheme.primaryGreen.withOpacity(0.4),
+                                      color: AppTheme.primaryGreen.withValues(alpha: 0.4),
                                       width: 1.5,
                                     ),
                                   ),
@@ -935,9 +935,9 @@ class TimeRemainingDisplay extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,

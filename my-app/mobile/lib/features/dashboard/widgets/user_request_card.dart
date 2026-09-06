@@ -49,7 +49,7 @@ class UserRequestCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
-      shadowColor: Colors.black.withOpacity(0.05),
+      shadowColor: Colors.black.withValues(alpha: 0.05),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -109,7 +109,7 @@ class UserRequestCard extends StatelessWidget {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: statusColor.withOpacity(0.1),
+                              color: statusColor.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
@@ -133,7 +133,7 @@ class UserRequestCard extends StatelessWidget {
                                 color: const Color(0xFFE8F5E9),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                  color: AppTheme.primaryGreen.withOpacity(0.4),
+                                  color: AppTheme.primaryGreen.withValues(alpha: 0.4),
                                 ),
                               ),
                               child: const Row(
@@ -467,10 +467,10 @@ class UserRequestCard extends StatelessWidget {
                             vertical: 10,
                           ),
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryGreen.withOpacity(0.1),
+                            color: AppTheme.primaryGreen.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                              color: AppTheme.primaryGreen.withOpacity(0.4),
+                              color: AppTheme.primaryGreen.withValues(alpha: 0.4),
                               width: 1.5,
                             ),
                           ),
@@ -759,7 +759,7 @@ class RequestImage extends StatelessWidget {
 
   Widget _fallbackImage() {
     return Container(
-      color: AppTheme.primaryGreen.withOpacity(0.08),
+      color: AppTheme.primaryGreen.withValues(alpha: 0.08),
       alignment: Alignment.center,
       child: const Icon(
         Icons.inventory_2_outlined,

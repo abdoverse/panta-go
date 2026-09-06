@@ -261,11 +261,12 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                     borderRadius: BorderRadius.circular(24),
                     onTap: _pickPhoto,
                     child: DottedBorder(
-                      borderType: BorderType.RRect,
-                      radius: const Radius.circular(24),
-                      color: Colors.grey[400]!,
-                      dashPattern: const [8, 4],
-                      strokeWidth: 2,
+                      options: RoundedRectDottedBorderOptions(
+                        radius: const Radius.circular(24),
+                        color: Colors.grey[400]!,
+                        dashPattern: const [8, 4],
+                        strokeWidth: 2,
+                      ),
                       child: Container(
                         height: 200,
                         width: double.infinity,

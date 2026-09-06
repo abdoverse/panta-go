@@ -231,7 +231,7 @@ class _ReceiptScannerDialogState extends State<ReceiptScannerDialog> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryGreen.withOpacity(0.12),
+                    color: AppTheme.primaryGreen.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(
@@ -357,7 +357,7 @@ class _ReceiptScannerDialogState extends State<ReceiptScannerDialog> {
                 decoration: BoxDecoration(
                   color: const Color(0xFFF1F8F4),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppTheme.primaryGreen.withOpacity(0.3)),
+                  border: Border.all(color: AppTheme.primaryGreen.withValues(alpha: 0.3)),
                 ),
                 child: Column(
                   children: [

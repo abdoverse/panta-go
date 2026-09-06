@@ -141,7 +141,7 @@ class _LiveMapTrackingViewState extends State<LiveMapTrackingView>
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.red.withOpacity(0.3),
+                              color: Colors.red.withValues(alpha: 0.3),
                               blurRadius: 8,
                               spreadRadius: 2,
                             ),
@@ -187,7 +187,7 @@ class _LiveMapTrackingViewState extends State<LiveMapTrackingView>
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppTheme.primaryGreen.withOpacity(0.4),
+                                    color: AppTheme.primaryGreen.withValues(alpha: 0.4),
                                     blurRadius: 10,
                                     spreadRadius: 3,
                                   ),
@@ -229,7 +229,7 @@ class _LiveMapTrackingViewState extends State<LiveMapTrackingView>
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.92),
+                      color: Colors.white.withValues(alpha: 0.92),
                       borderRadius: BorderRadius.circular(10),
                       boxShadow: const [
                         BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
@@ -395,7 +395,7 @@ class _MapGridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.4)
+      ..color = Colors.white.withValues(alpha: 0.4)
       ..strokeWidth = 1.5;
 
     // Road grid lines
@@ -413,7 +413,7 @@ class _RouteLinePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = AppTheme.primaryGreen.withOpacity(0.6)
+      ..color = AppTheme.primaryGreen.withValues(alpha: 0.6)
       ..strokeWidth = 3
       ..style = PaintingStyle.stroke;
 
