@@ -4,6 +4,13 @@
 # Fields: id | status | priority | complexity | dependencies | title
 
 ## backend
+plan-50 | done | high | medium | none | Fix cancelled pickups not returning to the available helper pool
+  Owner agent: backend_dev
+  Started at: 2026-04-12T19:50:00.000000+00:00
+  Last heartbeat at: 2026-04-12T19:52:00.000000+00:00
+  Last progress at: 2026-04-12T19:52:00.000000+00:00
+  Progress note: tester [done]: Fixed cancelled pickups returning to available helper pool with CanceledHelperIDs filtering; verified in Go unit tests and git commit a80eaed0.
+
 plan-73 | done | high | medium | none | Secure GDPR-compliant chat storage with encryption at rest and multi-language/emoji support
   Owner agent: backend_dev
   Started at: 2026-09-06T18:48:00.000000+00:00
@@ -548,13 +555,6 @@ plan-4 | done | medium | medium | plan-5 | Slim down mobile state management
   Likely files:
   `my-app/mobile/lib/providers/panta_provider.dart`, `my-app/mobile/lib/services/*.dart`, feature screens.
 
-## both
-plan-73 | done | high | large | none | Secure GDPR-compliant chat storage with encryption and multi-language character support
-  Owner agent: backend_dev+mobile_dev
-  Started at: 2026-09-06T18:45:00.000000+00:00
-  Last heartbeat at: 2026-09-06T18:50:00.000000+00:00
-  Last progress at: 2026-09-06T18:50:00.000000+00:00
-  Progress note: tester [done]: Implemented AES-256-GCM encryption at rest with requestID AAD binding, GDPR Right to Erasure (DELETE /api/v1/chat), 30-day retention window, and full UTF-8 emoji support; verified live in DynamoDB and passing all Go and Flutter test suites.
 
 plan-7 | done | medium | medium | plan-1,plan-4 | Add saved addresses and reusable request templates
   Owner agent: backend_dev+frontend_dev
