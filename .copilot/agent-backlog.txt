@@ -1,7 +1,7 @@
 # Agent Backlog
 # Managed by Panta Autonomous Multi-Agent Swarm (PantaSwarm).
-# Last heartbeat at: 2026-09-06T18:44:00.000000+00:00
-# Loop status: active | approved=0 | pending=5 | in_progress=0
+# Last heartbeat at: 2026-09-06T18:48:00.000000+00:00
+# Loop status: active | approved=0 | pending=6 | in_progress=0
 # Approve work by changing an item's status from pending to approved.
 # Fields: id | status | priority | complexity | dependencies | title
 
@@ -12,8 +12,6 @@
 (empty)
 
 ## both
-plan-73 | pending | high | large | none | Secure GDPR-compliant chat storage with encryption and multi-language character support
-  Goal: Implement industry-standard GDPR privacy and security for chat: encrypt messages at rest (AES-256-GCM/KMS), enforce retention/TTL and right-to-erasure policies, eliminate raw plaintext in DynamoDB, and ensure end-to-end UTF-8 support for special characters and emojis across languages.
 
 plan-74 | pending | medium | medium | none | Dynamic per-market active request limits for recyclers via market configuration profiles
   Goal: Introduce market configuration profiles with configurable per-market rules (e.g. max active requests per recycler), enforce the limit in backend request creation, and reflect quota and limits in the mobile create request UI.
@@ -24,5 +22,6 @@ plan-75 | pending | high | medium | none | Migrate from legacy .copilot folder t
 plan-76 | pending | high | small | none | Systematic repo-level release changelog with versions, feature summaries, and task IDs
   Goal: Create and maintain a repo-level markdown release log (e.g. CHANGELOG.md / RELEASES.md) documenting release versions, dates, feature summaries, and task IDs so administrators can track the latest releases directly within the repository.
 
-
+plan-77 | pending | high | small | none | High-autonomy development mode with non-critical action auto-approval
+  Goal: Configure agent execution, workspace rules, and orchestrator policies to auto-execute routine dev actions (code edits, test runs, linting, local builds) without user interruption, reserving approval prompts strictly for critical operations.
 

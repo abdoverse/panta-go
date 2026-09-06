@@ -76,6 +76,9 @@ func handleListRequests(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		requests[i].ImageUrl = resolvedURL
+		if len(requests[i].Messages) > 0 {
+			requests[i].Messages = sanitizeAndDecryptMessages(requests[i].Messages, requests[i].ID)
+		}
 	}
 
 	jsonResponse(w, http.StatusOK, requests)

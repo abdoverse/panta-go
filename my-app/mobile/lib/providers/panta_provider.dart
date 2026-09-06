@@ -172,6 +172,19 @@ class PantaProvider extends ChangeNotifier {
           return;
         }
       }
+      if (decoded is Map<String, dynamic> && decoded['type'] == 'chat-erased') {
+        final reqId = decoded['requestId']?.toString();
+        if (reqId != null) {
+          _chatByRequestId[reqId] = [];
+          final index = _requestState.requests.indexWhere((r) => r.id == reqId);
+          if (index != -1) {
+            _requestState.requests[index] =
+                _requestState.requests[index].copyWith(messages: []);
+          }
+          notifyListeners();
+          return;
+        }
+      }
     } catch (_) {}
 
     _requestState.handleRealtimeMessage(

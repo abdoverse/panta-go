@@ -121,6 +121,9 @@ func enrichRequestForClient(ctx context.Context, request *RecyclingRequest) erro
 		return err
 	}
 	request.ImageUrl = resolvedURL
+	if len(request.Messages) > 0 {
+		request.Messages = sanitizeAndDecryptMessages(request.Messages, request.ID)
+	}
 	return nil
 }
 

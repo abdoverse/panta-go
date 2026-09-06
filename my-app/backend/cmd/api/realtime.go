@@ -92,9 +92,7 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if req.Messages == nil {
-			req.Messages = []ChatMessage{}
-		}
+		req.Messages = sanitizeAndDecryptMessages(req.Messages, req.ID)
 
 		jsonResponse(w, http.StatusOK, map[string]interface{}{
 			"requestId": req.ID,
@@ -156,7 +154,16 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 			CreatedAt:  time.Now().UTC().Format(time.RFC3339),
 		}
 
-		msgAV, err := attributevalue.Marshal(newMsg)
+		encryptedMsg := newMsg
+		encryptedText, err := encryptChatMessageText(newMsg.Text, newMsg.RequestID)
+		if err != nil {
+			log.Printf("Failed to encrypt chat message: %v", err)
+			http.Error(w, "Failed to encrypt message", http.StatusInternalServerError)
+			return
+		}
+		encryptedMsg.Text = encryptedText
+
+		msgAV, err := attributevalue.Marshal(encryptedMsg)
 		if err != nil {
 			http.Error(w, "Failed to serialize message", http.StatusInternalServerError)
 			return
@@ -184,6 +191,56 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 
 		broadcastChatMessage(r.Context(), newMsg)
 		jsonResponse(w, http.StatusCreated, newMsg)
+
+	case http.MethodDelete:
+		requestID := strings.TrimSpace(r.URL.Query().Get("requestId"))
+		if requestID == "" {
+			http.Error(w, "requestId is required", http.StatusBadRequest)
+			return
+		}
+
+		out, err := svc.GetItem(r.Context(), &dynamodb.GetItemInput{
+			TableName: aws.String(tableName),
+			Key: map[string]types.AttributeValue{
+				"id": &types.AttributeValueMemberS{Value: requestID},
+			},
+		})
+		if err != nil || len(out.Item) == 0 {
+			http.Error(w, "Request not found", http.StatusNotFound)
+			return
+		}
+
+		var req RecyclingRequest
+		if err := attributevalue.UnmarshalMap(out.Item, &req); err != nil {
+			http.Error(w, "Failed to parse request", http.StatusInternalServerError)
+			return
+		}
+
+		senderID := claims.requestOwnerID()
+		if req.CreatorID != "" && senderID != req.CreatorID && senderID != req.HelperID {
+			http.Error(w, "Forbidden: not a participant of this request", http.StatusForbidden)
+			return
+		}
+
+		if err := eraseChatHistory(r.Context(), requestID); err != nil {
+			log.Printf("Failed to erase chat history for request %s: %v", requestID, err)
+			http.Error(w, "Failed to erase chat messages", http.StatusInternalServerError)
+			return
+		}
+
+		if hub != nil {
+			payload, _ := json.Marshal(map[string]interface{}{
+				"type":      "chat-erased",
+				"requestId": requestID,
+			})
+			hub.broadcast <- payload
+		}
+
+		jsonResponse(w, http.StatusOK, map[string]interface{}{
+			"status":    "erased",
+			"requestId": requestID,
+			"message":   "Chat history purged under GDPR Right to Erasure",
+		})
 
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
