@@ -192,6 +192,17 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 		}
 
 		broadcastChatMessage(r.Context(), newMsg)
+
+		// Push notification to creator device when helper sends a message
+		if claims.Role == "helper" && req.CreatorDeviceToken != "" {
+			notifTitle := fmt.Sprintf("Message from %s", senderName)
+			lowerText := strings.ToLower(payload.Text)
+			if strings.Contains(lowerText, "door") || strings.Contains(lowerText, "outside") || strings.Contains(lowerText, "arrived") {
+				notifTitle = "Ding-Dong! Helper is at your door 🛎️"
+			}
+			go sendPushNotification(req.CreatorDeviceToken, notifTitle, payload.Text)
+		}
+
 		jsonResponse(w, http.StatusCreated, newMsg)
 
 	case http.MethodDelete:

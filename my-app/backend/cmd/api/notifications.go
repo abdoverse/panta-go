@@ -12,11 +12,12 @@ import (
 )
 
 func sendPushNotification(token string, title string, body string) {
-	if fcmClient == nil {
-		log.Println("Skipping notification: FCM client not initialized")
+	if token == "" {
 		return
 	}
-	if token == "" {
+
+	if fcmClient == nil {
+		log.Printf("[Push Notification Mock] Sent to %s: [%s] %s", token, title, body)
 		return
 	}
 
