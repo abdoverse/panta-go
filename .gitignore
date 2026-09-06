@@ -9,9 +9,20 @@
 *.dylib
 *.test
 *.out
+panta-backend
+my-app/backend/panta-backend
 vendor/
 go.work
 go.work.sum
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Logs
+.agents/logs/
+
 
 # Flutter/Dart
 .dart_tool/
