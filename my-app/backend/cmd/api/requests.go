@@ -33,6 +33,7 @@ func registerRequestRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/v1/requests/rate", authMiddleware(handleRateRequest))
 	mux.HandleFunc("/api/v1/requests/arrived", authMiddleware(handleArrivedAtDoor))
 	mux.HandleFunc("/api/v1/analytics", authMiddleware(handleAnalytics))
+	mux.HandleFunc("/api/v1/market/config", authMiddleware(handleMarketConfig))
 	mux.HandleFunc("/api/v1/demo/seed", handleDemoSeed)
 }
 
@@ -232,6 +233,31 @@ func handleCreateRequest(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonResponse(w, http.StatusBadRequest, map[string]string{"error": fmt.Sprintf("Invalid payload: %v", err)})
 		return
+	}
+
+	market := strings.TrimSpace(r.URL.Query().Get("market"))
+	if market == "" {
+		market = "SE"
+	}
+	marketConfig := getMarketConfig(market)
+
+	creatorRequests, err := listCreatorRequests(r.Context(), claims.requestOwnerID())
+	if err == nil {
+		activeCount := 0
+		for _, cr := range creatorRequests {
+			if cr.Status == "pending" || cr.Status == "accepted" {
+				activeCount++
+			}
+		}
+		if activeCount >= marketConfig.MaxActiveRequestsPerRecycler {
+			jsonResponse(w, http.StatusConflict, map[string]interface{}{
+				"error":   fmt.Sprintf("Active request limit reached for market %s (maximum %d active requests allowed). Please complete or cancel an existing request first.", marketConfig.MarketName, marketConfig.MaxActiveRequestsPerRecycler),
+				"code":    "ACTIVE_LIMIT_REACHED",
+				"limit":   marketConfig.MaxActiveRequestsPerRecycler,
+				"current": activeCount,
+			})
+			return
+		}
 	}
 
 	req.ID = newRequestID()

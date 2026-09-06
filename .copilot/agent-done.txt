@@ -3,6 +3,22 @@
 # Status values: done
 # Fields: id | status | priority | complexity | dependencies | title
 
+## backend
+plan-73 | done | high | medium | none | Secure GDPR-compliant chat storage with encryption at rest and multi-language/emoji support
+  Owner agent: backend_dev
+  Started at: 2026-09-06T18:48:00.000000+00:00
+  Last heartbeat at: 2026-09-06T18:55:00.000000+00:00
+  Last progress at: 2026-09-06T18:55:00.000000+00:00
+  Progress note: tester [done]: Implemented AES-256-GCM encryption at rest with requestID AAD binding, GDPR Article 17 erasure API, 30-day retention enforcement, and verified live against real AWS DynamoDB with Swedish localization and emoji preservation.
+
+## both
+plan-74 | done | medium | medium | none | Dynamic per-market active request limits for recyclers via market configuration profiles
+  Owner agent: fullstack_dev
+  Started at: 2026-09-06T18:55:00.000000+00:00
+  Last heartbeat at: 2026-09-06T19:02:00.000000+00:00
+  Last progress at: 2026-09-06T19:02:00.000000+00:00
+  Progress note: tester [done]: Market configuration profile API added to backend, active request quota limits enforced at API and reflected in mobile CreateRequestPage with quota banners and disabled states; unit and widget tests passing (36/36).
+
 ## frontend
 plan-72 | done | medium | small | none | Remove personal number display from BankID badge in profile
   Owner agent: mobile_dev

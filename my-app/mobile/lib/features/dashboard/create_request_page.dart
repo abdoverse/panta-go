@@ -158,6 +158,64 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Market Active Request Quota Indicator (plan-74)
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(bottom: 20),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: provider.canCreateRequest
+                      ? AppTheme.primaryGreen.withValues(alpha: 0.08)
+                      : Colors.orange.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: provider.canCreateRequest
+                        ? AppTheme.primaryGreen.withValues(alpha: 0.25)
+                        : Colors.orange.withValues(alpha: 0.5),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      provider.canCreateRequest
+                          ? Icons.inventory_2_outlined
+                          : Icons.warning_amber_rounded,
+                      color: provider.canCreateRequest
+                          ? AppTheme.primaryGreen
+                          : Colors.orange[800],
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            provider.canCreateRequest
+                                ? 'Active Market Quota: ${provider.activeRequestsCount} of ${provider.maxActiveRequests} used'
+                                : 'Active Market Limit Reached (${provider.activeRequestsCount}/${provider.maxActiveRequests})',
+                            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: provider.canCreateRequest
+                                      ? AppTheme.primaryGreen
+                                      : Colors.orange[900],
+                                ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            provider.canCreateRequest
+                                ? 'You have ${provider.maxActiveRequests - provider.activeRequestsCount} request slots remaining in your market.'
+                                : 'Please wait for an existing pickup to complete before creating a new one.',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: Colors.grey[700],
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               if (canShowQuickSummary) ...[
                 _QuickRequestSummaryCard(
                   title: _titleController.text,
@@ -630,7 +688,7 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: provider.isLoading
+                  onPressed: (provider.isLoading || !provider.canCreateRequest)
                       ? null
                       : () async {
                           await _submitRequest(provider);
@@ -646,9 +704,11 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                   child: provider.isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
                       : Text(
-                          _isQuickMode
-                              ? 'Confirm quick request'
-                              : l10n.postRequest,
+                          !provider.canCreateRequest
+                              ? 'Market limit reached'
+                              : (_isQuickMode
+                                  ? 'Confirm quick request'
+                                  : l10n.postRequest),
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -819,6 +879,18 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
   }
 
   Future<void> _submitRequest(PantaProvider provider) async {
+    if (!provider.canCreateRequest) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Active request limit reached (${provider.activeRequestsCount}/${provider.maxActiveRequests}). Please wait for an existing pickup to complete.',
+          ),
+          backgroundColor: Colors.orange[800],
+        ),
+      );
+      return;
+    }
+
     if (!_formKey.currentState!.validate()) {
       return;
     }

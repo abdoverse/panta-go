@@ -96,6 +96,9 @@ class PantaProvider extends ChangeNotifier {
       _requestState.requests.where((r) => r.status != RequestStatus.pickedUp).toList();
   List<RecyclingRequest> get previousRequests =>
       _requestState.requests.where((r) => r.status == RequestStatus.pickedUp).toList();
+  int get activeRequestsCount => ongoingRequests.length;
+  int get maxActiveRequests => 5;
+  bool get canCreateRequest => activeRequestsCount < maxActiveRequests;
 
   ImpactSummary get userImpactSummary =>
       ImpactSummary.fromRequests(_requestState.requests, isHelper: false);
