@@ -120,8 +120,10 @@ class _ChatNotificationListenerState extends State<ChatNotificationListener>
     final provider = context.watch<PantaProvider>();
     final lastMsg = provider.lastIncomingChatMessage;
 
-    // Trigger incoming notification if a new message arrived
-    if (lastMsg != null && lastMsg.id != _lastNotifiedMessageId) {
+    // Trigger incoming notification if a new message arrived from the other party
+    if (lastMsg != null &&
+        lastMsg.id != _lastNotifiedMessageId &&
+        !provider.isMessageSentByMe(lastMsg)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           _triggerNotification(lastMsg);

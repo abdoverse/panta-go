@@ -48,6 +48,14 @@ class _ChatBottomSheetState extends State<ChatBottomSheet> {
   String? _lastMessageId;
   bool _initialScrollTriggered = false;
   double _lastBottomInset = 0;
+  PantaProvider? _provider;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _provider = context.read<PantaProvider>();
+    _provider?.setActiveChatRequestId(widget.request.id);
+  }
 
   @override
   void initState() {
@@ -77,6 +85,7 @@ class _ChatBottomSheetState extends State<ChatBottomSheet> {
 
   @override
   void dispose() {
+    _provider?.setActiveChatRequestId(null);
     _pollingTimer?.cancel();
     _textController.dispose();
     _scrollController.dispose();

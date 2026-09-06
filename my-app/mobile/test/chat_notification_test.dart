@@ -329,5 +329,110 @@ void main() {
       expect(find.text('Chat (1)'), findsOneWidget);
       expect(find.textContaining('NEW'), findsNothing);
     });
+
+    test('Recipient-only notification routing: recycler writing to helper notifies helper only, never recycler', () async {
+      // 1. Recycler Provider (Anna Recycler)
+      final recyclerProvider = PantaProvider();
+      await recyclerProvider.restoreSession();
+      await recyclerProvider.loginDirect(role: 'user', username: 'Anna Recycler', seedIfEmpty: false);
+
+      // 2. Helper Provider (Erik Helper)
+      final helperProvider = PantaProvider();
+      await helperProvider.restoreSession();
+      await helperProvider.loginDirect(role: 'helper', username: 'Erik Helper', seedIfEmpty: false);
+
+      final req = RecyclingRequest(
+        id: 'req-pair-1',
+        creatorId: recyclerProvider.currentUserId,
+        creatorName: 'Anna Recycler',
+        helperId: helperProvider.currentUserId,
+        helperName: 'Erik Helper',
+        title: 'Morning Glass pickup',
+        status: RequestStatus.accepted,
+        scheduledFrom: DateTime.now(),
+        scheduledTo: DateTime.now().add(const Duration(hours: 1)),
+        location: 'Drottninggatan 1',
+      );
+      recyclerProvider.requests.add(req);
+      helperProvider.requests.add(req);
+
+      // Message authored by Recycler
+      final recyclerMsg = ChatMessage(
+        id: 'msg-rec-1',
+        requestId: 'req-pair-1',
+        senderId: recyclerProvider.currentUserId ?? 'mock-user-anna',
+        senderRole: 'user',
+        senderName: 'Anna Recycler',
+        text: 'Portkoden är 4321',
+        createdAt: DateTime.now(),
+      );
+
+      // Sender (Recycler) processes message
+      recyclerProvider.handleIncomingChatMessage(recyclerMsg);
+
+      // SENDER MUST NEVER RECEIVE BANNER OR UNREAD INCREMENT
+      expect(recyclerProvider.isMessageSentByMe(recyclerMsg), isTrue,
+          reason: 'Sender provider must recognize its own message');
+      expect(recyclerProvider.lastIncomingChatMessage, isNull,
+          reason: 'Notification banner must NOT appear on the sender (recycler)');
+      expect(recyclerProvider.getUnreadChatCount('req-pair-1'), 0,
+          reason: 'Unread counter must not increment for the sender');
+      expect(recyclerProvider.hasUnreadChat('req-pair-1'), isFalse);
+
+      // Recipient (Helper) processes message
+      helperProvider.handleIncomingChatMessage(recyclerMsg);
+
+      // RECIPIENT MUST RECEIVE BANNER AND UNREAD COUNT
+      expect(helperProvider.isMessageSentByMe(recyclerMsg), isFalse,
+          reason: 'Recipient provider must recognize message is from other party');
+      expect(helperProvider.lastIncomingChatMessage, equals(recyclerMsg),
+          reason: 'Notification banner MUST appear on the recipient (helper)');
+      expect(helperProvider.getUnreadChatCount('req-pair-1'), 1,
+          reason: 'Unread counter must increment for the recipient');
+      expect(helperProvider.hasUnreadChat('req-pair-1'), isTrue);
+
+      // Now Helper replies to Recycler
+      final helperReply = ChatMessage(
+        id: 'msg-help-1',
+        requestId: 'req-pair-1',
+        senderId: helperProvider.currentUserId ?? 'mock-helper-erik',
+        senderRole: 'helper',
+        senderName: 'Erik Helper',
+        text: 'Tack! Jag är utanför dörren om 2 min.',
+        createdAt: DateTime.now(),
+      );
+
+      // Helper (sender) processes its own reply
+      helperProvider.handleIncomingChatMessage(helperReply);
+      expect(helperProvider.isMessageSentByMe(helperReply), isTrue);
+      // Helper still had recyclerMsg as its last incoming message, but not helperReply
+      expect(helperProvider.lastIncomingChatMessage, isNot(equals(helperReply)),
+          reason: 'Helper must not get banner for its own outgoing reply');
+
+      // Recycler (recipient) processes helper reply
+      recyclerProvider.handleIncomingChatMessage(helperReply);
+      expect(recyclerProvider.isMessageSentByMe(helperReply), isFalse);
+      expect(recyclerProvider.lastIncomingChatMessage, equals(helperReply),
+          reason: 'Recycler MUST receive banner for helper reply');
+      expect(recyclerProvider.getUnreadChatCount('req-pair-1'), 1);
+
+      // Verify active chat sheet suppresses banner while open
+      helperProvider.clearLastIncomingChatMessage();
+      helperProvider.setActiveChatRequestId('req-pair-1'); // helper is viewing this chat
+
+      final secondRecyclerMsg = ChatMessage(
+        id: 'msg-rec-2',
+        requestId: 'req-pair-1',
+        senderId: recyclerProvider.currentUserId ?? 'mock-user-anna',
+        senderRole: 'user',
+        senderName: 'Anna Recycler',
+        text: 'Jag lägger påsarna vid dörren nu',
+        createdAt: DateTime.now(),
+      );
+
+      helperProvider.handleIncomingChatMessage(secondRecyclerMsg);
+      expect(helperProvider.lastIncomingChatMessage, isNull,
+          reason: 'Banner is suppressed while recipient has that chat actively open');
+    });
   });
 }

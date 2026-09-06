@@ -148,6 +148,16 @@ class PantaProvider extends ChangeNotifier {
     }
   }
 
+  String? _activeChatRequestId;
+  String? get activeChatRequestId => _activeChatRequestId;
+
+  void setActiveChatRequestId(String? requestId) {
+    _activeChatRequestId = requestId;
+    if (requestId != null) {
+      markChatAsRead(requestId);
+    }
+  }
+
   void clearLastIncomingChatMessage() {
     if (_lastIncomingChatMessage != null) {
       _lastIncomingChatMessage = null;
@@ -938,7 +948,7 @@ class PantaProvider extends ChangeNotifier {
       isPreset: isPreset,
     );
     if (message != null) {
-      _appendChatMessage(message);
+      _appendChatMessage(message, isOutgoing: true);
       return true;
     }
     return false;
@@ -976,7 +986,69 @@ class PantaProvider extends ChangeNotifier {
     _appendChatMessage(msg);
   }
 
-  void _appendChatMessage(ChatMessage msg) {
+  /// Determines if a chat message was authored by the current logged-in user.
+  /// This guarantees that notification banners and unread counters are strictly dispatched
+  /// to the intended recipient only, and NEVER displayed on the sender's device.
+  bool isMessageSentByMe(ChatMessage msg) {
+    final senderRole = msg.senderRole.trim().toLowerCase();
+    final senderId = msg.senderId.trim().toLowerCase();
+    final senderName = msg.senderName.trim().toLowerCase();
+
+    // 1. Match against current user's authenticated ID / UUID
+    final myId = _authState.currentUserId?.trim().toLowerCase();
+    if (myId != null && myId.isNotEmpty && senderId.isNotEmpty && myId == senderId) {
+      return true;
+    }
+
+    // 2. Match against current user's display name
+    final myName = _authState.currentUserDisplayName?.trim().toLowerCase();
+    if (myName != null && myName.isNotEmpty && senderName.isNotEmpty && myName == senderName) {
+      return true;
+    }
+
+    // 3. Match against user roles in this 1-on-1 interaction
+    // - A Helper only authored 'helper' messages and expects notifications from 'user' / 'recycler'
+    // - A Recycler only authored 'user' / 'recycler' messages and expects notifications from 'helper'
+    if (_authState.isHelper && senderRole == 'helper') {
+      return true;
+    }
+    if (!_authState.isHelper && !_authState.isAdmin && (senderRole == 'user' || senderRole == 'recycler')) {
+      return true;
+    }
+
+    // 4. Cross-check against request participants
+    final index = _requestState.requests.indexWhere((r) => r.id == msg.requestId);
+    if (index != -1) {
+      final req = _requestState.requests[index];
+      if (_authState.isHelper) {
+        if (req.helperId != null && req.helperId!.isNotEmpty && senderId.isNotEmpty &&
+            req.helperId!.trim().toLowerCase() == senderId) {
+          return true;
+        }
+        if (req.helperName != null && req.helperName!.isNotEmpty && senderName.isNotEmpty &&
+            req.helperName!.trim().toLowerCase() == senderName) {
+          return true;
+        }
+      } else {
+        if (req.creatorId != null && req.creatorId!.isNotEmpty && senderId.isNotEmpty &&
+            req.creatorId!.trim().toLowerCase() == senderId) {
+          return true;
+        }
+        if (req.creatorName != null && req.creatorName!.isNotEmpty && senderName.isNotEmpty &&
+            req.creatorName!.trim().toLowerCase() == senderName) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  void _appendChatMessage(
+    ChatMessage msg, {
+    bool isOutgoing = false,
+    bool notifyBanner = true,
+  }) {
     final existing = _chatByRequestId[msg.requestId] ?? [];
     final isNew = !existing.any((m) => m.id == msg.id);
     if (isNew) {
@@ -992,16 +1064,18 @@ class PantaProvider extends ChangeNotifier {
       }
     }
 
-    // Determine if this message is from the other party (incoming notification)
-    final isFromOtherUser = msg.senderId.isNotEmpty &&
-        (msg.senderId != _authState.currentUserId ||
-         msg.senderRole != (_authState.isHelper ? 'helper' : 'user'));
+    // Determine if this message is from the other party (recipient notification only)
+    final bool isFromMe = isOutgoing || isMessageSentByMe(msg);
+    final bool isFromOtherUser = !isFromMe;
+    final bool isViewingThisChat = _activeChatRequestId == msg.requestId;
 
-    if (isNew && isFromOtherUser) {
+    if (isNew && isFromOtherUser && !isViewingThisChat) {
       _unreadChatRequestIds.add(msg.requestId);
       _unreadChatCounts[msg.requestId] =
           (_unreadChatCounts[msg.requestId] ?? 0) + 1;
-      _lastIncomingChatMessage = msg;
+      if (notifyBanner) {
+        _lastIncomingChatMessage = msg;
+      }
     }
 
     notifyListeners();
@@ -1013,7 +1087,7 @@ class PantaProvider extends ChangeNotifier {
         for (final msg in req.messages) {
           final existing = _chatByRequestId[msg.requestId] ?? [];
           if (!existing.any((m) => m.id == msg.id)) {
-            _appendChatMessage(msg);
+            _appendChatMessage(msg, notifyBanner: false);
           }
         }
       }
@@ -1085,6 +1159,7 @@ class PantaProvider extends ChangeNotifier {
     _unreadChatRequestIds.clear();
     _unreadChatCounts.clear();
     _lastIncomingChatMessage = null;
+    _activeChatRequestId = null;
     _savedAddresses = const [];
     _requestTemplates = const [];
 
