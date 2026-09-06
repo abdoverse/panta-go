@@ -78,5 +78,5 @@ To manage background autonomous agent development:
 scripts/manage_loop.sh start     # Starts the background orchestrator
 scripts/manage_loop.sh status    # Checks orchestrator process & heartbeat
 scripts/manage_loop.sh recover   # Recovers stalled backlog tasks
-scripts/manage_loop.sh logs      # Tails .copilot/orchestrator.log
+scripts/manage_loop.sh logs      # Tails .agents/logs/orchestrator.log
 ```

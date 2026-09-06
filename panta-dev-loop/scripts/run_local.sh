@@ -6,7 +6,7 @@ set -e
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 BACKEND_DIR="$PROJECT_ROOT/my-app/backend/cmd/api"
 FRONTEND_DIR="$PROJECT_ROOT/my-app/mobile"
-LOG_DIR="$PROJECT_ROOT/.copilot/local-run"
+LOG_DIR="$PROJECT_ROOT/.agents/logs/local-run"
 
 BACKEND_PID_FILE="$LOG_DIR/backend.pid"
 FRONTEND_PID_FILE="$LOG_DIR/frontend.pid"

@@ -4,8 +4,8 @@
 
 PROJECT_ROOT=$(pwd)
 ORCHESTRATOR_SCRIPT="$PROJECT_ROOT/langgraph_multi_agent.py"
-LOG_FILE="$PROJECT_ROOT/.copilot/orchestrator.log"
-PID_FILE="$PROJECT_ROOT/.copilot/orchestrator.pid"
+LOG_FILE="$PROJECT_ROOT/.agents/logs/orchestrator.log"
+PID_FILE="$PROJECT_ROOT/.agents/orchestrator.pid"
 
 # Select Python binary (prefer repo venv)
 if [ -x "$PROJECT_ROOT/.venv/bin/python3" ]; then

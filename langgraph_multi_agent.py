@@ -63,12 +63,36 @@ except ImportError:
 # =====================================================================
 
 DEFAULT_PROJECT_PATH = Path(".").resolve()
-DEFAULT_INSTRUCTIONS_FILE = Path(".github/copilot-instructions.md")
-DEFAULT_BACKLOG_FILE = ".copilot/agent-backlog.txt"
-DEFAULT_PLAN_FILE = ".copilot/agent-plan.md"
-DEFAULT_DONE_FILE = ".copilot/agent-done.txt"
-DEFAULT_WORKER_STATE_FILE = ".copilot/worker-state.json"
-DEFAULT_AGENT_LOG_DIR = ".copilot/agent-logs"
+DEFAULT_INSTRUCTIONS_FILE = (
+    Path("GEMINI.md")
+    if Path("GEMINI.md").exists()
+    else Path(".github/copilot-instructions.md")
+)
+DEFAULT_BACKLOG_FILE = (
+    ".agents/agent-backlog.txt"
+    if Path(".agents/agent-backlog.txt").exists()
+    else ".copilot/agent-backlog.txt"
+)
+DEFAULT_PLAN_FILE = (
+    ".agents/agent-plan.md"
+    if Path(".agents/agent-plan.md").exists()
+    else ".copilot/agent-plan.md"
+)
+DEFAULT_DONE_FILE = (
+    ".agents/agent-done.txt"
+    if Path(".agents/agent-done.txt").exists()
+    else ".copilot/agent-done.txt"
+)
+DEFAULT_WORKER_STATE_FILE = (
+    ".agents/worker-state.json"
+    if Path(".agents/worker-state.json").exists()
+    else ".copilot/worker-state.json"
+)
+DEFAULT_AGENT_LOG_DIR = (
+    ".agents/agent-logs"
+    if Path(".agents/agent-logs").exists()
+    else ".copilot/agent-logs"
+)
 
 VALID_CATEGORIES = ("backend", "frontend", "both")
 VALID_PLAN_STATUSES = ("planned", "approved")

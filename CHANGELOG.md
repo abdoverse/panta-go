@@ -21,6 +21,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BankID Personal Number Privacy (`plan-72`)**:
   - Masked and removed national identity personal number display from BankID verification badge on the user profile screen.
   - Added widget verification test in `bankid_test.dart`.
+- **Systematic Repository Changelog (`plan-76`)**:
+  - Authored repo-level `CHANGELOG.md` adhering to Keep a Changelog standard and SemVer, documenting releases 1.0.0 through 1.3.0 with dates and task IDs.
+- **Gemini / Antigravity Native Workspace Migration (`plan-75`)**:
+  - Migrated legacy `.copilot` directory structure to native `.agents/` layout (`.agents/agent-backlog.txt`, `.agents/agent-done.txt`, `.agents/agent-plan.md`, `.agents/rules/`, `.agents/logs/`).
+  - Added repo-level `GEMINI.md` and `AGENTS.md` configuration entrypoints.
+  - Updated `langgraph_multi_agent.py`, `manage_loop.sh`, `run_local.sh`, and `panta-dev-loop` skill with `.agents/` paths while preserving full backward compatibility.
+- **High-Autonomy Development Mode Policy (`plan-77`)**:
+  - Configured workspace rule `.agents/rules/autonomy.md` enabling auto-execution of routine non-critical dev actions (code edits, test runs, linting, local builds/runs) without user interruption, reserving confirmation strictly for critical destructive actions.
 - **Local Browser Testing Persona Suite**:
   - Added 1-click test personas for Anna Recycler and Erik Helper with local token bootstrap and pre-seeded recycling requests.
   - Added HTTP polling fallback for environments where WebSocket upgrades are constrained.
