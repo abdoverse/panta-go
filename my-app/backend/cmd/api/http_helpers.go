@@ -30,8 +30,9 @@ func enableCORS(next http.Handler) http.Handler {
 			return
 		}
 
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE, PATCH")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept, Origin, X-Requested-With")
+		w.Header().Set("Access-Control-Max-Age", "86400")
 
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusOK)
@@ -114,8 +115,21 @@ func isAllowedOrigin(origin string, r *http.Request) bool {
 		return true
 	}
 
+	if isLocalhostOrigin(normalizedOrigin) {
+		return true
+	}
+
 	_, isConfiguredOrigin := configuredAllowedOrigins[normalizedOrigin]
 	return isConfiguredOrigin
+}
+
+func isLocalhostOrigin(origin string) bool {
+	parsedOrigin, err := url.Parse(origin)
+	if err != nil {
+		return false
+	}
+	hostname := strings.ToLower(parsedOrigin.Hostname())
+	return hostname == "localhost" || hostname == "127.0.0.1" || hostname == "::1"
 }
 
 func normalizeAllowedOrigin(rawOrigin string) (string, bool) {

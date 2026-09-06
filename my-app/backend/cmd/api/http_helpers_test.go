@@ -89,4 +89,21 @@ func TestApplyCORSHeaders(t *testing.T) {
 			t.Fatalf("applyCORSHeaders() = false, want true")
 		}
 	})
+
+	t.Run("allows localhost development origins", func(t *testing.T) {
+		t.Parallel()
+
+		req := httptest.NewRequest(http.MethodGet, "http://localhost:8080/health", nil)
+		req.Host = "localhost:8080"
+		req.Header.Set("Origin", "http://localhost:3000")
+
+		recorder := httptest.NewRecorder()
+		if ok := applyCORSHeaders(recorder, req); !ok {
+			t.Fatalf("applyCORSHeaders() = false, want true")
+		}
+
+		if got := recorder.Header().Get("Access-Control-Allow-Origin"); got != "http://localhost:3000" {
+			t.Fatalf("Access-Control-Allow-Origin = %q, want %q", got, "http://localhost:3000")
+		}
+	})
 }

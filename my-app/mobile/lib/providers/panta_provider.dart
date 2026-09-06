@@ -248,14 +248,22 @@ class PantaProvider extends ChangeNotifier {
 
       if (seedIfEmpty) {
         final token = await _authService.getToken();
-        await _requestApiService.seedDemoData(token: token);
+        try {
+          await _requestApiService.seedDemoData(token: token);
+        } catch (_) {}
       }
 
-      await Future.wait([
-        fetchRequests(),
-        fetchRequestAssets(),
-      ]);
+      try {
+        await Future.wait([
+          fetchRequests(silent: true),
+          fetchRequestAssets(silent: true),
+        ]);
+      } catch (_) {}
+
       return null;
+    } catch (e) {
+      debugPrint('Direct login error: $e');
+      return 'Direct login failed: $e';
     } finally {
       _setLoading(false);
       notifyListeners();
