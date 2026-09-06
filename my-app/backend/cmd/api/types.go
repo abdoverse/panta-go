@@ -43,8 +43,10 @@ type RecyclingRequest struct {
 	DoorInstructions   string     `json:"doorInstructions,omitempty" dynamodbav:"doorInstructions,omitempty"`
 	DropoffPhotoUrl    string        `json:"dropoffPhotoUrl,omitempty" dynamodbav:"dropoffPhotoUrl,omitempty"`
 	DropoffConfirmedAt *time.Time    `json:"dropoffConfirmedAt,omitempty" dynamodbav:"dropoffConfirmedAt,omitempty"`
-	ArrivedAtDoor      *time.Time    `json:"arrivedAtDoor,omitempty" dynamodbav:"arrivedAtDoor,omitempty"`
-	Messages           []ChatMessage `json:"messages,omitempty" dynamodbav:"messages,omitempty"`
+	ArrivedAtDoor         *time.Time    `json:"arrivedAtDoor,omitempty" dynamodbav:"arrivedAtDoor,omitempty"`
+	Messages              []ChatMessage `json:"messages,omitempty" dynamodbav:"messages,omitempty"`
+	CreatorBankIdVerified bool          `json:"creatorBankIdVerified" dynamodbav:"creatorBankIdVerified"`
+	HelperBankIdVerified  bool          `json:"helperBankIdVerified" dynamodbav:"helperBankIdVerified"`
 }
 
 type ArrivedAtDoorPayload struct {
@@ -365,11 +367,50 @@ type LoginResponse struct {
 }
 
 type Claims struct {
-	Role            string `json:"nickname"`
-	CognitoUsername string `json:"cognito:username"`
-	DisplayName     string `json:"name"`
-	Email           string `json:"email"`
+	Role                 string `json:"nickname"`
+	CognitoUsername      string `json:"cognito:username"`
+	DisplayName          string `json:"name"`
+	Email                string `json:"email"`
+	BankIdVerified       bool   `json:"bankIdVerified,omitempty"`
+	BankIdPersonalNumber string `json:"bankIdPersonalNumber,omitempty"`
+	BankIdVerifiedAt     string `json:"bankIdVerifiedAt,omitempty"`
 	jwt.RegisteredClaims
+}
+
+type BankIdInitiateRequest struct {
+	PersonalNumber string `json:"personalNumber,omitempty"` // Swedish SSN: YYYYMMDDXXXX
+	Role           string `json:"role"`                     // "user" or "helper"
+	DisplayName    string `json:"displayName,omitempty"`
+}
+
+type BankIdInitiateResponse struct {
+	OrderRef       string `json:"orderRef"`
+	AutoStartToken string `json:"autoStartToken"`
+	QrCode         string `json:"qrCode"`
+	Status         string `json:"status"` // "pending"
+}
+
+type BankIdCollectRequest struct {
+	OrderRef string `json:"orderRef"`
+}
+
+type BankIdCollectResponse struct {
+	OrderRef             string `json:"orderRef"`
+	Status               string `json:"status"`   // "pending", "complete", "failed"
+	HintCode             string `json:"hintCode"` // "outstandingTransaction", "userSign", "complete", "userCancel"
+	Token                string `json:"token,omitempty"`
+	PersonalNumber       string `json:"personalNumber,omitempty"` // Masked: 19920512-****
+	Name                 string `json:"name,omitempty"`
+	BankIdVerified       bool   `json:"bankIdVerified"`
+	BankIdVerifiedAt     string `json:"bankIdVerifiedAt,omitempty"`
+}
+
+type BankIdVerificationStatus struct {
+	BankIdVerified       bool   `json:"bankIdVerified"`
+	BankIdPersonalNumber string `json:"bankIdPersonalNumber,omitempty"`
+	BankIdVerifiedAt     string `json:"bankIdVerifiedAt,omitempty"`
+	DisplayName          string `json:"displayName,omitempty"`
+	Role                 string `json:"role,omitempty"`
 }
 
 func (c *Claims) helperID() string {

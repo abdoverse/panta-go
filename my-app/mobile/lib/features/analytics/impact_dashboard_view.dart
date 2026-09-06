@@ -20,7 +20,6 @@ class ImpactDashboardView extends StatefulWidget {
 
 class _ImpactDashboardViewState extends State<ImpactDashboardView> {
   ImpactSummary? _remoteSummary;
-  bool _isLoading = true;
 
   @override
   void initState() {
@@ -33,7 +32,6 @@ class _ImpactDashboardViewState extends State<ImpactDashboardView> {
     if (mounted) {
       setState(() {
         _remoteSummary = res;
-        _isLoading = false;
       });
     }
   }

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/panta_provider.dart';
+import 'bankid_dialog.dart';
 
 enum _AuthMode { login, signUp }
 
@@ -307,6 +308,36 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                                 label: Text(
                                   _isSignUpMode ? l10n.createAccount : l10n.logIn,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: const Color(0xFF235971),
+                                  side: const BorderSide(
+                                    color: Color(0xFF235971),
+                                    width: 1.5,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                ),
+                                onPressed: () {
+                                  BankIdDialog.show(
+                                    context,
+                                    isLogin: true,
+                                    isHelper: _selectedRole == 'Helper',
+                                  );
+                                },
+                                icon: const Icon(Icons.shield_outlined, size: 20),
+                                label: Text(
+                                  l10n.bankIdLogin,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 12),

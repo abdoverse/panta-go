@@ -86,6 +86,9 @@ class PantaAuthState {
   String? currentUserId;
   String? currentUserDisplayName;
   bool isHelper = false;
+  bool bankIdVerified = false;
+  String? bankIdPersonalNumber;
+  String? bankIdVerifiedAt;
   String? pendingSignupEmail;
   String? pendingSignupUsername;
 
@@ -95,10 +98,36 @@ class PantaAuthState {
     required String? userId,
     required String? displayName,
     required bool helper,
+    bool? verifiedBankId,
+    String? personalNumber,
+    String? verifiedAt,
   }) {
     currentUserId = userId;
     currentUserDisplayName = displayName;
     isHelper = helper;
+    if (verifiedBankId != null) {
+      bankIdVerified = verifiedBankId;
+    }
+    if (personalNumber != null) {
+      bankIdPersonalNumber = personalNumber;
+    }
+    if (verifiedAt != null) {
+      bankIdVerifiedAt = verifiedAt;
+    }
+  }
+
+  void updateBankIdStatus({
+    required bool verified,
+    String? personalNumber,
+    String? verifiedAt,
+  }) {
+    bankIdVerified = verified;
+    if (personalNumber != null) {
+      bankIdPersonalNumber = personalNumber;
+    }
+    if (verifiedAt != null) {
+      bankIdVerifiedAt = verifiedAt;
+    }
   }
 
   void cachePendingSignup({
@@ -118,6 +147,9 @@ class PantaAuthState {
     currentUserId = null;
     currentUserDisplayName = null;
     isHelper = false;
+    bankIdVerified = false;
+    bankIdPersonalNumber = null;
+    bankIdVerifiedAt = null;
     clearPendingSignup();
   }
 }

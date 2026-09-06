@@ -13,6 +13,7 @@ import '../models/request_model.dart';
 import '../services/analytics_api_service.dart';
 import '../services/api_config.dart';
 import '../services/auth_service.dart';
+import '../services/bankid_service.dart';
 import '../services/chat_api_service.dart';
 import '../services/panta_state_services.dart' as panta_state;
 import '../services/request_api_service.dart';
@@ -46,6 +47,7 @@ class PantaProvider extends ChangeNotifier {
   final RequestApiService _requestApiService;
   final ChatApiService _chatApiService;
   final AnalyticsApiService _analyticsApiService;
+  final BankIdService _bankIdService;
 
   final panta_state.PantaAuthState _authState = panta_state.PantaAuthState();
   final panta_state.PantaRequestState _requestState =
@@ -63,10 +65,12 @@ class PantaProvider extends ChangeNotifier {
     RequestApiService? requestApiService,
     ChatApiService? chatApiService,
     AnalyticsApiService? analyticsApiService,
+    BankIdService? bankIdService,
   })  : _authService = authService ?? AuthService(),
         _requestApiService = requestApiService ?? RequestApiService(),
         _chatApiService = chatApiService ?? ChatApiService(),
-        _analyticsApiService = analyticsApiService ?? AnalyticsApiService() {
+        _analyticsApiService = analyticsApiService ?? AnalyticsApiService(),
+        _bankIdService = bankIdService ?? BankIdService() {
     _initialize();
   }
 
@@ -76,6 +80,9 @@ class PantaProvider extends ChangeNotifier {
   bool get isAuthenticated => _authState.isAuthenticated;
   bool get isLoading => _requestState.isLoading;
   bool get isRestoringSession => _isRestoringSession;
+  bool get isBankIdVerified => _authState.bankIdVerified;
+  String? get bankIdPersonalNumber => _authState.bankIdPersonalNumber;
+  String? get bankIdVerifiedAt => _authState.bankIdVerifiedAt;
   List<RecyclingRequest> get requests => _requestState.requests;
   List<SavedAddress> get savedAddresses => _savedAddresses;
   List<RequestTemplate> get requestTemplates => _requestTemplates;
@@ -303,6 +310,73 @@ class PantaProvider extends ChangeNotifier {
     }
 
     return error;
+  }
+
+  // --- BankID Integration ---
+
+  Future<BankIdInitiateResponse?> initiateBankId({
+    String? personalNumber,
+    required bool asHelper,
+    String? displayName,
+  }) async {
+    return _bankIdService.initiate(
+      personalNumber: personalNumber,
+      role: asHelper ? 'helper' : 'user',
+      displayName: displayName,
+    );
+  }
+
+  Future<BankIdCollectResponse?> collectBankId({
+    required String orderRef,
+  }) async {
+    return _bankIdService.collect(orderRef: orderRef);
+  }
+
+  Future<String?> completeBankIdLogin({
+    required BankIdCollectResponse collectResponse,
+    required bool asHelper,
+  }) async {
+    final token = collectResponse.token;
+    if (token == null || token.isEmpty) {
+      return 'BankID authentication did not return a session token';
+    }
+
+    await _authService.setCustomToken(token);
+    await _refreshAuthState(helperOverride: asHelper);
+    notifyListeners();
+    fetchRequests();
+    fetchRequestAssets();
+    return null;
+  }
+
+  Future<bool> verifyCurrentAccountWithBankId({
+    String? orderRef,
+    String? personalNumber,
+  }) async {
+    final token = await _authService.getToken();
+    if (token == null) return false;
+
+    final result = await _bankIdService.verifyUser(
+      token: token,
+      orderRef: orderRef,
+      personalNumber: personalNumber,
+    );
+
+    if (result != null && result['bankIdVerified'] == true) {
+      final newToken = result['token']?.toString();
+      if (newToken != null && newToken.isNotEmpty) {
+        await _authService.setCustomToken(newToken);
+      }
+      _authState.updateBankIdStatus(
+        verified: true,
+        personalNumber: result['bankIdPersonalNumber']?.toString(),
+        verifiedAt: result['bankIdVerifiedAt']?.toString(),
+      );
+      notifyListeners();
+      await fetchRequests(silent: true);
+      return true;
+    }
+    return false;
   }
 
   // --- Requests & Assets API Integration ---
@@ -713,6 +787,20 @@ class PantaProvider extends ChangeNotifier {
     bool? helperOverride,
     String? fallbackEmail,
   }) async {
+    final token = await _authService.getToken();
+    bool bankIdVerified = _authService.isBankIdVerified;
+    String? personalNumber = _authService.bankIdPersonalNumber;
+    String? verifiedAt = _authService.bankIdVerifiedAt;
+
+    if (token != null && !bankIdVerified) {
+      final status = await _bankIdService.getVerificationStatus(token: token);
+      if (status != null && status.bankIdVerified) {
+        bankIdVerified = true;
+        personalNumber = status.personalNumber;
+        verifiedAt = status.verifiedAt;
+      }
+    }
+
     _authState.updateSession(
       userId: await _authService.getCurrentUsername(),
       displayName: await _authService.getCurrentDisplayName(
@@ -721,6 +809,9 @@ class PantaProvider extends ChangeNotifier {
       helper: helperOverride ??
           await _authService.getCurrentUserIsHelper() ??
           false,
+      verifiedBankId: bankIdVerified,
+      personalNumber: personalNumber,
+      verifiedAt: verifiedAt,
     );
   }
 

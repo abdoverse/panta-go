@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:amazon_cognito_identity_dart_2/cognito.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'api_config.dart';
 
 class SignUpResult {
@@ -37,6 +39,35 @@ class AuthService {
 
   CognitoUser? _currentUser;
   CognitoUserSession? _session;
+
+  static const _customJwtStorageKey = 'panta_custom_jwt';
+  String? _customJwtToken;
+  Map<String, dynamic>? _customJwtPayload;
+
+  static Map<String, dynamic>? parseJwtPayload(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return null;
+      final normalized = base64Url.normalize(parts[1]);
+      final payloadString = utf8.decode(base64Url.decode(normalized));
+      return json.decode(payloadString) as Map<String, dynamic>;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> setCustomToken(String token) async {
+    _customJwtToken = token;
+    _customJwtPayload = parseJwtPayload(token);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_customJwtStorageKey, token);
+    } catch (_) {}
+  }
+
+  bool get isBankIdVerified => _customJwtPayload?['bankIdVerified'] == true;
+  String? get bankIdPersonalNumber => _customJwtPayload?['bankIdPersonalNumber']?.toString();
+  String? get bankIdVerifiedAt => _customJwtPayload?['bankIdVerifiedAt']?.toString();
 
   // Login
   Future<String?> login(String email, String password) async {
@@ -153,6 +184,23 @@ class AuthService {
 
   Future<bool> restoreSession() async {
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final customToken = prefs.getString(_customJwtStorageKey);
+      if (customToken != null && customToken.isNotEmpty) {
+        final payload = parseJwtPayload(customToken);
+        if (payload != null) {
+          final exp = payload['exp'];
+          final isExpired = exp is num &&
+              DateTime.fromMillisecondsSinceEpoch(exp.toInt() * 1000)
+                  .isBefore(DateTime.now());
+          if (!isExpired) {
+            _customJwtToken = customToken;
+            _customJwtPayload = payload;
+            return true;
+          }
+        }
+      }
+
       final session = await _loadSession();
       if (session == null) {
         await _invalidateSession();
@@ -167,6 +215,9 @@ class AuthService {
 
   // Get Token
   Future<String?> getToken() async {
+    if (_customJwtToken != null) {
+      return _customJwtToken;
+    }
     try {
       final session = await _loadSession();
       if (session == null || !_isUsableSession(session)) {
@@ -182,6 +233,12 @@ class AuthService {
 
   // Get Current Sub/Username
   Future<String?> getCurrentUsername() async {
+    if (_customJwtPayload != null) {
+      final username = _customJwtPayload!['cognito:username'] ??
+          _customJwtPayload!['name'] ??
+          _customJwtPayload!['sub'];
+      return username?.toString();
+    }
     final session = await _loadSession();
     if (session == null) {
       return null;
@@ -192,6 +249,16 @@ class AuthService {
   }
 
   Future<String?> getCurrentDisplayName({String? fallbackEmail}) async {
+    if (_customJwtPayload != null) {
+      final name = _customJwtPayload!['name']?.toString().trim();
+      if (name != null && name.isNotEmpty) {
+        return name;
+      }
+      final username = _customJwtPayload!['cognito:username']?.toString().trim();
+      if (username != null && username.isNotEmpty) {
+        return username;
+      }
+    }
     final session = await _loadSession();
     if (session == null) {
       return null;
@@ -216,6 +283,15 @@ class AuthService {
   }
 
   Future<bool?> getCurrentUserIsHelper() async {
+    if (_customJwtPayload != null) {
+      final role = _customJwtPayload!['nickname']?.toString().trim().toLowerCase();
+      if (role == 'helper') {
+        return true;
+      }
+      if (role == 'user') {
+        return false;
+      }
+    }
     final session = await _loadSession();
     if (session == null) {
       return null;
@@ -235,6 +311,13 @@ class AuthService {
 
   // Logout
   Future<void> logout() async {
+    _customJwtToken = null;
+    _customJwtPayload = null;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_customJwtStorageKey);
+    } catch (_) {}
+
     final currentUser = _currentUser ?? await _userPool.getCurrentUser();
     final activeSession = await _loadSession();
     _session = null;

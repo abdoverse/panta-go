@@ -461,10 +461,12 @@ class RequestApiService {
               ?.map((m) => ChatMessage.fromJson(m as Map<String, dynamic>))
               .toList() ??
           const [],
+      creatorBankIdVerified: json['creatorBankIdVerified'] == true,
+      helperBankIdVerified: json['helperBankIdVerified'] == true,
     );
   }
 
-  static RequestStatus parseStatus(String status) {
+  static RequestStatus parseStatus(String? status) {
     switch (status) {
       case 'accepted':
         return RequestStatus.accepted;

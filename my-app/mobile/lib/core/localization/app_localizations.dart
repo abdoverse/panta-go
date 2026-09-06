@@ -340,6 +340,33 @@ class AppLocalizations {
   String couldNotOpenMap(String label) => _isSwedish
       ? 'Det gick inte att öppna $label för den här adressen.'
       : 'Could not open $label for this address.';
+
+  String get bankIdLogin =>
+      _isSwedish ? 'Logga in med BankID' : 'Log in with BankID';
+  String get bankIdVerify =>
+      _isSwedish ? 'Verifiera med BankID' : 'Verify with BankID';
+  String get bankIdVerified =>
+      _isSwedish ? 'BankID-verifierad' : 'BankID Verified';
+  String get bankIdVerificationTitle =>
+      _isSwedish ? 'BankID Säker Identifiering' : 'BankID Secure Identification';
+  String get bankIdWaiting =>
+      _isSwedish ? 'Startar BankID...' : 'Starting BankID...';
+  String get bankIdOpenApp => _isSwedish
+      ? 'Öppna BankID-appen på din telefon'
+      : 'Open the BankID app on your phone';
+  String get bankIdSuccess =>
+      _isSwedish ? 'Verifiering lyckades!' : 'Verification successful!';
+  String get bankIdPersonalNumber =>
+      _isSwedish ? 'Personnummer' : 'Personal Identity Number';
+  String get bankIdPersonalNumberHint =>
+      _isSwedish ? 'ÅÅÅÅMMDD-XXXX (valfritt)' : 'YYYYMMDD-XXXX (optional)';
+  String get bankIdOpenOnThisDevice =>
+      _isSwedish ? 'Öppna på denna enhet' : 'Open on this device';
+  String get bankIdVerifiedBadge =>
+      _isSwedish ? 'Verifierad med BankID' : 'Verified with BankID';
+  String get bankIdTrustSubtitle => _isSwedish
+      ? 'Öka tryggheten för återvinnare och hjälpare genom att verifiera din identitet.'
+      : 'Increase trust with recyclers and helpers by verifying your identity.';
 }
 
 class _AppLocalizationsDelegate

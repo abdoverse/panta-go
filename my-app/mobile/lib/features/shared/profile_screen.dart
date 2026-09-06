@@ -5,6 +5,7 @@ import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/responsive_layout.dart';
 import '../../providers/panta_provider.dart';
+import '../auth/bankid_dialog.dart';
 
 String _formatRating(double value) {
   return value == value.roundToDouble()
@@ -79,10 +80,63 @@ class ProfileScreen extends StatelessWidget {
                           ),
                     ),
                   ),
+                  if (provider.isBankIdVerified) ...[
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE8F5E9),
+                        border: Border.all(
+                          color: AppTheme.primaryGreen.withOpacity(0.5),
+                        ),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.verified_rounded,
+                            size: 18,
+                            color: AppTheme.primaryGreen,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            l10n.bankIdVerifiedBadge,
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelMedium
+                                ?.copyWith(
+                                  color: AppTheme.primaryGreen,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                          ),
+                          if (provider.bankIdPersonalNumber != null) ...[
+                            const SizedBox(width: 6),
+                            Text(
+                              '(${provider.bankIdPersonalNumber})',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelSmall
+                                  ?.copyWith(
+                                    color: AppTheme.textSecondary,
+                                  ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
           ),
+          if (!provider.isBankIdVerified) ...[
+            const SizedBox(height: 16),
+            _BankIdVerificationCard(isHelper: isHelper),
+          ],
           const SizedBox(height: 20),
           if (isHelper) ...[
             Text(
@@ -514,6 +568,98 @@ class _ProfileItem extends StatelessWidget {
       ),
       subtitle: Text(subtitle),
       trailing: Icon(Icons.chevron_right_rounded, color: Colors.grey[400]),
+    );
+  }
+}
+
+class _BankIdVerificationCard extends StatelessWidget {
+  final bool isHelper;
+
+  const _BankIdVerificationCard({required this.isHelper});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: const Color(0xFF235971).withOpacity(0.2)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF235971),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.shield_outlined,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.bankIdVerificationTitle,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF1C3F60),
+                            ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        l10n.bankIdTrustSubtitle,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppTheme.textSecondary,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF235971),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                onPressed: () {
+                  BankIdDialog.show(
+                    context,
+                    isLogin: false,
+                    isHelper: isHelper,
+                  );
+                },
+                icon: const Icon(Icons.verified_user_outlined, size: 18),
+                label: Text(
+                  l10n.bankIdVerify,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

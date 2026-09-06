@@ -183,6 +183,7 @@ func normalizedRequestOrigin(r *http.Request) (string, bool) {
 func registerRoutes(mux *http.ServeMux) {
 	registerCoreRoutes(mux)
 	registerAuthRoutes(mux)
+	registerBankIdRoutes(mux)
 	registerUploadRoutes(mux)
 	registerRequestRoutes(mux)
 	registerRealtimeRoutes(mux)

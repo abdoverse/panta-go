@@ -100,9 +100,49 @@ class HelperJobCard extends StatelessWidget {
                         ),
                       ),
                     Expanded(
-                      child: Text(
-                        job.title,
-                        style: Theme.of(context).textTheme.titleLarge,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            job.title,
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          if (job.creatorBankIdVerified) ...[
+                            const SizedBox(height: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE8F5E9),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: AppTheme.primaryGreen.withOpacity(0.4),
+                                ),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.verified_rounded,
+                                    size: 12,
+                                    color: AppTheme.primaryGreen,
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'BankID',
+                                    style: TextStyle(
+                                      color: AppTheme.primaryGreen,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                     Container(

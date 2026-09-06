@@ -247,6 +247,7 @@ func handleCreateRequest(w http.ResponseWriter, r *http.Request) {
 		req.SplitPercentage = 70.0
 	}
 	req.Status = "pending"
+	req.CreatorBankIdVerified = claims.BankIdVerified || isUserBankIdVerified(claims.requestOwnerID())
 
 	item, err := attributevalue.MarshalMap(req)
 	if err != nil {

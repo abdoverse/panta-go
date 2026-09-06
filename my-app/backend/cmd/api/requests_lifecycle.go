@@ -42,18 +42,20 @@ func handleAcceptRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	helperVerified := claims.BankIdVerified || isUserBankIdVerified(claims.helperID())
 	out, err := svc.UpdateItem(context.TODO(), &dynamodb.UpdateItemInput{
 		TableName: aws.String(tableName),
 		Key: map[string]types.AttributeValue{
 			"id": &types.AttributeValueMemberS{Value: payload.ID},
 		},
-		UpdateExpression:         aws.String("SET #status = :accepted, helperId = :helperId"),
+		UpdateExpression:         aws.String("SET #status = :accepted, helperId = :helperId, helperBankIdVerified = :helperBankIdVerified"),
 		ConditionExpression:      aws.String("#status = :pending"),
 		ExpressionAttributeNames: map[string]string{"#status": "status"},
 		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":accepted": &types.AttributeValueMemberS{Value: "accepted"},
-			":helperId": &types.AttributeValueMemberS{Value: claims.helperID()},
-			":pending":  &types.AttributeValueMemberS{Value: "pending"},
+			":accepted":             &types.AttributeValueMemberS{Value: "accepted"},
+			":helperId":             &types.AttributeValueMemberS{Value: claims.helperID()},
+			":pending":              &types.AttributeValueMemberS{Value: "pending"},
+			":helperBankIdVerified": &types.AttributeValueMemberBOOL{Value: helperVerified},
 		},
 		ReturnValues: types.ReturnValueAllNew,
 	})

@@ -82,6 +82,8 @@ class RecyclingRequest {
   final DateTime? dropoffConfirmedAt;
   final DateTime? arrivedAtDoor;
   final List<ChatMessage> messages;
+  final bool creatorBankIdVerified;
+  final bool helperBankIdVerified;
 
   RecyclingRequest({
     required this.id,
@@ -116,6 +118,8 @@ class RecyclingRequest {
     this.dropoffConfirmedAt,
     this.arrivedAtDoor,
     this.messages = const [],
+    this.creatorBankIdVerified = false,
+    this.helperBankIdVerified = false,
   });
 
   RecyclingRequest copyWith({
@@ -145,6 +149,8 @@ class RecyclingRequest {
     DateTime? dropoffConfirmedAt,
     DateTime? arrivedAtDoor,
     List<ChatMessage>? messages,
+    bool? creatorBankIdVerified,
+    bool? helperBankIdVerified,
   }) {
     return RecyclingRequest(
       id: id,
@@ -179,6 +185,10 @@ class RecyclingRequest {
       dropoffConfirmedAt: dropoffConfirmedAt ?? this.dropoffConfirmedAt,
       arrivedAtDoor: arrivedAtDoor ?? this.arrivedAtDoor,
       messages: messages ?? this.messages,
+      creatorBankIdVerified:
+          creatorBankIdVerified ?? this.creatorBankIdVerified,
+      helperBankIdVerified:
+          helperBankIdVerified ?? this.helperBankIdVerified,
     );
   }
 
