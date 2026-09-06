@@ -58,7 +58,7 @@ func TestHandleLogin(t *testing.T) {
 	})
 
 	t.Run("rejects unsupported roles", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodPost, "/api/v1/login", strings.NewReader(`{"role":"admin","username":"abdo"}`))
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/login", strings.NewReader(`{"role":"guest","username":"abdo"}`))
 		recorder := httptest.NewRecorder()
 
 		handleLogin(recorder, req)

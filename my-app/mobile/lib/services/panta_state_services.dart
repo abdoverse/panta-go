@@ -86,6 +86,7 @@ class PantaAuthState {
   String? currentUserId;
   String? currentUserDisplayName;
   bool isHelper = false;
+  bool isAdmin = false;
   bool bankIdVerified = false;
   String? bankIdPersonalNumber;
   String? bankIdVerifiedAt;
@@ -98,6 +99,7 @@ class PantaAuthState {
     required String? userId,
     required String? displayName,
     required bool helper,
+    bool admin = false,
     bool? verifiedBankId,
     String? personalNumber,
     String? verifiedAt,
@@ -105,6 +107,7 @@ class PantaAuthState {
     currentUserId = userId;
     currentUserDisplayName = displayName;
     isHelper = helper;
+    isAdmin = admin;
     if (verifiedBankId != null) {
       bankIdVerified = verifiedBankId;
     }
@@ -147,6 +150,7 @@ class PantaAuthState {
     currentUserId = null;
     currentUserDisplayName = null;
     isHelper = false;
+    isAdmin = false;
     bankIdVerified = false;
     bankIdPersonalNumber = null;
     bankIdVerifiedAt = null;

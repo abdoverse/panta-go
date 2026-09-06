@@ -259,21 +259,26 @@ class AuthService {
     }
   }
 
-  // Get Current Sub/Username
-  Future<String?> getCurrentUsername() async {
+  // Get Current User UUID
+  Future<String?> getCurrentUserId() async {
     if (_customJwtPayload != null) {
-      final username = _customJwtPayload!['cognito:username'] ??
-          _customJwtPayload!['name'] ??
-          _customJwtPayload!['sub'];
-      return username?.toString();
+      final id = _customJwtPayload!['userId'] ??
+          _customJwtPayload!['sub'] ??
+          _customJwtPayload!['cognito:username'] ??
+          _customJwtPayload!['name'];
+      return id?.toString();
     }
     final session = await _loadSession();
     if (session == null) {
       return null;
     }
-    // Backend uses ID Token claims (cognito:username)
     final payload = session.getIdToken().payload;
-    return payload?['cognito:username'] ?? payload?['sub'];
+    return payload?['sub'] ?? payload?['userId'] ?? payload?['cognito:username'];
+  }
+
+  // Get Current Sub/Username (delegates to canonical user ID / UUID)
+  Future<String?> getCurrentUsername() async {
+    return getCurrentUserId();
   }
 
   Future<String?> getCurrentDisplayName({String? fallbackEmail}) async {
@@ -312,11 +317,14 @@ class AuthService {
 
   Future<bool?> getCurrentUserIsHelper() async {
     if (_customJwtPayload != null) {
-      final role = _customJwtPayload!['nickname']?.toString().trim().toLowerCase();
+      final role = (_customJwtPayload!['role'] ?? _customJwtPayload!['nickname'])
+          ?.toString()
+          .trim()
+          .toLowerCase();
       if (role == 'helper') {
         return true;
       }
-      if (role == 'user') {
+      if (role == 'user' || role == 'admin') {
         return false;
       }
     }
@@ -331,10 +339,26 @@ class AuthService {
     if (role.toLowerCase() == 'helper') {
       return true;
     }
-    if (role.toLowerCase() == 'user') {
+    if (role.toLowerCase() == 'user' || role.toLowerCase() == 'admin') {
       return false;
     }
     return null;
+  }
+
+  Future<bool> getCurrentUserIsAdmin() async {
+    if (_customJwtPayload != null) {
+      final role = (_customJwtPayload!['role'] ?? _customJwtPayload!['nickname'])
+          ?.toString()
+          .trim()
+          .toLowerCase();
+      return role == 'admin';
+    }
+    final session = await _loadSession();
+    if (session == null) {
+      return false;
+    }
+    final role = session.getIdToken().payload?['nickname']?.toString().trim().toLowerCase();
+    return role == 'admin';
   }
 
   // Logout

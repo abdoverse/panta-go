@@ -42,18 +42,39 @@ func handleAcceptRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	marketConfig := getMarketConfig("SE")
+	assigned, err := listHelperAssignedRequests(r.Context(), claims.helperID())
+	if err == nil {
+		activeCount := 0
+		for _, job := range assigned {
+			if job.Status == "accepted" {
+				activeCount++
+			}
+		}
+		if activeCount >= marketConfig.MaxActiveJobsPerHelper {
+			jsonResponse(w, http.StatusConflict, map[string]interface{}{
+				"error":   fmt.Sprintf("Personal active job limit reached (%d/%d active jobs). To ensure timely pickups and avoid hoarding, complete an active pickup before accepting new ones.", activeCount, marketConfig.MaxActiveJobsPerHelper),
+				"code":    "HELPER_QUOTA_EXCEEDED",
+				"limit":   marketConfig.MaxActiveJobsPerHelper,
+				"current": activeCount,
+			})
+			return
+		}
+	}
+
 	helperVerified := claims.BankIdVerified || isUserBankIdVerified(claims.helperID())
 	out, err := svc.UpdateItem(context.TODO(), &dynamodb.UpdateItemInput{
 		TableName: aws.String(tableName),
 		Key: map[string]types.AttributeValue{
 			"id": &types.AttributeValueMemberS{Value: payload.ID},
 		},
-		UpdateExpression:         aws.String("SET #status = :accepted, helperId = :helperId, helperBankIdVerified = :helperBankIdVerified"),
+		UpdateExpression:         aws.String("SET #status = :accepted, helperId = :helperId, helperName = :helperName, helperBankIdVerified = :helperBankIdVerified"),
 		ConditionExpression:      aws.String("#status = :pending"),
 		ExpressionAttributeNames: map[string]string{"#status": "status"},
 		ExpressionAttributeValues: map[string]types.AttributeValue{
 			":accepted":             &types.AttributeValueMemberS{Value: "accepted"},
 			":helperId":             &types.AttributeValueMemberS{Value: claims.helperID()},
+			":helperName":           &types.AttributeValueMemberS{Value: claims.notificationName()},
 			":pending":              &types.AttributeValueMemberS{Value: "pending"},
 			":helperBankIdVerified": &types.AttributeValueMemberBOOL{Value: helperVerified},
 		},
@@ -100,6 +121,11 @@ func handleCancelRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !claims.isHelper() {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
 	var payload requestIDPayload
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "Invalid payload"})
@@ -112,7 +138,7 @@ func handleCancelRequest(w http.ResponseWriter, r *http.Request) {
 		Key: map[string]types.AttributeValue{
 			"id": &types.AttributeValueMemberS{Value: payload.ID},
 		},
-		UpdateExpression:    aws.String("SET #status = :pending, canceledHelperIds = list_append(if_not_exists(canceledHelperIds, :emptyList), :helperList) REMOVE helperId"),
+		UpdateExpression:    aws.String("SET #status = :pending, canceledHelperIds = list_append(if_not_exists(canceledHelperIds, :emptyList), :helperList) REMOVE helperId, helperName"),
 		ConditionExpression: aws.String("#status = :accepted AND helperId = :helperId"),
 		ExpressionAttributeNames: map[string]string{
 			"#status": "status",
@@ -372,11 +398,12 @@ func handleArrivedAtDoor(w http.ResponseWriter, r *http.Request) {
 
 	// Broadcast arrival alert via WebSocket
 	arrivedMsg := map[string]interface{}{
-		"type":      "helper-arrived-at-door",
-		"requestId": updatedReq.ID,
-		"arrivedAt": nowStr,
-		"title":     "Helper is at your door!",
-		"message":   fmt.Sprintf("%s is outside your door with Panta Go.", claims.notificationName()),
+		"type":         "helper-arrived-at-door",
+		"requestId":    updatedReq.ID,
+		"targetUserId": updatedReq.CreatorID,
+		"arrivedAt":    nowStr,
+		"title":        "Ding-Dong! Helper is at your door 🛎️",
+		"message":      fmt.Sprintf("%s has arrived outside your door for your recycling pickup.", claims.notificationName()),
 	}
 	rawMsg, _ := json.Marshal(arrivedMsg)
 	hub.broadcast <- rawMsg
@@ -389,6 +416,50 @@ func handleArrivedAtDoor(w http.ResponseWriter, r *http.Request) {
 			fmt.Sprintf("%s has arrived for your recycling pickup.", claims.notificationName()),
 		)
 	}
+
+	// Real-time push notification broadcast over WebSocket for in-app alert banner
+	pushMsg := map[string]interface{}{
+		"type":         "push-notification",
+		"requestId":    updatedReq.ID,
+		"targetUserId": updatedReq.CreatorID,
+		"title":        "Ding-Dong! Helper is at your door 🛎️",
+		"body":         fmt.Sprintf("%s has arrived outside your door for your recycling pickup.", claims.notificationName()),
+	}
+	rawPush, _ := json.Marshal(pushMsg)
+	hub.broadcast <- rawPush
+
+	// Persist and broadcast arrival chat message to chat history
+	arrivalChatMsg := ChatMessage{
+		ID:         fmt.Sprintf("msg-door-%d", time.Now().UnixNano()),
+		RequestID:  updatedReq.ID,
+		SenderID:   claims.helperID(),
+		SenderRole: "helper",
+		SenderName: claims.notificationName(),
+		Text:       "🛎️ Ding-Dong! I am at your door!",
+		IsPreset:   true,
+		CreatedAt:  nowStr,
+	}
+	encArrivalChat := arrivalChatMsg
+	if encText, err := encryptChatMessageText(arrivalChatMsg.Text, arrivalChatMsg.RequestID); err == nil {
+		encArrivalChat.Text = encText
+	}
+	if msgAV, err := attributevalue.Marshal(encArrivalChat); err == nil {
+		_, _ = svc.UpdateItem(r.Context(), &dynamodb.UpdateItemInput{
+			TableName: aws.String(tableName),
+			Key: map[string]types.AttributeValue{
+				"id": &types.AttributeValueMemberS{Value: updatedReq.ID},
+			},
+			UpdateExpression: aws.String("SET #msgs = list_append(if_not_exists(#msgs, :empty_list), :new_msg)"),
+			ExpressionAttributeNames: map[string]string{
+				"#msgs": "messages",
+			},
+			ExpressionAttributeValues: map[string]types.AttributeValue{
+				":empty_list": &types.AttributeValueMemberL{Value: []types.AttributeValue{}},
+				":new_msg":    &types.AttributeValueMemberL{Value: []types.AttributeValue{msgAV}},
+			},
+		})
+	}
+	broadcastChatMessage(r.Context(), arrivalChatMsg)
 
 	respondWithUpdatedRequest(w, r, updatedReq, "arrived_at_door")
 }

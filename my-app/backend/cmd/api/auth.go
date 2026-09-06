@@ -64,7 +64,7 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	role := strings.ToLower(strings.TrimSpace(req.Role))
-	if role != "user" && role != "helper" {
+	if role != "user" && role != "helper" && role != "admin" {
 		jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "Invalid role"})
 		return
 	}
@@ -76,6 +76,8 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	if name == "" {
 		if role == "helper" {
 			name = "Erik Helper"
+		} else if role == "admin" {
+			name = "Admin Operator"
 		} else {
 			name = "Anna Recycler"
 		}
@@ -83,15 +85,21 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 
 	expirationTime := time.Now().Add(24 * time.Hour)
 	email := fmt.Sprintf("%s@example.com", strings.ToLower(strings.ReplaceAll(name, " ", ".")))
+	if strings.Contains(name, "@") {
+		email = name
+	}
+	uID := userUUID(name)
 	claims := &Claims{
 		Role:                 role,
 		CognitoUsername:      name,
 		DisplayName:          name,
 		Email:                email,
-		BankIdVerified:       isUserBankIdVerified(name) || strings.Contains(name, "Anna") || strings.Contains(name, "Erik"),
+		UserID:               uID,
+		BankIdVerified:       isUserBankIdVerified(name) || strings.Contains(name, "Anna") || strings.Contains(name, "Erik") || role == "admin",
 		BankIdPersonalNumber: "19920512-****",
 		BankIdVerifiedAt:     time.Now().UTC().Format(time.RFC3339),
 		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   uID,
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
 			Issuer:    "panta-backend",
 		},

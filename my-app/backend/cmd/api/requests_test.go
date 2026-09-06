@@ -3,6 +3,8 @@ package main
 import (
 	"testing"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 func TestHelperPoolCandidateStatuses(t *testing.T) {
@@ -297,6 +299,121 @@ func TestArrivedAtDoorPayload(t *testing.T) {
 		t.Fatalf("unexpected payload ID: %s", payload.ID)
 	}
 }
+
+func TestRegisterDeviceTokenPayload(t *testing.T) {
+	t.Parallel()
+
+	payload := registerDeviceTokenPayload{
+		DeviceToken: "fcm-test-token-12345",
+	}
+	if payload.DeviceToken != "fcm-test-token-12345" {
+		t.Fatalf("unexpected device token: %s", payload.DeviceToken)
+	}
+}
+
+func TestUserUUID(t *testing.T) {
+	t.Parallel()
+
+	// 1. Empty string generates valid random UUID
+	rnd := userUUID("")
+	if _, err := uuid.Parse(rnd); err != nil {
+		t.Fatalf("expected valid UUID for empty string, got %q: %v", rnd, err)
+	}
+
+	// 2. Existing valid UUID is parsed and preserved
+	validInput := "e8b7c3d2-4567-4a89-9bcd-ef0123456789"
+	out := userUUID(validInput)
+	if out != validInput {
+		t.Fatalf("expected preserved UUID %q, got %q", validInput, out)
+	}
+
+	// 3. Name or email produces valid deterministic RFC 4122 UUID v5
+	id1 := userUUID("anna.recycler@example.com")
+	id2 := userUUID("anna.recycler@example.com")
+	id3 := userUUID("ANNA.RECYCLER@EXAMPLE.COM")
+	if _, err := uuid.Parse(id1); err != nil {
+		t.Fatalf("expected valid UUID for email, got %q: %v", id1, err)
+	}
+	if id1 != id2 || id1 != id3 {
+		t.Fatalf("expected deterministic UUIDs for same identifier, got %q vs %q vs %q", id1, id2, id3)
+	}
+
+	// Helper produces distinct UUID
+	helperID := userUUID("erik.helper@example.com")
+	if _, err := uuid.Parse(helperID); err != nil {
+		t.Fatalf("expected valid UUID for helper, got %q: %v", helperID, err)
+	}
+	if helperID == id1 {
+		t.Fatalf("expected distinct UUIDs for recycler and helper, both were %q", helperID)
+	}
+}
+
+func TestClaimsUserUUIDs(t *testing.T) {
+	t.Parallel()
+
+	cRecycler := &Claims{
+		Role:            "user",
+		CognitoUsername: "Anna Recycler",
+		DisplayName:     "Anna Recycler",
+		Email:           "anna.recycler@example.com",
+	}
+	recyclerUUID := cRecycler.requestOwnerID()
+	if _, err := uuid.Parse(recyclerUUID); err != nil {
+		t.Fatalf("expected valid UUID from recycler requestOwnerID, got %q: %v", recyclerUUID, err)
+	}
+	if cRecycler.notificationName() != "Anna Recycler" {
+		t.Fatalf("expected notificationName to be display name %q, got %q", "Anna Recycler", cRecycler.notificationName())
+	}
+
+	cHelper := &Claims{
+		Role:            "helper",
+		CognitoUsername: "Erik Helper",
+		DisplayName:     "Erik Helper",
+		Email:           "erik.helper@example.com",
+	}
+	helperUUID := cHelper.helperID()
+	if _, err := uuid.Parse(helperUUID); err != nil {
+		t.Fatalf("expected valid UUID from helperID, got %q: %v", helperUUID, err)
+	}
+	if helperUUID == recyclerUUID {
+		t.Fatalf("expected helper and recycler UUIDs to differ")
+	}
+}
+
+func TestRecyclingRequestUUIDAndCurrencySerialization(t *testing.T) {
+	t.Parallel()
+
+	cUUID := userUUID("anna.recycler@example.com")
+	hUUID := userUUID("erik.helper@example.com")
+
+	req := RecyclingRequest{
+		ID:             "req-test-uuid-curr",
+		CreatorID:      cUUID,
+		CreatorName:    "Anna Recycler",
+		HelperID:       hUUID,
+		HelperName:     "Erik Helper",
+		Title:          "Glass bottles",
+		Location:       "Stockholm",
+		Reward:         35.0,
+		Currency:       "SEK",
+		CurrencySymbol: "kr",
+		Market:         "SE",
+		Status:         "accepted",
+	}
+
+	// Verify valid UUIDs
+	if _, err := uuid.Parse(req.CreatorID); err != nil {
+		t.Fatalf("invalid CreatorID UUID: %v", err)
+	}
+	if _, err := uuid.Parse(req.HelperID); err != nil {
+		t.Fatalf("invalid HelperID UUID: %v", err)
+	}
+	if req.Currency != "SEK" || req.CurrencySymbol != "kr" || req.Market != "SE" {
+		t.Fatalf("unexpected currency fields: %+v", req)
+	}
+}
+
+
 
 
 

@@ -7,11 +7,27 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
+
+// userUUID returns a canonical RFC 4122 UUID string for any user identifier.
+// If the identifier is already a valid UUID, it is normalized and returned.
+// Otherwise, a deterministic UUID v5 is generated so demo/mock users have consistent UUIDs.
+func userUUID(identifier string) string {
+	cleaned := strings.TrimSpace(identifier)
+	if cleaned == "" {
+		return uuid.New().String()
+	}
+	if parsed, err := uuid.Parse(cleaned); err == nil {
+		return parsed.String()
+	}
+	return uuid.NewSHA1(uuid.NameSpaceURL, []byte("panta:user:"+strings.ToLower(cleaned))).String()
+}
 
 type RecyclingRequest struct {
 	ID                 string    `json:"id" dynamodbav:"id"`
-	CreatorID          string    `json:"-" dynamodbav:"creatorId,omitempty"`
+	CreatorID          string    `json:"creatorId,omitempty" dynamodbav:"creatorId,omitempty"`
+	CreatorName        string    `json:"creatorName,omitempty" dynamodbav:"creatorName,omitempty"`
 	Title              string    `json:"title" dynamodbav:"title"`
 	ImageUrl           string    `json:"imageUrl" dynamodbav:"imageUrl"`
 	ImageUploadKey     string    `json:"imageUploadKey,omitempty" dynamodbav:"-"`
@@ -22,8 +38,12 @@ type RecyclingRequest struct {
 	LocationLongitude  *float64  `json:"locationLongitude,omitempty" dynamodbav:"locationLongitude,omitempty"`
 	Description        string    `json:"description" dynamodbav:"description"`
 	Reward             float64   `json:"reward" dynamodbav:"reward"`
+	Currency           string    `json:"currency,omitempty" dynamodbav:"currency,omitempty"`
+	CurrencySymbol     string    `json:"currencySymbol,omitempty" dynamodbav:"currencySymbol,omitempty"`
+	Market             string    `json:"market,omitempty" dynamodbav:"market,omitempty"`
 	Status             string    `json:"status" dynamodbav:"status"`
 	HelperID           string    `json:"helperId,omitempty" dynamodbav:"helperId,omitempty"`
+	HelperName         string    `json:"helperName,omitempty" dynamodbav:"helperName,omitempty"`
 	CanceledHelperIDs  []string  `json:"canceledHelperIds,omitempty" dynamodbav:"canceledHelperIds,omitempty"`
 	IsRated            bool      `json:"isRated" dynamodbav:"isRated"`
 	Rating             float64   `json:"rating,omitempty" dynamodbav:"rating,omitempty"`
@@ -372,6 +392,7 @@ type Claims struct {
 	CognitoUsername      string `json:"cognito:username"`
 	DisplayName          string `json:"name"`
 	Email                string `json:"email"`
+	UserID               string `json:"userId,omitempty"`
 	BankIdVerified       bool   `json:"bankIdVerified,omitempty"`
 	BankIdPersonalNumber string `json:"bankIdPersonalNumber,omitempty"`
 	BankIdVerifiedAt     string `json:"bankIdVerifiedAt,omitempty"`
@@ -419,13 +440,19 @@ func (c *Claims) helperID() string {
 }
 
 func (c *Claims) requestOwnerID() string {
+	if c.UserID != "" {
+		return userUUID(c.UserID)
+	}
+	if c.Subject != "" {
+		return userUUID(c.Subject)
+	}
 	if username := strings.TrimSpace(c.CognitoUsername); username != "" {
-		return username
+		return userUUID(username)
 	}
 	if name := strings.TrimSpace(c.DisplayName); name != "" {
-		return name
+		return userUUID(name)
 	}
-	return strings.TrimSpace(c.Email)
+	return userUUID(c.Email)
 }
 
 func (c *Claims) notificationName() string {
@@ -435,9 +462,17 @@ func (c *Claims) notificationName() string {
 	if email := strings.TrimSpace(c.Email); email != "" {
 		return strings.Split(email, "@")[0]
 	}
-	return c.requestOwnerID()
+	if username := strings.TrimSpace(c.CognitoUsername); username != "" {
+		return username
+	}
+	return "Recycler"
 }
 
 func (c *Claims) isHelper() bool {
 	return strings.EqualFold(strings.TrimSpace(c.Role), "helper")
 }
+
+func (c *Claims) isAdmin() bool {
+	return strings.EqualFold(strings.TrimSpace(c.Role), "admin")
+}
+

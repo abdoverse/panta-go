@@ -50,6 +50,8 @@ class RequestTemplate {
 
 class RecyclingRequest {
   final String id;
+  final String? creatorId;
+  final String? creatorName;
   final String title;
   final String? imageUrl;
   final DateTime scheduledFrom;
@@ -60,8 +62,12 @@ class RecyclingRequest {
   final String description;
   final double?
       reward; // Changed to nullable to safe-guard against hot-reload nulls
+  final String currency;
+  final String currencySymbol;
+  final String? market;
   final RequestStatus status;
   final String? helperId;
+  final String? helperName;
   final List<String> canceledHelperIds;
   final bool isRated;
   final double? rating;
@@ -87,6 +93,8 @@ class RecyclingRequest {
 
   RecyclingRequest({
     required this.id,
+    this.creatorId,
+    this.creatorName,
     required this.title,
     this.imageUrl,
     required this.scheduledFrom,
@@ -96,8 +104,12 @@ class RecyclingRequest {
     this.locationLongitude,
     this.description = '',
     this.reward = 0.0,
+    this.currency = 'SEK',
+    this.currencySymbol = 'kr',
+    this.market = 'SE',
     this.status = RequestStatus.pending,
     this.helperId,
+    this.helperName,
     this.canceledHelperIds = const [],
     this.isRated = false,
     this.rating,
@@ -123,8 +135,14 @@ class RecyclingRequest {
   });
 
   RecyclingRequest copyWith({
+    String? creatorId,
+    String? creatorName,
     RequestStatus? status,
     String? helperId,
+    String? helperName,
+    String? currency,
+    String? currencySymbol,
+    String? market,
     List<String>? canceledHelperIds,
     bool? isRated,
     double? rating,
@@ -154,6 +172,8 @@ class RecyclingRequest {
   }) {
     return RecyclingRequest(
       id: id,
+      creatorId: creatorId ?? this.creatorId,
+      creatorName: creatorName ?? this.creatorName,
       title: title,
       imageUrl: imageUrl,
       scheduledFrom: scheduledFrom,
@@ -163,8 +183,12 @@ class RecyclingRequest {
       locationLongitude: locationLongitude ?? this.locationLongitude,
       description: description ?? this.description,
       reward: reward ?? this.reward,
+      currency: currency ?? this.currency,
+      currencySymbol: currencySymbol ?? this.currencySymbol,
+      market: market ?? this.market,
       status: status ?? this.status,
       helperId: helperId ?? this.helperId,
+      helperName: helperName ?? this.helperName,
       canceledHelperIds: canceledHelperIds ?? this.canceledHelperIds,
       isRated: isRated ?? this.isRated,
       rating: rating ?? this.rating,

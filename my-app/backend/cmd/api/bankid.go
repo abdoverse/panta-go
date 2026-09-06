@@ -116,14 +116,17 @@ func markUserBankIdVerified(userID, personalNumber, displayName, role string) *B
 
 func generateBankIdToken(role, username, displayName, personalNumber string, verifiedAt time.Time) (string, error) {
 	expirationTime := time.Now().Add(24 * time.Hour)
+	uID := userUUID(username)
 	claims := &Claims{
 		Role:                 role,
 		CognitoUsername:      username,
 		DisplayName:          displayName,
+		UserID:               uID,
 		BankIdVerified:       true,
 		BankIdPersonalNumber: maskPersonalNumber(personalNumber),
 		BankIdVerifiedAt:     verifiedAt.Format(time.RFC3339),
 		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   uID,
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
 			Issuer:    "panta-backend",
 		},

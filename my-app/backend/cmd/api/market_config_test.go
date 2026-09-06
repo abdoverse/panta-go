@@ -10,17 +10,27 @@ import (
 
 func TestMarketConfigProfiles(t *testing.T) {
 	se := getMarketConfig("SE")
-	if se.MarketCode != "SE" || se.Currency != "SEK" || se.MaxActiveRequestsPerRecycler != 5 {
+	if se.MarketCode != "SE" || se.Currency != "SEK" || se.CurrencySymbol != "kr" || se.MaxActiveRequestsPerRecycler != 10 || se.MaxActiveJobsPerHelper != 15 {
 		t.Fatalf("Unexpected SE config: %+v", se)
 	}
 
 	no := getMarketConfig("NO")
-	if no.MarketCode != "NO" || no.Currency != "NOK" || no.MaxActiveRequestsPerRecycler != 4 {
+	if no.MarketCode != "NO" || no.Currency != "NOK" || no.CurrencySymbol != "kr" || no.MaxActiveRequestsPerRecycler != 10 || no.MaxActiveJobsPerHelper != 15 {
 		t.Fatalf("Unexpected NO config: %+v", no)
 	}
 
+	dk := getMarketConfig("DK")
+	if dk.MarketCode != "DK" || dk.Currency != "DKK" || dk.CurrencySymbol != "kr." {
+		t.Fatalf("Unexpected DK config: %+v", dk)
+	}
+
+	fi := getMarketConfig("FI")
+	if fi.MarketCode != "FI" || fi.Currency != "EUR" || fi.CurrencySymbol != "€" {
+		t.Fatalf("Unexpected FI config: %+v", fi)
+	}
+
 	def := getMarketConfig("XYZ")
-	if def.MarketCode != "default" || def.Currency != "SEK" {
+	if def.MarketCode != "default" || def.Currency != "SEK" || def.CurrencySymbol != "kr" {
 		t.Fatalf("Unexpected default config for unknown market: %+v", def)
 	}
 }

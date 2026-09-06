@@ -87,6 +87,9 @@ class RequestApiService {
     String? doorInstructions,
     String? imageUploadKey,
     String? fcmToken,
+    String? market,
+    String? currency,
+    String? currencySymbol,
   }) async {
     final body = json.encode({
       'title': title,
@@ -104,6 +107,9 @@ class RequestApiService {
       'imageUploadKey': imageUploadKey,
       'isRated': false,
       'creatorDeviceToken': fcmToken,
+      'market': market,
+      'currency': currency,
+      'currencySymbol': currencySymbol,
     });
 
     try {
@@ -230,6 +236,26 @@ class RequestApiService {
       debugPrint('Error marking arrived at door: $e');
     }
     return null;
+  }
+
+  Future<bool> registerDeviceToken({
+    required String token,
+    required String deviceToken,
+  }) async {
+    try {
+      final response = await _client.post(
+        ApiConfig.apiUri('/api/v1/users/device-token'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode({'deviceToken': deviceToken}),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error registering device token: $e');
+      return false;
+    }
   }
 
   Future<RecyclingRequest?> updateHelperLocation({
@@ -396,6 +422,8 @@ class RequestApiService {
   static RecyclingRequest parseRecyclingRequest(Map<String, dynamic> json) {
     return RecyclingRequest(
       id: json['id'],
+      creatorId: json['creatorId']?.toString(),
+      creatorName: json['creatorName']?.toString(),
       title: json['title'],
       imageUrl: parseImageUrl(json['imageUrl']),
       scheduledFrom: DateTime.parse(json['scheduledFrom']),
@@ -411,8 +439,12 @@ class RequestApiService {
       reward: json['reward'] != null
           ? double.tryParse(json['reward'].toString()) ?? 0.0
           : 0.0,
+      currency: json['currency']?.toString() ?? 'SEK',
+      currencySymbol: json['currencySymbol']?.toString() ?? 'kr',
+      market: json['market']?.toString() ?? 'SE',
       status: parseStatus(json['status']),
-      helperId: json['helperId'],
+      helperId: json['helperId']?.toString(),
+      helperName: json['helperName']?.toString(),
       canceledHelperIds: (json['canceledHelperIds'] as List<dynamic>?)
               ?.map((item) => item.toString())
               .toList(growable: false) ??

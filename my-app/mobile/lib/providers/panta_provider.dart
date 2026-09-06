@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../core/constants/app_constants.dart';
 import '../core/localization/app_localizations.dart';
 import '../models/chat_message.dart';
 import '../models/impact_summary.dart';
@@ -81,6 +82,7 @@ class PantaProvider extends ChangeNotifier {
   // --- Getters ---
 
   bool get isHelper => _authState.isHelper;
+  bool get isAdmin => _authState.isAdmin;
   bool get isAuthenticated => _authState.isAuthenticated;
   bool get isLoading => _requestState.isLoading;
   bool get isRestoringSession => _isRestoringSession;
@@ -100,8 +102,25 @@ class PantaProvider extends ChangeNotifier {
   List<RecyclingRequest> get previousRequests =>
       _requestState.requests.where((r) => r.status == RequestStatus.pickedUp).toList();
   int get activeRequestsCount => ongoingRequests.length;
-  int get maxActiveRequests => 5;
+  int get maxActiveRequests => 10;
+  int get maxActiveHelperJobs => 15;
   bool get canCreateRequest => activeRequestsCount < maxActiveRequests;
+
+  // --- Market & Currency Configuration ---
+  String _currentMarket = 'SE';
+  String get currentMarket => _currentMarket;
+  void setMarket(String marketCode) {
+    _currentMarket = marketCode.toUpperCase();
+    notifyListeners();
+  }
+
+  String get currencyCode => AppConstants.getProfileForMarket(_currentMarket).currencyCode;
+  String get currencySymbol => AppConstants.getProfileForMarket(_currentMarket).currencySymbol;
+
+  String formatCurrency(num amount, {String? currency, String? symbol}) {
+    final sym = symbol ?? (currency != null ? AppConstants.getProfileForMarket(currency).currencySymbol : currencySymbol);
+    return '${amount.toStringAsFixed(2)} $sym';
+  }
 
   // --- In-App Chat Notifications & Badges ---
   String? get currentUserId => _authState.currentUserId;
@@ -211,6 +230,54 @@ class PantaProvider extends ChangeNotifier {
           return;
         }
       }
+      if (decoded is Map<String, dynamic> && decoded['type'] == 'helper-arrived-at-door') {
+        final reqId = decoded['requestId']?.toString();
+        final title = decoded['title']?.toString() ?? 'Ding-Dong! Helper is at your door 🛎️';
+        final message = decoded['message']?.toString() ?? 'Your helper has arrived for recycling pickup.';
+        if (reqId != null) {
+          final arrivalMsg = ChatMessage(
+            id: 'arrival-$reqId-${DateTime.now().millisecondsSinceEpoch}',
+            requestId: reqId,
+            senderId: 'helper',
+            senderRole: 'helper',
+            senderName: title,
+            text: message,
+            isPreset: true,
+            createdAt: DateTime.now(),
+          );
+          _appendChatMessage(arrivalMsg);
+          final idx = _requestState.requests.indexWhere((r) => r.id == reqId);
+          if (idx != -1) {
+            _requestState.requests[idx] = _requestState.requests[idx].copyWith(
+              arrivedAtDoor: DateTime.now(),
+              milestone: 'arrived',
+              etaMinutes: 0,
+            );
+          }
+          notifyListeners();
+          return;
+        }
+      }
+      if (decoded is Map<String, dynamic> && decoded['type'] == 'push-notification') {
+        final reqId = decoded['requestId']?.toString();
+        final title = decoded['title']?.toString() ?? 'Ding-Dong! Helper is at your door 🛎️';
+        final body = decoded['body']?.toString() ?? 'Your helper has arrived for recycling pickup.';
+        if (reqId != null) {
+          final pushMsg = ChatMessage(
+            id: 'push-$reqId-${DateTime.now().millisecondsSinceEpoch}',
+            requestId: reqId,
+            senderId: 'helper',
+            senderRole: 'helper',
+            senderName: title,
+            text: body,
+            isPreset: true,
+            createdAt: DateTime.now(),
+          );
+          _appendChatMessage(pushMsg);
+          notifyListeners();
+          return;
+        }
+      }
       if (decoded is Map<String, dynamic> && decoded['type'] == 'chat-erased') {
         final reqId = decoded['requestId']?.toString();
         if (reqId != null) {
@@ -296,7 +363,10 @@ class PantaProvider extends ChangeNotifier {
         return error;
       }
 
-      await _refreshAuthState(helperOverride: role.toLowerCase() == 'helper');
+      await _refreshAuthState(
+        helperOverride: role.toLowerCase() == 'helper',
+        adminOverride: role.toLowerCase() == 'admin',
+      );
       notifyListeners();
 
       if (seedIfEmpty) {
@@ -323,6 +393,10 @@ class PantaProvider extends ChangeNotifier {
     }
   }
 
+  Future<String?> loginAdmin() async {
+    return loginDirect(role: 'admin', username: 'Admin Operator', seedIfEmpty: false);
+  }
+
   Future<bool> seedDemoData() async {
     _setLoading(true);
     notifyListeners();
@@ -343,8 +417,8 @@ class PantaProvider extends ChangeNotifier {
   }
 
   Future<void> switchDemoRole() async {
-    final nextRole = isHelper ? 'user' : 'helper';
-    final nextUsername = isHelper ? 'Anna Recycler' : 'Erik Helper';
+    final nextRole = isAdmin ? 'user' : (isHelper ? 'user' : 'helper');
+    final nextUsername = nextRole == 'helper' ? 'Erik Helper' : 'Anna Recycler';
     await loginDirect(role: nextRole, username: nextUsername, seedIfEmpty: false);
   }
 
@@ -629,6 +703,9 @@ class PantaProvider extends ChangeNotifier {
         doorInstructions: doorInstructions,
         imageUploadKey: imageUploadKey,
         fcmToken: fcmToken,
+        market: _currentMarket,
+        currency: currencyCode,
+        currencySymbol: currencySymbol,
       );
 
       if (success) {
@@ -794,6 +871,15 @@ class PantaProvider extends ChangeNotifier {
     return false;
   }
 
+  Future<void> syncDeviceToken(String deviceToken) async {
+    final token = await _authService.getToken();
+    if (token == null || deviceToken.isEmpty) return;
+    await _requestApiService.registerDeviceToken(
+      token: token,
+      deviceToken: deviceToken,
+    );
+  }
+
   Future<bool> updateHelperLocation(
     String requestId,
     double lat,
@@ -954,6 +1040,7 @@ class PantaProvider extends ChangeNotifier {
 
   Future<void> _refreshAuthState({
     bool? helperOverride,
+    bool? adminOverride,
     String? fallbackEmail,
   }) async {
     final token = await _authService.getToken();
@@ -970,6 +1057,8 @@ class PantaProvider extends ChangeNotifier {
       }
     }
 
+    final bool resolvedAdmin = adminOverride ?? await _authService.getCurrentUserIsAdmin();
+
     _authState.updateSession(
       userId: await _authService.getCurrentUsername(),
       displayName: await _authService.getCurrentDisplayName(
@@ -978,6 +1067,7 @@ class PantaProvider extends ChangeNotifier {
       helper: helperOverride ??
           await _authService.getCurrentUserIsHelper() ??
           false,
+      admin: resolvedAdmin,
       verifiedBankId: bankIdVerified,
       personalNumber: personalNumber,
       verifiedAt: verifiedAt,

@@ -14,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/google/uuid"
 )
 
 const (
@@ -32,6 +33,7 @@ func registerRequestRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/v1/requests/location", authMiddleware(handleUpdateLocation))
 	mux.HandleFunc("/api/v1/requests/rate", authMiddleware(handleRateRequest))
 	mux.HandleFunc("/api/v1/requests/arrived", authMiddleware(handleArrivedAtDoor))
+	mux.HandleFunc("/api/v1/users/device-token", authMiddleware(handleRegisterDeviceToken))
 	mux.HandleFunc("/api/v1/analytics", authMiddleware(handleAnalytics))
 	mux.HandleFunc("/api/v1/market/config", authMiddleware(handleMarketConfig))
 	mux.HandleFunc("/api/v1/demo/seed", handleDemoSeed)
@@ -141,6 +143,17 @@ func listHelperAccessibleRequests(ctx context.Context, helperID string) ([]Recyc
 	), nil
 }
 
+func listHelperAssignedRequests(ctx context.Context, helperID string) ([]RecyclingRequest, error) {
+	return queryRequests(ctx, &dynamodb.QueryInput{
+		TableName:              aws.String(tableName),
+		IndexName:              aws.String(requestsByHelperIndexName),
+		KeyConditionExpression: aws.String("helperId = :helperId"),
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":helperId": &types.AttributeValueMemberS{Value: helperID},
+		},
+	})
+}
+
 func helperPoolCandidateStatuses() []string {
 	return []string{"pending"}
 }
@@ -188,6 +201,37 @@ func filterHelperAssignedRequests(requests []RecyclingRequest, helperID string) 
 	return filtered
 }
 
+func normalizeRequest(req *RecyclingRequest) {
+	if req.CreatorID != "" {
+		if _, err := uuid.Parse(req.CreatorID); err != nil {
+			if req.CreatorName == "" {
+				req.CreatorName = req.CreatorID
+			}
+			req.CreatorID = userUUID(req.CreatorID)
+		}
+	}
+	if req.HelperID != "" {
+		if _, err := uuid.Parse(req.HelperID); err != nil {
+			if req.HelperName == "" {
+				req.HelperName = req.HelperID
+			}
+			req.HelperID = userUUID(req.HelperID)
+		}
+	}
+	if req.Market == "" {
+		req.Market = "SE"
+	}
+	if req.Currency == "" {
+		mCfg := getMarketConfig(req.Market)
+		req.Currency = mCfg.Currency
+		req.CurrencySymbol = mCfg.CurrencySymbol
+	}
+	if req.CurrencySymbol == "" {
+		mCfg := getMarketConfig(req.Market)
+		req.CurrencySymbol = mCfg.CurrencySymbol
+	}
+}
+
 func queryRequests(ctx context.Context, input *dynamodb.QueryInput) ([]RecyclingRequest, error) {
 	out, err := svc.Query(ctx, input)
 	if err != nil {
@@ -200,6 +244,7 @@ func queryRequests(ctx context.Context, input *dynamodb.QueryInput) ([]Recycling
 		if err := attributevalue.UnmarshalMap(item, &req); err != nil {
 			return nil, err
 		}
+		normalizeRequest(&req)
 		requests = append(requests, req)
 	}
 	return requests, nil
@@ -236,6 +281,9 @@ func handleCreateRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	market := strings.TrimSpace(r.URL.Query().Get("market"))
+	if market == "" && req.Market != "" {
+		market = req.Market
+	}
 	if market == "" {
 		market = "SE"
 	}
@@ -251,7 +299,7 @@ func handleCreateRequest(w http.ResponseWriter, r *http.Request) {
 		}
 		if activeCount >= marketConfig.MaxActiveRequestsPerRecycler {
 			jsonResponse(w, http.StatusConflict, map[string]interface{}{
-				"error":   fmt.Sprintf("Active request limit reached for market %s (maximum %d active requests allowed). Please complete or cancel an existing request first.", marketConfig.MarketName, marketConfig.MaxActiveRequestsPerRecycler),
+				"error":   fmt.Sprintf("Personal active request limit reached (%d/%d active requests). To prevent spam, please complete or cancel an existing pickup before posting a new one.", activeCount, marketConfig.MaxActiveRequestsPerRecycler),
 				"code":    "ACTIVE_LIMIT_REACHED",
 				"limit":   marketConfig.MaxActiveRequestsPerRecycler,
 				"current": activeCount,
@@ -262,6 +310,16 @@ func handleCreateRequest(w http.ResponseWriter, r *http.Request) {
 
 	req.ID = newRequestID()
 	req.CreatorID = claims.requestOwnerID()
+	req.CreatorName = claims.notificationName()
+	if req.Market == "" {
+		req.Market = marketConfig.MarketCode
+	}
+	if req.Currency == "" {
+		req.Currency = marketConfig.Currency
+	}
+	if req.CurrencySymbol == "" {
+		req.CurrencySymbol = marketConfig.CurrencySymbol
+	}
 	if strings.TrimSpace(req.ImageUrl) == "" && strings.TrimSpace(req.ImageUploadKey) == "" {
 		req.ImageUrl = "assets/images/generic.png"
 	}
@@ -312,15 +370,19 @@ func handleDemoSeed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	creatorID := userUUID("anna.recycler@example.com")
 	creatorName := "Anna Recycler"
+	helperID := userUUID("erik.helper@example.com")
 	helperName := "Erik Helper"
 
 	if tokenString, err := bearerTokenFromRequest(r); err == nil && tokenString != "" {
 		if claims, err := validateToken(tokenString); err == nil && claims != nil {
 			if claims.isHelper() {
-				helperName = claims.helperID()
+				helperID = claims.helperID()
+				helperName = claims.notificationName()
 			} else {
-				creatorName = claims.requestOwnerID()
+				creatorID = claims.requestOwnerID()
+				creatorName = claims.notificationName()
 			}
 		}
 	}
@@ -339,13 +401,17 @@ func handleDemoSeed(w http.ResponseWriter, r *http.Request) {
 	sampleRequests := []RecyclingRequest{
 		{
 			ID:                    "demo-pending-1",
-			CreatorID:             creatorName,
+			CreatorID:             creatorID,
+			CreatorName:           creatorName,
 			Title:                 "Bottles & Cans Pickup",
 			Location:              "Sveavägen 44, Stockholm",
 			LocationLatitude:      &lat1,
 			LocationLongitude:     &lon1,
 			Description:           "3 bags of sorted pant cans and PET bottles ready at door",
 			Reward:                45.0,
+			Currency:              "SEK",
+			CurrencySymbol:        "kr",
+			Market:                "SE",
 			SplitPercentage:       70.0,
 			Status:                "pending",
 			CreatorBankIdVerified: true,
@@ -355,14 +421,19 @@ func handleDemoSeed(w http.ResponseWriter, r *http.Request) {
 		},
 		{
 			ID:                    "demo-accepted-1",
-			CreatorID:             creatorName,
-			HelperID:              helperName,
+			CreatorID:             creatorID,
+			CreatorName:           creatorName,
+			HelperID:              helperID,
+			HelperName:            helperName,
 			Title:                 "Glass & Aluminum Return",
 			Location:              "Götgatan 22, Stockholm",
 			LocationLatitude:      &lat2,
 			LocationLongitude:     &lon2,
 			Description:           "Large box of glass bottles + cans from weekend party",
 			Reward:                65.0,
+			Currency:              "SEK",
+			CurrencySymbol:        "kr",
+			Market:                "SE",
 			SplitPercentage:       75.0,
 			Status:                "accepted",
 			EtaMinutes:            &eta12,
@@ -374,11 +445,12 @@ func handleDemoSeed(w http.ResponseWriter, r *http.Request) {
 			ScheduledFrom:         now,
 			ScheduledTo:           now.Add(1 * time.Hour),
 			ImageUrl:              "assets/images/generic.png",
+			CreatorDeviceToken:    "fcm-demo-creator-token",
 			Messages: []ChatMessage{
 				{
 					ID:         "msg-seed-1",
 					RequestID:  "demo-accepted-1",
-					SenderID:   creatorName,
+					SenderID:   creatorID,
 					SenderRole: "user",
 					SenderName: creatorName,
 					Text:       "Hej! The recycling bags are ready outside apartment 3B.",
@@ -388,7 +460,7 @@ func handleDemoSeed(w http.ResponseWriter, r *http.Request) {
 				{
 					ID:         "msg-seed-2",
 					RequestID:  "demo-accepted-1",
-					SenderID:   helperName,
+					SenderID:   helperID,
 					SenderRole: "helper",
 					SenderName: helperName,
 					Text:       "Great, I am on my way with a cargo bike! ETA 12 mins.",
@@ -399,14 +471,19 @@ func handleDemoSeed(w http.ResponseWriter, r *http.Request) {
 		},
 		{
 			ID:                    "demo-completed-1",
-			CreatorID:             creatorName,
-			HelperID:              helperName,
+			CreatorID:             creatorID,
+			CreatorName:           creatorName,
+			HelperID:              helperID,
+			HelperName:            helperName,
 			Title:                 "Bulk PET Bottles - Completed",
 			Location:              "Drottningholmsvägen 12, Stockholm",
 			LocationLatitude:      &lat3,
 			LocationLongitude:     &lon3,
 			Description:           "Office recycling pickup completed yesterday",
 			Reward:                50.0,
+			Currency:              "SEK",
+			CurrencySymbol:        "kr",
+			Market:                "SE",
 			SplitPercentage:       70.0,
 			Status:                "pickedUp",
 			ReceiptAmount:         rec185,
@@ -441,7 +518,12 @@ func handleDemoSeed(w http.ResponseWriter, r *http.Request) {
 					req.Status = existing.Status
 				}
 				if existing.HelperID != "" {
-					req.HelperID = existing.HelperID
+					if _, err := uuid.Parse(existing.HelperID); err == nil {
+						req.HelperID = existing.HelperID
+					} else {
+						req.HelperID = helperID
+						req.HelperName = helperName
+					}
 				}
 			}
 		}
@@ -466,3 +548,57 @@ func handleDemoSeed(w http.ResponseWriter, r *http.Request) {
 		"requests": sampleRequests,
 	})
 }
+
+type registerDeviceTokenPayload struct {
+	DeviceToken string `json:"deviceToken"`
+}
+
+func handleRegisterDeviceToken(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	claims, ok := currentClaims(r)
+	if !ok || claims == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	var payload registerDeviceTokenPayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "Invalid payload"})
+		return
+	}
+
+	token := strings.TrimSpace(payload.DeviceToken)
+	if token == "" {
+		jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "deviceToken is required"})
+		return
+	}
+
+	// Attach device token to any currently active requests created by this user
+	reqs, err := listCreatorRequests(r.Context(), claims.requestOwnerID())
+	if err == nil {
+		for _, req := range reqs {
+			if req.Status == "pending" || req.Status == "accepted" {
+				_, _ = svc.UpdateItem(r.Context(), &dynamodb.UpdateItemInput{
+					TableName: aws.String(tableName),
+					Key: map[string]types.AttributeValue{
+						"id": &types.AttributeValueMemberS{Value: req.ID},
+					},
+					UpdateExpression: aws.String("SET creatorDeviceToken = :token"),
+					ExpressionAttributeValues: map[string]types.AttributeValue{
+						":token": &types.AttributeValueMemberS{Value: token},
+					},
+				})
+			}
+		}
+	}
+
+	jsonResponse(w, http.StatusOK, map[string]interface{}{
+		"status":      "registered",
+		"deviceToken": token,
+	})
+}
+
