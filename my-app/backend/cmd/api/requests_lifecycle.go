@@ -290,10 +290,11 @@ func handleUpdateLocation(w http.ResponseWriter, r *http.Request) {
 		Key: map[string]types.AttributeValue{
 			"id": &types.AttributeValueMemberS{Value: payload.ID},
 		},
-		UpdateExpression:    aws.String(expr),
-		ConditionExpression: aws.String("status = :accepted AND helperId = :helperId"),
+		UpdateExpression:          aws.String(expr),
+		ConditionExpression:       aws.String("#status = :accepted AND helperId = :helperId"),
+		ExpressionAttributeNames:  map[string]string{"#status": "status"},
 		ExpressionAttributeValues: exprValues,
-		ReturnValues:        types.ReturnValueAllNew,
+		ReturnValues:              types.ReturnValueAllNew,
 	})
 	if err != nil {
 		log.Printf("Failed to update location: %v", err)
@@ -352,7 +353,8 @@ func handleArrivedAtDoor(w http.ResponseWriter, r *http.Request) {
 			"id": &types.AttributeValueMemberS{Value: payload.ID},
 		},
 		UpdateExpression:          aws.String(expr),
-		ConditionExpression:       aws.String("status = :accepted AND helperId = :helperId"),
+		ConditionExpression:       aws.String("#status = :accepted AND helperId = :helperId"),
+		ExpressionAttributeNames:  map[string]string{"#status": "status"},
 		ExpressionAttributeValues: exprValues,
 		ReturnValues:              types.ReturnValueAllNew,
 	})

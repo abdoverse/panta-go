@@ -338,7 +338,7 @@ func handleDemoSeed(w http.ResponseWriter, r *http.Request) {
 
 	sampleRequests := []RecyclingRequest{
 		{
-			ID:                    fmt.Sprintf("demo-pending-%d", now.Unix()),
+			ID:                    "demo-pending-1",
 			CreatorID:             creatorName,
 			Title:                 "Bottles & Cans Pickup",
 			Location:              "Sveavägen 44, Stockholm",
@@ -354,7 +354,7 @@ func handleDemoSeed(w http.ResponseWriter, r *http.Request) {
 			ImageUrl:              "assets/images/generic.png",
 		},
 		{
-			ID:                    fmt.Sprintf("demo-accepted-%d", now.Unix()),
+			ID:                    "demo-accepted-1",
 			CreatorID:             creatorName,
 			HelperID:              helperName,
 			Title:                 "Glass & Aluminum Return",
@@ -377,7 +377,7 @@ func handleDemoSeed(w http.ResponseWriter, r *http.Request) {
 			Messages: []ChatMessage{
 				{
 					ID:         "msg-seed-1",
-					RequestID:  fmt.Sprintf("demo-accepted-%d", now.Unix()),
+					RequestID:  "demo-accepted-1",
 					SenderID:   creatorName,
 					SenderRole: "user",
 					SenderName: creatorName,
@@ -387,7 +387,7 @@ func handleDemoSeed(w http.ResponseWriter, r *http.Request) {
 				},
 				{
 					ID:         "msg-seed-2",
-					RequestID:  fmt.Sprintf("demo-accepted-%d", now.Unix()),
+					RequestID:  "demo-accepted-1",
 					SenderID:   helperName,
 					SenderRole: "helper",
 					SenderName: helperName,
@@ -398,7 +398,7 @@ func handleDemoSeed(w http.ResponseWriter, r *http.Request) {
 			},
 		},
 		{
-			ID:                    fmt.Sprintf("demo-completed-%d", now.Unix()),
+			ID:                    "demo-completed-1",
 			CreatorID:             creatorName,
 			HelperID:              helperName,
 			Title:                 "Bulk PET Bottles - Completed",
@@ -424,6 +424,28 @@ func handleDemoSeed(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, req := range sampleRequests {
+		// Preserve existing dynamic chat messages & status if item exists
+		existingOut, err := svc.GetItem(context.TODO(), &dynamodb.GetItemInput{
+			TableName: aws.String(tableName),
+			Key: map[string]types.AttributeValue{
+				"id": &types.AttributeValueMemberS{Value: req.ID},
+			},
+		})
+		if err == nil && len(existingOut.Item) > 0 {
+			var existing RecyclingRequest
+			if err := attributevalue.UnmarshalMap(existingOut.Item, &existing); err == nil {
+				if len(existing.Messages) > 0 {
+					req.Messages = existing.Messages
+				}
+				if existing.Status != "" {
+					req.Status = existing.Status
+				}
+				if existing.HelperID != "" {
+					req.HelperID = existing.HelperID
+				}
+			}
+		}
+
 		item, err := attributevalue.MarshalMap(req)
 		if err != nil {
 			log.Printf("Error marshalling demo request: %v", err)

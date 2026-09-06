@@ -136,11 +136,13 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		senderName := "Recycler"
-		if claims.Role == "helper" {
-			senderName = "Helper"
-		} else if claims.DisplayName != "" {
-			senderName = claims.DisplayName
+		senderName := strings.TrimSpace(claims.DisplayName)
+		if senderName == "" {
+			if claims.Role == "helper" {
+				senderName = "Erik Helper"
+			} else {
+				senderName = "Anna Recycler"
+			}
 		}
 
 		newMsg := ChatMessage{
