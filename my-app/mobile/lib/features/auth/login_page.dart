@@ -373,6 +373,40 @@ class _LoginPageState extends State<LoginPage> {
                                       : l10n.newToPanta,
                                 ),
                               ),
+                              const SizedBox(height: 10),
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton.icon(
+                                  key: const Key('demo_admin_button'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.teal.shade900,
+                                    side: BorderSide(color: Colors.teal.shade300),
+                                    padding: const EdgeInsets.symmetric(vertical: 10),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  onPressed: _isLoading
+                                      ? null
+                                      : () async {
+                                          setState(() => _isLoading = true);
+                                          final error = await context.read<PantaProvider>().loginAdmin();
+                                          if (mounted) {
+                                            setState(() => _isLoading = false);
+                                            if (error != null) {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(content: Text(error)),
+                                              );
+                                            }
+                                          }
+                                        },
+                                  icon: const Icon(Icons.admin_panel_settings, size: 18),
+                                  label: const Text(
+                                    'Admin Dashboard (Sweden Market Oversight)',
+                                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                                  ),
+                                ),
+                              ),
                             ],
                           ],
                         ),

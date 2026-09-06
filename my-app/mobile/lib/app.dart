@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
 import 'core/localization/app_localizations.dart';
+import 'features/admin/admin_dashboard_page.dart';
 import 'features/dashboard/helper_home_page.dart';
 import 'features/dashboard/user_home_page.dart';
 import 'features/auth/login_page.dart';
@@ -101,8 +102,14 @@ class _AuthGate extends StatelessWidget {
       return const LoginPage();
     }
 
-    final home =
-        provider.isHelper ? const HelperHomePage() : const UserHomePage();
+    final Widget home;
+    if (provider.isAdmin) {
+      home = const AdminDashboardPage();
+    } else if (provider.isHelper) {
+      home = const HelperHomePage();
+    } else {
+      home = const UserHomePage();
+    }
     return ChatNotificationListener(child: home);
   }
 }
