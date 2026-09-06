@@ -12,6 +12,13 @@ plan-73 | done | high | medium | none | Secure GDPR-compliant chat storage with 
   Progress note: tester [done]: Implemented AES-256-GCM encryption at rest with requestID AAD binding, GDPR Article 17 erasure API, 30-day retention enforcement, and verified live against real AWS DynamoDB with Swedish localization and emoji preservation.
 
 ## both
+plan-76 | done | high | small | none | Systematic repo-level release changelog with versions, feature summaries, and task IDs
+  Owner agent: tech_lead
+  Started at: 2026-09-06T19:03:00.000000+00:00
+  Last heartbeat at: 2026-09-06T19:04:00.000000+00:00
+  Last progress at: 2026-09-06T19:04:00.000000+00:00
+  Progress note: tester [done]: Authored repo-level CHANGELOG.md adhering to Keep a Changelog standard and SemVer, detailing versions 1.0.0 through 1.3.0 with task IDs, release dates, and feature breakdowns.
+
 plan-74 | done | medium | medium | none | Dynamic per-market active request limits for recyclers via market configuration profiles
   Owner agent: fullstack_dev
   Started at: 2026-09-06T18:55:00.000000+00:00
