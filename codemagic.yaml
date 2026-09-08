@@ -26,17 +26,31 @@ workflows:
         script: |
           cd mobile
           
-          # Force Xcode to disable code signing by overriding the xcconfig
-          echo "CODE_SIGNING_ALLOWED = NO" >> ios/Flutter/Release.xcconfig
-          echo "CODE_SIGNING_REQUIRED = NO" >> ios/Flutter/Release.xcconfig
-          echo "CODE_SIGN_IDENTITY = -" >> ios/Flutter/Release.xcconfig
-          echo "EXPANDED_CODE_SIGN_IDENTITY = -" >> ios/Flutter/Release.xcconfig
+          # 1. Run flutter build to compile Dart AOT and setup plugins.
+          # It will fail at the end because Flutter's CLI strictly demands a Dev Team, 
+          # but the Dart compilation (App.framework) will succeed.
+          flutter build ios --release --no-codesign || true
           
-          flutter build ios --release --no-codesign
+          # 2. Run Xcodebuild directly to package the Runner.app.
+          # We pass CODE_SIGNING_ALLOWED=NO directly to xcodebuild to bypass Apple's signing.
+          cd ios
+          xcodebuild build \
+            -workspace Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -sdk iphoneos \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            EXPANDED_CODE_SIGN_IDENTITY="" \
+            -quiet
           
+          cd ..
           if [ ! -d "build/ios/iphoneos/Runner.app" ]; then
             echo "❌ Runner.app was not generated."
             exit 1
+          else
+            echo "✅ Runner.app generated successfully!"
           fi
 
       - name: Package .ipa for AltStore
