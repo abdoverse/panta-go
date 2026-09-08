@@ -102,7 +102,7 @@ class PantaProvider extends ChangeNotifier {
   List<RecyclingRequest> get previousRequests =>
       _requestState.requests.where((r) => r.status == RequestStatus.pickedUp).toList();
   int get activeRequestsCount => ongoingRequests.length;
-  int get maxActiveRequests => 10;
+  int get maxActiveRequests => 20;
   int get maxActiveHelperJobs => 15;
   bool get canCreateRequest => activeRequestsCount < maxActiveRequests;
 

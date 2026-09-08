@@ -28,8 +28,8 @@ class AdminMarketSummary {
     this.totalPantAmount = 0.0,
     this.totalRecyclerPayout = 0.0,
     this.totalHelperPayout = 0.0,
-    this.recyclerLimit = 10,
-    this.helperLimit = 15,
+    this.recyclerLimit = 20,
+    this.helperLimit = 30,
     this.activeRecyclersCount = 0,
     this.activeHelpersCount = 0,
   });
@@ -45,8 +45,8 @@ class AdminMarketSummary {
       totalPantAmount: (json['totalPantAmount'] as num?)?.toDouble() ?? 0.0,
       totalRecyclerPayout: (json['totalRecyclerPayout'] as num?)?.toDouble() ?? 0.0,
       totalHelperPayout: (json['totalHelperPayout'] as num?)?.toDouble() ?? 0.0,
-      recyclerLimit: (json['recyclerLimit'] as num?)?.toInt() ?? 10,
-      helperLimit: (json['helperLimit'] as num?)?.toInt() ?? 15,
+      recyclerLimit: (json['recyclerLimit'] as num?)?.toInt() ?? 20,
+      helperLimit: (json['helperLimit'] as num?)?.toInt() ?? 30,
       activeRecyclersCount: (json['activeRecyclersCount'] as num?)?.toInt() ?? 0,
       activeHelpersCount: (json['activeHelpersCount'] as num?)?.toInt() ?? 0,
     );

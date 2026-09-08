@@ -75,11 +75,11 @@ func TestAdminEndpoints(t *testing.T) {
 			t.Fatalf("Expected summary object, got %v", res["summary"])
 		}
 
-		if summary["recyclerLimit"] != float64(10) {
-			t.Errorf("Expected recyclerLimit=10, got %v", summary["recyclerLimit"])
+		if summary["recyclerLimit"] != float64(20) {
+			t.Errorf("Expected recyclerLimit=20, got %v", summary["recyclerLimit"])
 		}
-		if summary["helperLimit"] != float64(15) {
-			t.Errorf("Expected helperLimit=15, got %v", summary["helperLimit"])
+		if summary["helperLimit"] != float64(30) {
+			t.Errorf("Expected helperLimit=30, got %v", summary["helperLimit"])
 		}
 
 		cities, ok := res["cities"].([]interface{})

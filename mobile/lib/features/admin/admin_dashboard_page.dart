@@ -18,8 +18,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   final AuthService _authService = AuthService();
 
   AdminMarketSummary _summary = const AdminMarketSummary(
-    recyclerLimit: 10,
-    helperLimit: 15,
+    recyclerLimit: 20,
+    helperLimit: 30,
   );
   List<CityTrendModel> _cities = [];
   List<AdminLogModel> _logs = [];
@@ -89,8 +89,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         totalPantAmount: 2450.0,
         totalRecyclerPayout: 1715.0,
         totalHelperPayout: 735.0,
-        recyclerLimit: 10,
-        helperLimit: 15,
+        recyclerLimit: 20,
+        helperLimit: 30,
         activeRecyclersCount: 9,
         activeHelpersCount: 6,
       );
