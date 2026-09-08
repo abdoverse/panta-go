@@ -85,12 +85,16 @@ class AppTheme {
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         backgroundColor: darkBackground,
+        width: 400,
+        elevation: 4,
         contentTextStyle: const TextStyle(
           color: Colors.white,
+          fontSize: 14,
           fontWeight: FontWeight.w500,
+          height: 1.4,
         ),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
