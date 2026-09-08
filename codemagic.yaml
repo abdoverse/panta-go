@@ -24,8 +24,9 @@ workflows:
 
       - name: Install CocoaPods
         script: |
-          cd mobile/ios
-          pod install
+          cd mobile
+          find . -name "Podfile" -maxdepth 3
+          cd ios && pod install
 
       - name: Build iOS (no codesign)
         script: |
