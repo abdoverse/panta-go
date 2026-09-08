@@ -1,32 +1,52 @@
 workflows:
-  ios-workflow:
-    name: iOS Build (Sideload)
+  ios-altstore:
+    name: iOS Build — AltStore Sideload
     max_build_duration: 60
     instance_type: mac_mini_m1
     environment:
       flutter: stable
       xcode: latest
       cocoapods: default
+      vars:
+        BUNDLE_ID: com.abdoverse.panta
+      # Add GOOGLE_SERVICE_INFO_PLIST as a base64-encoded secret in Codemagic UI
+      # (Environment variables → Secret → name: GOOGLE_SERVICE_INFO_PLIST)
+
     scripts:
+      - name: Inject GoogleService-Info.plist
+        script: |
+          echo "$GOOGLE_SERVICE_INFO_PLIST" | base64 --decode > mobile/ios/Runner/GoogleService-Info.plist
+
       - name: Get Flutter packages
         script: |
           cd mobile
-          flutter packages get
-      - name: Install pods
+          flutter pub get
+
+      - name: Install CocoaPods
         script: |
           cd mobile/ios
           pod install
-      - name: Build iOS App (No Signing)
+
+      - name: Build iOS (no codesign)
         script: |
           cd mobile
           flutter build ios --release --no-codesign
-      - name: Package .ipa
+
+      - name: Package .ipa for AltStore
         script: |
           cd mobile/build/ios/iphoneos
-          mkdir Payload
-          cp -r Runner.app Payload
-          zip -r Runner.ipa Payload
+          mkdir -p Payload
+          cp -r Runner.app Payload/
+          zip -r Panta.ipa Payload
+          echo "✅ Panta.ipa ready"
+
     artifacts:
-      - mobile/build/ios/iphoneos/Runner.ipa
+      - mobile/build/ios/iphoneos/Panta.ipa
 
-
+    publishing:
+      email:
+        recipients:
+          - $CM_SUBMITTER_EMAIL
+        notify:
+          success: true
+          failure: true
