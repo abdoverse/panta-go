@@ -31,6 +31,14 @@
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Panta uses your location to sort the closest pickup jobs first.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Panta uses your location to sort the closest pickup jobs first.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Panta needs camera access to photograph items for pickup requests and scan receipts.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Panta needs photo library access to attach images to pickup requests.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Panta needs permission to save receipt photos to your library.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
@@ -52,5 +60,10 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>remote-notification</string>
+	</array>
 </dict>
 </plist>
