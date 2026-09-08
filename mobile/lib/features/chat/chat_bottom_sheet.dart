@@ -123,7 +123,7 @@ class _ChatBottomSheetState extends State<ChatBottomSheet> {
               child: Row(
                 children: [
                   CircleAvatar(
-                    backgroundColor: AppTheme.primaryGreen.withOpacity(0.1),
+                    backgroundColor: AppTheme.primaryGreen.withValues(alpha: 0.1),
                     child: const Icon(Icons.support_agent,
                         color: AppTheme.primaryGreen),
                   ),
@@ -193,9 +193,9 @@ class _ChatBottomSheetState extends State<ChatBottomSheet> {
                             final preset = presets[index];
                             return ActionChip(
                               label: Text(preset, style: const TextStyle(fontSize: 12)),
-                              backgroundColor: AppTheme.primaryGreen.withOpacity(0.08),
+                              backgroundColor: AppTheme.primaryGreen.withValues(alpha: 0.08),
                               side: BorderSide(
-                                  color: AppTheme.primaryGreen.withOpacity(0.3)),
+                                  color: AppTheme.primaryGreen.withValues(alpha: 0.3)),
                               onPressed: () {
                                 _handleSendPressed(types.PartialText(text: preset));
                               },
