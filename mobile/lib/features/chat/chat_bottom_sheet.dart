@@ -104,7 +104,7 @@ class _ChatBottomSheetState extends State<ChatBottomSheet> {
     final targetHeight = (availableHeight * 0.85) - keyboardHeight;
     
     return Container(
-      height: targetHeight > 0 ? targetHeight : availableHeight * 0.5,
+      height: targetHeight > 400 ? targetHeight : 400,
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -182,7 +182,7 @@ class _ChatBottomSheetState extends State<ChatBottomSheet> {
                   return Column(
                     children: [
                       Container(
-                        height: 40,
+                        height: 50,
                         margin: const EdgeInsets.symmetric(vertical: 8),
                         child: ListView.separated(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
