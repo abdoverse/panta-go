@@ -43,10 +43,4 @@ workflows:
     artifacts:
       - mobile/build/ios/iphoneos/Panta.ipa
 
-    publishing:
-      email:
-        recipients:
-          - $CM_SUBMITTER_EMAIL
-        notify:
-          success: true
-          failure: true
+
