@@ -25,15 +25,18 @@ workflows:
       - name: Build iOS (no codesign)
         script: |
           cd mobile
-          # Flutter throws an exit code 1 at the end because of signing, but the build actually succeeds.
-          # We catch it and verify the .app exists to continue the workflow.
-          flutter build ios --release --no-codesign || true
+          
+          # Force Xcode to disable code signing by overriding the xcconfig
+          echo "CODE_SIGNING_ALLOWED = NO" >> ios/Flutter/Release.xcconfig
+          echo "CODE_SIGNING_REQUIRED = NO" >> ios/Flutter/Release.xcconfig
+          echo "CODE_SIGN_IDENTITY = -" >> ios/Flutter/Release.xcconfig
+          echo "EXPANDED_CODE_SIGN_IDENTITY = -" >> ios/Flutter/Release.xcconfig
+          
+          flutter build ios --release --no-codesign
           
           if [ ! -d "build/ios/iphoneos/Runner.app" ]; then
-            echo "❌ Runner.app was not generated. The build actually failed."
+            echo "❌ Runner.app was not generated."
             exit 1
-          else
-            echo "✅ Runner.app generated successfully!"
           fi
 
       - name: Package .ipa for AltStore
