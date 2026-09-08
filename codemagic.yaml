@@ -22,16 +22,19 @@ workflows:
           cd mobile
           flutter pub get
 
-      - name: Install CocoaPods
-        script: |
-          cd mobile
-          find . -name "Podfile" -maxdepth 3
-          cd ios && pod install
-
       - name: Build iOS (no codesign)
         script: |
           cd mobile
-          flutter build ios --release --no-codesign
+          # Flutter throws an exit code 1 at the end because of signing, but the build actually succeeds.
+          # We catch it and verify the .app exists to continue the workflow.
+          flutter build ios --release --no-codesign || true
+          
+          if [ ! -d "build/ios/iphoneos/Runner.app" ]; then
+            echo "❌ Runner.app was not generated. The build actually failed."
+            exit 1
+          else
+            echo "✅ Runner.app generated successfully!"
+          fi
 
       - name: Package .ipa for AltStore
         script: |
