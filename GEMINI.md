@@ -2,10 +2,10 @@
 
 ## Project Overview
 Panta is a high-grade recycling platform connecting household recyclers with verified local helpers (pantare) in Sweden.
-- **Backend**: Go REST API (`my-app/backend/cmd/api`) running on port 8080.
-- **Frontend**: Flutter Web & Mobile (`my-app/mobile`) running on port 3000.
-- **Cloud Infrastructure**: AWS DynamoDB (`panta-go-requests`), S3 (`panta-go-request-images`), Cognito in region `eu-north-1`.
-- **Changelog**: Maintained at [`CHANGELOG.md`](file:///home/abdo/Desktop/abdoverse/panta-go/CHANGELOG.md).
+- **Backend**: Go REST API (`backend/cmd/api`) running on port 8080.
+- **Frontend**: Flutter Web & Mobile (`mobile/`) running on port 3000.
+- **Infrastructure**: AWS CDK TypeScript stack (`infra/`). DynamoDB (`panta-go-requests`), S3 (`panta-go-request-images`), Cognito in region `eu-north-1`.
+- **Changelog**: Maintained at [`CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
@@ -13,7 +13,7 @@ Panta is a high-grade recycling platform connecting household recyclers with ver
 This workspace operates with **non-critical action auto-approval**:
 - Auto-approve: Code edits, file creation, unit/widget test execution, formatting (`gofmt`, `dart format`), local builds, and local service lifecycle.
 - Reserve explicit user approval strictly for: destructive git operations (`reset --hard`, force push), cloud infrastructure destruction (`cdk destroy`), or deleting persistent production data.
-- See detailed policy in [`.agents/rules/autonomy.md`](file:///home/abdo/Desktop/abdoverse/panta-go/.agents/rules/autonomy.md).
+- See detailed policy in [`.agents/rules/autonomy.md`](.agents/rules/autonomy.md).
 
 ---
 
@@ -46,15 +46,15 @@ Access points:
 
 ## Testing & Verification
 Before delivering changes, ensure all automated verification checks pass:
-- **Backend Tests**: `cd my-app/backend && go test ./...`
-- **Mobile / Web Tests**: `cd my-app/mobile && flutter test`
+- **Backend Tests**: `cd backend && go test ./...`
+- **Mobile / Web Tests**: `cd mobile && flutter test`
 
 ---
 
 ## Agent Workspace & Backlog Structure (plan-75)
-Tasks, plans, and orchestrations are natively managed under [`.agents/`](file:///home/abdo/Desktop/abdoverse/panta-go/.agents/):
-- **Backlog**: [`.agents/agent-backlog.txt`](file:///home/abdo/Desktop/abdoverse/panta-go/.agents/agent-backlog.txt)
-- **Completed Archive**: [`.agents/agent-done.txt`](file:///home/abdo/Desktop/abdoverse/panta-go/.agents/agent-done.txt)
-- **Roadmap / Plan**: [`.agents/agent-plan.md`](file:///home/abdo/Desktop/abdoverse/panta-go/.agents/agent-plan.md)
-- **Rules & Standards**: [`.agents/rules/`](file:///home/abdo/Desktop/abdoverse/panta-go/.agents/rules/)
-- **Orchestrator Logs**: [`.agents/logs/`](file:///home/abdo/Desktop/abdoverse/panta-go/.agents/logs/)
+Tasks, plans, and orchestrations are natively managed under [`.agents/`](.agents/):
+- **Backlog**: [`.agents/agent-backlog.txt`](.agents/agent-backlog.txt)
+- **Completed Archive**: [`.agents/agent-done.txt`](.agents/agent-done.txt)
+- **Roadmap / Plan**: [`.agents/agent-plan.md`](.agents/agent-plan.md)
+- **Rules & Standards**: [`.agents/rules/`](.agents/rules/)
+- **Orchestrator Logs**: [`.agents/logs/`](.agents/logs/)

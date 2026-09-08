@@ -4,8 +4,8 @@
 set -e
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-BACKEND_DIR="$PROJECT_ROOT/my-app/backend/cmd/api"
-FRONTEND_DIR="$PROJECT_ROOT/my-app/mobile"
+BACKEND_DIR="$PROJECT_ROOT/backend/cmd/api"
+FRONTEND_DIR="$PROJECT_ROOT/mobile"
 LOG_DIR="$PROJECT_ROOT/.agents/logs/local-run"
 
 BACKEND_PID_FILE="$LOG_DIR/backend.pid"
@@ -84,8 +84,8 @@ check_frontend_health() {
 
 seed_demo_data() {
     echo "🌱 Seeding realistic test requests into local backend..."
-    if [ -f "$PROJECT_ROOT/seed.js" ]; then
-        API_BASE_URL="http://localhost:$BACKEND_PORT" node "$PROJECT_ROOT/seed.js"
+    if [ -f "$PROJECT_ROOT/panta-dev-loop/scripts/seed.js" ]; then
+        API_BASE_URL="http://localhost:$BACKEND_PORT" node "$PROJECT_ROOT/panta-dev-loop/scripts/seed.js"
     else
         curl -s -X POST "http://localhost:$BACKEND_PORT/api/v1/demo/seed" > /dev/null 2>&1 || true
         echo "✅ Seed endpoint triggered via curl"

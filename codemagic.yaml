@@ -10,23 +10,23 @@ workflows:
     scripts:
       - name: Get Flutter packages
         script: |
-          cd my-app/mobile
+          cd mobile
           flutter packages get
       - name: Install pods
         script: |
-          cd my-app/mobile/ios
+          cd mobile/ios
           pod install
       - name: Build iOS App (No Signing)
         script: |
-          cd my-app/mobile
+          cd mobile
           flutter build ios --release --no-codesign
       - name: Package .ipa
         script: |
-          cd my-app/mobile/build/ios/iphoneos
+          cd mobile/build/ios/iphoneos
           mkdir Payload
           cp -r Runner.app Payload
           zip -r Runner.ipa Payload
     artifacts:
-      - my-app/mobile/build/ios/iphoneos/Runner.ipa
+      - mobile/build/ios/iphoneos/Runner.ipa
 
 

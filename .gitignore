@@ -9,19 +9,30 @@
 *.dylib
 *.test
 *.out
-panta-backend
-my-app/backend/panta-backend
+backend/panta-backend
 vendor/
 go.work
 go.work.sum
+
+# CDK (TypeScript compiled output)
+infra/lib/*.js
+infra/lib/*.d.ts
+infra/bin/*.js
+infra/bin/*.d.ts
+infra/test/*.js
+infra/test/*.d.ts
+cdk.out/
 
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
+.venv/
 
 # Logs
 .agents/logs/
+*.log
+nohup.out
 
 
 # Flutter/Dart

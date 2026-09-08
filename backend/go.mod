@@ -1,4 +1,4 @@
-module my-app/backend
+module panta/backend
 
 go 1.26.0
 
