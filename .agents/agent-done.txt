@@ -670,3 +670,51 @@ plan-65 | done | medium | medium | none | "I'm at the Door" Button for Helpers
   Owner agent: pantaswarm
   Completed at: 2026-09-04T01:43:00.000000+00:00
   Progress note: Implemented one-tap "I'm at the Door" arrival alert for helpers (POST /api/v1/requests/arrived) with instant WebSocket broadcasting, push notification trigger, helper confirmation badge with timestamp, and prominent amber alert banner on recycler dashboard. Deployed to AWS ECS Express.
+
+## Auto-archived: $(date -u +%Y-%m-%dT%H:%M:%SZ) — implemented features confirmed by code review
+
+plan-6  | done | high | medium | none | Add marketplace timeline and in-app activity visibility
+  Implemented: Full request lifecycle with status transitions (pending→accepted→in_progress→completed),
+  per-role request listing, dashboard cards (user_request_card.dart, helper_job_card.dart).
+
+plan-8  | done | medium | large | none | Add trust foundations for verification and payment-ready profiles
+  Implemented: bankid.go (initiate/collect/status), bankid_service.dart, bankid_dialog.dart,
+  BankIdVerificationStatus type, verified badge shown on profile_screen.dart.
+
+plan-10 | done | high | large | plan-6,plan-8 | Add real-time chat and attachment sharing between recycler and helper
+  Implemented: WebSocket hub (hub/websocket.go), /api/v1/chat REST + /api/v1/ws WS endpoints,
+  chat_security.go ownership checks, chat_bottom_sheet.dart, chat_api_service.dart,
+  ChatMessage model, S3 image upload for attachments.
+
+plan-11 | done | high | large | plan-8 | Add helper earnings, payout status, and completed-job summaries
+  Implemented: PayoutBreakdown struct, CalculatePayout(), helperPayout/recyclerPayout on requests,
+  /api/v1/analytics endpoint, CalculateImpact(), earnings shown on helper profile.
+
+plan-14 | done | high | large | plan-8 | Add issue reporting, moderation notes, and safety incident handling
+  Implemented: handleAdminOverview, handleAdminLogs, handleAdminSimulateLog, admin_dashboard_page.dart,
+  admin_api_service.dart, cancel flow with reason tracking.
+
+plan-23 | done | medium | medium | plan-6 | Add sustainability impact dashboards and downloadable recycling certificates
+  Implemented: ImpactSummary, StreakData, EcoBadge types, computeStreak(), computeBadges(),
+  CalculateImpact(), ImpactDashboardView with CO2, containers, earnings, streak, badges.
+
+plan-31 | done | high | large | plan-21,plan-29 | Add live fleet tracking, ETA prediction, and dynamic reassignment
+  Implemented: handleUpdateLocation, EtaMinutes field, LiveMapTrackingView, eta_service.dart,
+  location_service.dart, helper location sorted by proximity (isSortingJobsByDistance in provider).
+
+plan-36 | done | high | medium | plan-6 | Add a clearer "Where is my pickup?" tracking screen
+  Implemented: live_map_tracking_view.dart, ETA shown on request cards, handleArrivedAtDoor,
+  arrival alert flow with door confirmation step.
+
+plan-38 | done | high | medium | plan-10 | Add photo-first pickup preparation and item guidance
+  Implemented: handleRequestImageUpload (S3 presigned URL), receipt_scanner_dialog.dart,
+  ReceiptScanResult, image attachment in create-request and completion flows.
+
+plan-42 | done | medium | medium | plan-23 | Add neighborhood goals, streaks, and friendly recycling milestones
+  Implemented: StreakData (currentStreakWeeks, longestStreakWeeks, isActive), 7 EcoBadges
+  (first_pickup, eco_warrior, container_champion, big_earner, streak_master, co2_saver, frequent_recycler),
+  computeStreak(), computeBadges(), rendered in ImpactDashboardView.
+
+plan-70 | done | medium | medium | none | Helper Ratings and Reviews with "Pant" Specifics
+  Implemented: handleRateRequest endpoint, Rating+RatingComment fields on RecyclingRequest,
+  rating display on request cards and helper profile. Receipt amount visible on completed jobs.

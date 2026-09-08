@@ -94,14 +94,6 @@ plan-29 | planned | high | medium | plan-18,plan-21 | Add driver-style helper sh
   Likely files:
   helper workflow screens, map/route UI, availability state, active job sequencing surfaces.
 
-plan-36 | planned | high | medium | plan-6 | Add a clearer "Where is my pickup?" tracking screen
-  Goal:
-  Give recyclers a single place to see request status, next step, ETA language, and what they should do now.
-  Why:
-  Users feel uncertainty most when they do not know what happens next after booking.
-  Likely files:
-  request detail UI, timeline/progress widgets, notification handoff surfaces, status models.
-
 plan-37 | planned | medium | medium | none | Add a saved-items organizer for favorite addresses, notes, and pickup presets
   Goal:
   Let users manage their most-used booking details from one lightweight settings area.
@@ -109,14 +101,6 @@ plan-37 | planned | medium | medium | none | Add a saved-items organizer for fav
   Practical retention improves when users can reuse their own patterns without digging through history.
   Likely files:
   profile/settings UI, request preset models, provider state, saved-address surfaces.
-
-plan-38 | planned | high | medium | plan-10 | Add photo-first pickup preparation and item guidance
-  Goal:
-  Help users attach quick photos and get simple prep guidance before a helper arrives.
-  Why:
-  Better preparation reduces failed pickups, confusion, and chat back-and-forth.
-  Likely files:
-  create-request flow, request detail UI, upload/image components, backend attachment metadata.
 
 plan-39 | planned | medium | medium | plan-12 | Add a personal reminders center with snooze and "remind me later"
   Goal:
@@ -143,22 +127,6 @@ plan-46 | planned | high | medium | none | Add customer-set pricing with guided 
   pricing input UI, request quote logic, recommendation models, backend pricing heuristics and validation.
 
 ## both
-plan-6 | planned | medium | medium | none | Add marketplace timeline and in-app activity visibility
-  Goal:
-  Show request lifecycle progress clearly and provide a stable in-app activity center.
-  Why:
-  Core request flow works, but visibility is still too opaque for helpers and recyclers.
-  Likely files:
-  dashboard screens, request models/provider, backend request/activity emission logic.
-
-plan-8 | planned | medium | large | none | Add trust foundations for verification and payment-ready profiles
-  Goal:
-  Introduce verification state and the backend/mobile shape needed for BankID and payment extensions.
-  Why:
-  Trust and monetization work should start with visible verification-ready primitives, not ad hoc UI.
-  Likely files:
-  profile UI, auth/backend files, secrets/config surfaces, future payment integration points.
-
 plan-9 | planned | medium | medium | plan-6 | Add structured categories and helper-side marketplace filters
   Goal:
   Support material categories plus filtering by distance, time, reward, and material type.
@@ -166,30 +134,6 @@ plan-9 | planned | medium | medium | plan-6 | Add structured categories and help
   The helper marketplace already sorts well, but it still lacks strong filtering and job qualification signals.
   Likely files:
   helper marketplace UI, request models/provider, backend filtering/index support.
-
-plan-10 | planned | high | large | plan-6,plan-8 | Add real-time chat and attachment sharing between recycler and helper
-  Goal:
-  Support in-app conversation on active requests, including lightweight image sharing for pickup coordination.
-  Why:
-  Once trust and activity visibility improve, direct coordination becomes the next high-value conversion and completion unlock.
-  Likely files:
-  backend websocket/message persistence files, mobile request detail screens, notification hooks, auth/ownership checks.
-
-plan-11 | planned | high | large | plan-8 | Add helper earnings, payout status, and completed-job summaries
-  Goal:
-  Show helpers their completed rewards, pending payouts, and a clean earnings history that can later connect to payments.
-  Why:
-  Verification-ready profiles are more valuable when helpers can immediately see economic progress and payout readiness.
-  Likely files:
-  helper dashboard/profile UI, backend reward aggregation endpoints, request completion/payout state models.
-
-plan-14 | planned | high | large | plan-8 | Add issue reporting, moderation notes, and safety incident handling
-  Goal:
-  Let users report no-shows, unsafe interactions, and disputed pickups, with backend state to support follow-up and moderation.
-  Why:
-  As the marketplace grows, trust requires not only verification but also clear incident handling and accountability flows.
-  Likely files:
-  request detail/reporting UI, backend request/report models, admin/moderation support endpoints, notification surfaces.
 
 plan-20 | planned | high | large | plan-8 | Add business accounts with team roles and multi-location pickups
   Goal:
@@ -215,14 +159,6 @@ plan-22 | planned | high | large | plan-10,plan-16 | Add a support inbox with es
   Likely files:
   support/help UI, chat/escalation flows, backend support case models, admin/support integration points.
 
-plan-23 | planned | medium | medium | plan-6 | Add sustainability impact dashboards and downloadable recycling certificates
-  Goal:
-  Show individual and business users measurable recycling impact, milestone summaries, and exportable sustainability proof.
-  Why:
-  Impact visibility creates a professional value story for retention, business adoption, and brand differentiation.
-  Likely files:
-  dashboard/profile UI, backend aggregation/reporting endpoints, request completion metrics, PDF/export surfaces.
-
 plan-24 | planned | high | medium | plan-11,plan-19 | Add referrals, credits, and promotional pricing rules
   Goal:
   Support referral rewards, user credits, and campaign-style pricing incentives for repeat growth.
@@ -238,14 +174,6 @@ plan-30 | planned | high | large | plan-20,plan-25 | Add contract pricing, SLA t
   Professional monetization grows beyond one-off jobs when the platform can sell recurring service packages and SLAs.
   Likely files:
   pricing and contract models, business account UI, backend quoting/rules logic, billing and request policy surfaces.
-
-plan-31 | planned | high | large | plan-21,plan-29 | Add live fleet tracking, ETA prediction, and dynamic reassignment
-  Goal:
-  Improve marketplace reliability with live helper tracking, ETA updates, and controlled reassignment when plans change mid-route.
-  Why:
-  Once route workflows exist, live operational visibility becomes the next major trust and efficiency multiplier.
-  Likely files:
-  realtime location flows, map/ETA UI, backend tracking and reassignment logic, notification updates.
 
 plan-32 | planned | high | medium | plan-16,plan-26 | Add role-based access control across support, finance, and operations
   Goal:
@@ -286,14 +214,6 @@ plan-41 | planned | high | medium | plan-9,plan-21 | Add "best match" helper rec
   Better matching improves confidence and makes the marketplace feel more helpful and premium.
   Likely files:
   request detail UI, helper ranking logic, provider models, backend recommendation endpoints.
-
-plan-42 | planned | medium | medium | plan-23 | Add neighborhood goals, streaks, and friendly recycling milestones
-  Goal:
-  Turn sustainability progress into small motivating goals without making the app feel gimmicky.
-  Why:
-  Light, practical motivation can improve repeat usage when tied to real pickup behavior.
-  Likely files:
-  dashboard/profile UI, impact metrics, milestone models, notification copy surfaces.
 
 plan-43 | planned | high | medium | plan-14,plan-22 | Add a post-pickup follow-up flow with issue resolution shortcuts
   Goal:
@@ -388,12 +308,6 @@ plan-66 | planned | medium | large | none | Geofenced Pick-up/Drop-off Confirmat
   Automatically confirm pickup and drop-off at the recycling center when the helper's GPS location enters and leaves a predefined geographical area (geofence).
   Why:
   This automates the tracking process and adds a layer of trust to the system.
-
-plan-70 | planned | medium | medium | none | Helper Ratings and Reviews with "Pant" Specifics
-  Goal:
-  A rating system where recyclers can rate helpers on things like punctuality and communication, and reviews can include information about "Pant" earnings.
-  Why:
-  This helps to build trust in the marketplace and allows users to make more informed decisions.
 
 plan-71 | planned | medium | medium | none | "Request a Helper" vs "Offer a Pickup" modes
   Goal:
