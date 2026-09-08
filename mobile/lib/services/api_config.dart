@@ -19,7 +19,8 @@ class ApiConfig {
 
     final isLocalHost = uri.host == 'localhost' ||
         uri.host == '127.0.0.1' ||
-        uri.host == '10.0.2.2';
+        uri.host == '10.0.2.2' ||
+        uri.host.startsWith('192.168.');
     if (uri.scheme != 'https' && !isLocalHost) {
       throw StateError(
         'Panta requires HTTPS for remote API traffic. '
