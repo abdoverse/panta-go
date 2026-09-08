@@ -29,14 +29,10 @@ class ChatBottomSheet extends StatefulWidget {
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: ChatBottomSheet(
-          request: request,
-          isHelper: isHelper,
-        ),
+      // Let the sheet resize when keyboard appears
+      builder: (context) => ChatBottomSheet(
+        request: request,
+        isHelper: isHelper,
       ),
     );
   }
@@ -55,8 +51,7 @@ class _ChatBottomSheetState extends State<ChatBottomSheet> {
     super.initState();
     _provider = context.read<PantaProvider>();
     _provider?.setActiveChatRequestId(widget.request.id);
-    
-    // Set up the current user for Flyer Chat
+
     final pId = _provider?.currentUserId ?? 'unknown';
     final pName = _provider?.currentUserDisplayName ?? 'Me';
     _currentUser = types.User(id: pId, firstName: pName);
@@ -67,8 +62,7 @@ class _ChatBottomSheetState extends State<ChatBottomSheet> {
         context.read<PantaProvider>().markChatAsRead(widget.request.id);
       }
     });
-    
-    // Fallback polling every 3 seconds while chat sheet is open
+
     _pollingTimer = Timer.periodic(const Duration(seconds: 3), (_) {
       if (mounted) {
         context.read<PantaProvider>().fetchChatMessages(widget.request.id);
@@ -87,161 +81,279 @@ class _ChatBottomSheetState extends State<ChatBottomSheet> {
   void _handleSendPressed(types.PartialText message) async {
     final text = message.text.trim();
     if (text.isEmpty) return;
-
-    final provider = context.read<PantaProvider>();
-    await provider.sendChatMessage(
+    await context.read<PantaProvider>().sendChatMessage(
       widget.request.id,
       text,
       isPreset: false,
     );
   }
 
+  String get _otherPersonName {
+    if (widget.isHelper) {
+      final name = widget.request.creatorName;
+      return name != null && name.isNotEmpty ? name.split(' ').first : 'Recycler';
+    } else {
+      final name = widget.request.helperName;
+      return name != null && name.isNotEmpty ? name.split(' ').first : 'Helper';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Calculate height so it takes 85% of screen, but shrinks when keyboard opens
-    final availableHeight = MediaQuery.of(context).size.height;
-    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
-    final targetHeight = (availableHeight * 0.85) - keyboardHeight;
-    
-    return Container(
-      height: targetHeight > 400 ? targetHeight : 400,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: Colors.grey.shade200),
+    // Use MediaQuery to correctly handle keyboard insets — the sheet itself
+    // sits above the keyboard because showModalBottomSheet handles this natively.
+    return DraggableScrollableSheet(
+      initialChildSize: 0.9,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      snap: true,
+      snapSizes: const [0.9],
+      builder: (context, scrollController) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: AppTheme.surfaceWhite,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Column(
+            children: [
+              // ── Drag Handle ──────────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.only(top: 12, bottom: 4),
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppTheme.borderSubtle,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    backgroundColor: AppTheme.primaryGreen.withValues(alpha: 0.1),
-                    child: const Icon(Icons.support_agent,
-                        color: AppTheme.primaryGreen),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          widget.isHelper 
-                              ? 'Chat with ${widget.request.creatorName?.split(' ').first ?? 'Recycler'}' 
-                              : 'Chat with ${widget.request.helperName?.split(' ').first ?? 'Helper'}',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          'ID: ${widget.request.id.substring(0, 8)}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ],
-              ),
-            ),
-            
-            // Chat UI
-            Expanded(
-              child: Consumer<PantaProvider>(
-                builder: (context, provider, child) {
-                  final req = provider.requests.firstWhere(
-                    (r) => r.id == widget.request.id,
-                    orElse: () => widget.request,
-                  );
-                  
-                  // Convert Go ChatMessages to Flyer Chat Messages
-                  // Note: FlyerHQ expects the list in reverse chronological order (newest first)
-                  final flyerMessages = req.messages.reversed.map((msg) {
-                    return msg.toFlyerMessage();
-                  }).toList();
 
-                  final presets = widget.isHelper 
-                      ? ChatMessage.helperPresets 
-                      : ChatMessage.recyclerPresets;
-
-                  return Column(
-                    children: [
-                      Container(
-                        height: 50,
-                        margin: const EdgeInsets.symmetric(vertical: 8),
-                        child: ListView.separated(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          scrollDirection: Axis.horizontal,
-                          itemCount: presets.length,
-                          separatorBuilder: (_, __) => const SizedBox(width: 8),
-                          itemBuilder: (context, index) {
-                            final preset = presets[index];
-                            return ActionChip(
-                              label: Text(preset, style: const TextStyle(fontSize: 12)),
-                              backgroundColor: AppTheme.primaryGreen.withValues(alpha: 0.08),
-                              side: BorderSide(
-                                  color: AppTheme.primaryGreen.withValues(alpha: 0.3)),
-                              onPressed: () {
-                                _handleSendPressed(types.PartialText(text: preset));
-                              },
-                            );
-                          },
-                        ),
+              // ── Header ───────────────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 8, 12),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: AppTheme.accentLeaf,
+                        borderRadius: BorderRadius.circular(14),
                       ),
-                      Expanded(
-                        child: Chat(
-                          messages: flyerMessages,
-                          onSendPressed: _handleSendPressed,
-                          user: _currentUser,
-                          showUserAvatars: true,
-                          showUserNames: true,
-                          inputOptions: const InputOptions(
-                            sendButtonVisibilityMode: SendButtonVisibilityMode.always,
-                          ),
-                          l10n: const ChatL10nEn(
-                            inputPlaceholder: 'Type a message...',
-                          ),
-                          theme: DefaultChatTheme(
-                            primaryColor: AppTheme.primaryGreen,
-                            secondaryColor: const Color(0xFFF0F0F0),
-                            backgroundColor: Colors.white,
-                            inputBackgroundColor: const Color(0xFFF5F5F5),
-                            inputTextColor: Colors.black87,
-                            inputBorderRadius: BorderRadius.circular(24),
-                            inputMargin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            inputPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                            messageBorderRadius: 18,
-                            dateDividerTextStyle: const TextStyle(
-                              color: Colors.black54,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
+                      child: const Icon(
+                        Icons.chat_bubble_outline_rounded,
+                        color: AppTheme.primaryGreen,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _otherPersonName,
+                            style: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.textPrimary,
+                              height: 1.2,
                             ),
                           ),
+                          const SizedBox(height: 2),
+                          Row(
+                            children: [
+                              Container(
+                                width: 7,
+                                height: 7,
+                                decoration: const BoxDecoration(
+                                  color: AppTheme.primaryLight,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                'Active now',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.grey.shade500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Close button — fixed size, never overlaps
+                    SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: Material(
+                        color: AppTheme.surfaceGrey,
+                        borderRadius: BorderRadius.circular(12),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: () => Navigator.of(context).pop(),
+                          child: const Icon(
+                            Icons.close_rounded,
+                            color: AppTheme.textSecondary,
+                            size: 20,
+                          ),
                         ),
                       ),
-                    ],
+                    ),
+                    const SizedBox(width: 12),
+                  ],
+                ),
+              ),
+
+              // ── Divider ──────────────────────────────────────────────────
+              const Divider(height: 1, thickness: 1, color: AppTheme.borderSubtle),
+
+              // ── Quick Presets ─────────────────────────────────────────────
+              Consumer<PantaProvider>(
+                builder: (context, provider, _) {
+                  final presets = widget.isHelper
+                      ? ChatMessage.helperPresets
+                      : ChatMessage.recyclerPresets;
+
+                  return SizedBox(
+                    height: 52,
+                    child: ListView.separated(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      scrollDirection: Axis.horizontal,
+                      itemCount: presets.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      itemBuilder: (context, index) {
+                        final preset = presets[index];
+                        return GestureDetector(
+                          onTap: () {
+                            _handleSendPressed(types.PartialText(text: preset));
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AppTheme.accentLeaf,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: AppTheme.primaryGreen.withValues(alpha: 0.15),
+                              ),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              preset,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: AppTheme.primaryGreen,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   );
                 },
               ),
-            ),
-          ],
-        ),
-      ),
+
+              const Divider(height: 1, thickness: 1, color: AppTheme.borderSubtle),
+
+              // ── Flyer Chat ───────────────────────────────────────────────
+              Expanded(
+                child: Consumer<PantaProvider>(
+                  builder: (context, provider, _) {
+                    final req = provider.requests.firstWhere(
+                      (r) => r.id == widget.request.id,
+                      orElse: () => widget.request,
+                    );
+
+                    final flyerMessages = req.messages.reversed
+                        .map((m) => m.toFlyerMessage())
+                        .toList();
+
+                    return Chat(
+                      messages: flyerMessages,
+                      onSendPressed: _handleSendPressed,
+                      user: _currentUser,
+                      showUserAvatars: false,
+                      showUserNames: false,
+                      inputOptions: const InputOptions(
+                        sendButtonVisibilityMode: SendButtonVisibilityMode.always,
+                      ),
+                      l10n: const ChatL10nEn(
+                        inputPlaceholder: 'Type a message...',
+                      ),
+                      theme: DefaultChatTheme(
+                        primaryColor: AppTheme.primaryGreen,
+                        secondaryColor: AppTheme.surfaceGrey,
+                        backgroundColor: AppTheme.surfaceWhite,
+                        // Input bar styling
+                        inputBackgroundColor: AppTheme.surfaceGrey,
+                        inputTextColor: AppTheme.textPrimary,
+                        inputBorderRadius: BorderRadius.circular(28),
+                        inputMargin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                        inputPadding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 8,
+                        ),
+                        inputTextStyle: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w400,
+                          height: 1.4,
+                          color: AppTheme.textPrimary,
+                        ),
+                        inputTextDecoration: InputDecoration(
+                          hintText: 'Type a message...',
+                          hintStyle: TextStyle(
+                            fontSize: 15,
+                            color: AppTheme.textSecondary.withValues(alpha: 0.7),
+                          ),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 12,
+                          ),
+                        ),
+                        // Message bubble styling
+                        messageBorderRadius: 20,
+                        messageInsetsHorizontal: 14,
+                        messageInsetsVertical: 10,
+                        sentMessageBodyTextStyle: const TextStyle(
+                          fontSize: 15,
+                          color: Colors.white,
+                          height: 1.4,
+                        ),
+                        receivedMessageBodyTextStyle: const TextStyle(
+                          fontSize: 15,
+                          color: AppTheme.textPrimary,
+                          height: 1.4,
+                        ),
+                        // Date divider
+                        dateDividerTextStyle: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.textSecondary.withValues(alpha: 0.6),
+                          letterSpacing: 0.4,
+                        ),
+                        // Timestamps
+                        sentMessageCaptionTextStyle: TextStyle(
+                          fontSize: 11,
+                          color: Colors.white.withValues(alpha: 0.7),
+                        ),
+                        receivedMessageCaptionTextStyle: TextStyle(
+                          fontSize: 11,
+                          color: AppTheme.textSecondary.withValues(alpha: 0.8),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
