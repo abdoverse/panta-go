@@ -18,6 +18,7 @@ import (
 func registerRealtimeRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/v1/ws", handleWebSocket)
 	mux.HandleFunc("/api/v1/chat", authMiddleware(handleChat))
+	mux.HandleFunc("/api/v1/chat/read", authMiddleware(handleMarkMessagesRead))
 }
 
 func broadcastRequestUpdate(ctx context.Context, request RecyclingRequest) {
@@ -279,4 +280,84 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	serveWs(hub, w, r)
+}
+
+func handleMarkMessagesRead(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	claims, ok := currentClaims(r)
+	if !ok || claims == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	var payload struct {
+		RequestID string `json:"requestId"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, "Invalid payload", http.StatusBadRequest)
+		return
+	}
+
+	requestID := strings.TrimSpace(payload.RequestID)
+	if requestID == "" {
+		http.Error(w, "requestId is required", http.StatusBadRequest)
+		return
+	}
+
+	out, err := svc.GetItem(r.Context(), &dynamodb.GetItemInput{
+		TableName: aws.String(tableName),
+		Key: map[string]types.AttributeValue{
+			"id": &types.AttributeValueMemberS{Value: requestID},
+		},
+	})
+	if err != nil || len(out.Item) == 0 {
+		http.Error(w, "Request not found", http.StatusNotFound)
+		return
+	}
+
+	var req RecyclingRequest
+	if err := attributevalue.UnmarshalMap(out.Item, &req); err != nil {
+		http.Error(w, "Failed to parse request", http.StatusInternalServerError)
+		return
+	}
+
+	senderID := claims.requestOwnerID()
+	if req.CreatorID != "" && senderID != req.CreatorID && senderID != req.HelperID {
+		http.Error(w, "Forbidden: not a participant", http.StatusForbidden)
+		return
+	}
+
+	changed := false
+	for i, msg := range req.Messages {
+		if msg.SenderID != senderID && !msg.IsRead {
+			req.Messages[i].IsRead = true
+			changed = true
+		}
+	}
+
+	if changed {
+		updatedMsgs, err := attributevalue.MarshalList(req.Messages)
+		if err == nil {
+			_, err = svc.UpdateItem(r.Context(), &dynamodb.UpdateItemInput{
+				TableName: aws.String(tableName),
+				Key: map[string]types.AttributeValue{
+					"id": &types.AttributeValueMemberS{Value: req.ID},
+				},
+				UpdateExpression: aws.String("SET messages = :msgs"),
+				ExpressionAttributeValues: map[string]types.AttributeValue{
+					":msgs": &types.AttributeValueMemberL{Value: updatedMsgs},
+				},
+			})
+			if err == nil {
+				// Broadcast the full request update so the other party sees the read receipts
+				broadcastRequestUpdate(r.Context(), req)
+			}
+		}
+	}
+
+	jsonResponse(w, http.StatusOK, map[string]interface{}{"success": true})
 }

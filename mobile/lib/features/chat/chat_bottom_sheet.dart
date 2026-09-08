@@ -1,11 +1,12 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_chat_ui/flutter_chat_ui.dart';
+import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 
 import '../../core/theme/app_theme.dart';
-import '../../models/chat_message.dart';
 import '../../models/request_model.dart';
+import '../../models/chat_message.dart';
 import '../../providers/panta_provider.dart';
 
 class ChatBottomSheet extends StatefulWidget {
@@ -15,21 +16,27 @@ class ChatBottomSheet extends StatefulWidget {
   const ChatBottomSheet({
     super.key,
     required this.request,
-    this.isHelper = false,
+    required this.isHelper,
   });
 
-  static Future<void> show(
+  static void show(
     BuildContext context, {
     required RecyclingRequest request,
-    bool isHelper = false,
+    required bool isHelper,
   }) {
-    return showModalBottomSheet<void>(
+    showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => ChatBottomSheet(
-        request: request,
-        isHelper: isHelper,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: ChatBottomSheet(
+          request: request,
+          isHelper: isHelper,
+        ),
       ),
     );
   }
@@ -39,41 +46,28 @@ class ChatBottomSheet extends StatefulWidget {
 }
 
 class _ChatBottomSheetState extends State<ChatBottomSheet> {
-  final _textController = TextEditingController();
-  final _scrollController = ScrollController();
-  bool _isSending = false;
   Timer? _pollingTimer;
-
-  int _lastMessageCount = 0;
-  String? _lastMessageId;
-  bool _initialScrollTriggered = false;
-  double _lastBottomInset = 0;
   PantaProvider? _provider;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _provider = context.read<PantaProvider>();
-    _provider?.setActiveChatRequestId(widget.request.id);
-  }
+  late types.User _currentUser;
 
   @override
   void initState() {
     super.initState();
-    // Fetch initial chat messages and mark read
+    _provider = context.read<PantaProvider>();
+    _provider?.setActiveChatRequestId(widget.request.id);
+    
+    // Set up the current user for Flyer Chat
+    final pId = _provider?.currentUserId ?? 'unknown';
+    final pName = _provider?.currentUserDisplayName ?? 'Me';
+    _currentUser = types.User(id: pId, firstName: pName);
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        context
-            .read<PantaProvider>()
-            .fetchChatMessages(widget.request.id)
-            .then((_) {
-          if (mounted) {
-            _scrollToBottom();
-          }
-        });
+        context.read<PantaProvider>().fetchChatMessages(widget.request.id);
         context.read<PantaProvider>().markChatAsRead(widget.request.id);
       }
     });
+    
     // Fallback polling every 3 seconds while chat sheet is open
     _pollingTimer = Timer.periodic(const Duration(seconds: 3), (_) {
       if (mounted) {
@@ -85,344 +79,167 @@ class _ChatBottomSheetState extends State<ChatBottomSheet> {
 
   @override
   void dispose() {
-    _provider?.setActiveChatRequestId(null);
     _pollingTimer?.cancel();
-    _textController.dispose();
-    _scrollController.dispose();
+    _provider?.setActiveChatRequestId(null);
     super.dispose();
   }
 
-  void _scrollToBottom({bool animate = true}) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_scrollController.hasClients) return;
-      if (!_scrollController.position.hasContentDimensions) return;
-      final maxScroll = _scrollController.position.maxScrollExtent;
-      if (maxScroll <= 0) return;
-      if (animate) {
-        _scrollController
-            .animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeOut,
-        )
-            .then((_) {
-          if (mounted &&
-              _scrollController.hasClients &&
-              _scrollController.position.hasContentDimensions &&
-              _scrollController.position.pixels <
-                  _scrollController.position.maxScrollExtent) {
-            _scrollController.animateTo(
-              _scrollController.position.maxScrollExtent,
-              duration: const Duration(milliseconds: 80),
-              curve: Curves.easeOut,
-            );
-          }
-        });
-      } else {
-        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted &&
-              _scrollController.hasClients &&
-              _scrollController.position.hasContentDimensions &&
-              _scrollController.position.pixels <
-                  _scrollController.position.maxScrollExtent) {
-            _scrollController
-                .jumpTo(_scrollController.position.maxScrollExtent);
-          }
-        });
-      }
-    });
-  }
+  void _handleSendPressed(types.PartialText message) async {
+    final text = message.text.trim();
+    if (text.isEmpty) return;
 
-  Future<void> _sendMessage(String text, {bool isPreset = false}) async {
-    final clean = text.trim();
-    if (clean.isEmpty || _isSending) return;
-
-    setState(() => _isSending = true);
-    _textController.clear();
-
-    final ok = await context.read<PantaProvider>().sendChatMessage(
-          widget.request.id,
-          clean,
-          isPreset: isPreset,
-        );
-
-    if (mounted) {
-      setState(() => _isSending = false);
-      if (ok) {
-        context.read<PantaProvider>().markChatAsRead(widget.request.id);
-        _scrollToBottom(animate: true);
-      }
-    }
+    final provider = context.read<PantaProvider>();
+    await provider.sendChatMessage(
+      widget.request.id,
+      text,
+      isPreset: false,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<PantaProvider>();
-    final cachedMessages = provider.getChatMessages(widget.request.id);
-    final currentReq = provider.myRequests.firstWhere(
-      (r) => r.id == widget.request.id,
-      orElse: () => widget.request,
-    );
-    final messages =
-        cachedMessages.isNotEmpty ? cachedMessages : currentReq.messages;
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    final presets = widget.isHelper
-        ? ChatMessage.helperPresets
-        : ChatMessage.recyclerPresets;
-
-    final hasNewMessages = messages.length > _lastMessageCount ||
-        (messages.isNotEmpty && messages.last.id != _lastMessageId);
-    final needsInitialScroll = !_initialScrollTriggered && messages.isNotEmpty;
-    final keyboardOpened = bottomInset > 0 && _lastBottomInset == 0;
-
-    if (needsInitialScroll || hasNewMessages || keyboardOpened) {
-      _lastMessageCount = messages.length;
-      _lastMessageId = messages.isNotEmpty ? messages.last.id : null;
-      _lastBottomInset = bottomInset;
-      _scrollToBottom(animate: true);
-      if (needsInitialScroll) {
-        _initialScrollTriggered = true;
-      }
-    } else {
-      _lastBottomInset = bottomInset;
-    }
-
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 640),
-        child: Container(
-          height: MediaQuery.of(context).size.height * 0.75,
-          padding: EdgeInsets.fromLTRB(16, 12, 16, 16 + bottomInset),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            children: [
-              // Drag handle
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+    // Calculate height so it takes 85% of screen, but shrinks when keyboard opens
+    final availableHeight = MediaQuery.of(context).size.height;
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    final targetHeight = (availableHeight * 0.85) - keyboardHeight;
+    
+    return Container(
+      height: targetHeight > 0 ? targetHeight : availableHeight * 0.5,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: SafeArea(
+        child: Column(
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(color: Colors.grey.shade200),
                 ),
               ),
-              const SizedBox(height: 12),
-              // Header
-              Row(
+              child: Row(
                 children: [
                   CircleAvatar(
-                    radius: 20,
-                    backgroundColor: widget.isHelper
-                        ? AppTheme.primaryGreen.withValues(alpha: 0.15)
-                        : Colors.blue.withValues(alpha: 0.15),
-                    child: Icon(
-                      widget.isHelper ? Icons.person : Icons.recycling,
-                      color:
-                          widget.isHelper ? AppTheme.primaryGreen : Colors.blue,
-                    ),
+                    backgroundColor: AppTheme.primaryGreen.withOpacity(0.1),
+                    child: const Icon(Icons.support_agent,
+                        color: AppTheme.primaryGreen),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          widget.isHelper
-                              ? 'Chat with Recycler'
-                              : 'Chat with Helper',
+                          widget.isHelper 
+                              ? 'Chat with ${widget.request.creatorName?.split(' ').first ?? 'Recycler'}' 
+                              : 'Chat with ${widget.request.helperName?.split(' ').first ?? 'Helper'}',
                           style: const TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 16),
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         Text(
-                          widget.request.title,
+                          'ID: ${widget.request.id.substring(0, 8)}',
                           style: TextStyle(
-                              color: Colors.grey.shade600, fontSize: 12),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
                         ),
                       ],
                     ),
                   ),
                   IconButton(
-                    onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
               ),
-              const Divider(),
-              // Messages list
-              Expanded(
-                child: messages.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.chat_bubble_outline,
-                                size: 48, color: Colors.grey.shade400),
-                            const SizedBox(height: 12),
-                            Text(
-                              'No messages yet',
-                              style: TextStyle(
-                                  color: Colors.grey.shade600,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Send a quick preset message or type below.',
-                              style: TextStyle(
-                                  color: Colors.grey.shade500, fontSize: 12),
-                            ),
-                          ],
-                        ),
-                      )
-                    : ListView.builder(
-                        controller: _scrollController,
-                        itemCount: messages.length,
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        itemBuilder: (context, index) {
-                          final msg = messages[index];
-                          final isMe = widget.isHelper
-                              ? msg.senderRole == 'helper'
-                              : msg.senderRole == 'user';
+            ),
+            
+            // Chat UI
+            Expanded(
+              child: Consumer<PantaProvider>(
+                builder: (context, provider, child) {
+                  final req = provider.requests.firstWhere(
+                    (r) => r.id == widget.request.id,
+                    orElse: () => widget.request,
+                  );
+                  
+                  // Convert Go ChatMessages to Flyer Chat Messages
+                  // Note: FlyerHQ expects the list in reverse chronological order (newest first)
+                  final flyerMessages = req.messages.reversed.map((msg) {
+                    return msg.toFlyerMessage();
+                  }).toList();
 
-                          return Align(
-                            alignment: isMe
-                                ? Alignment.centerRight
-                                : Alignment.centerLeft,
-                            child: Container(
-                              margin: const EdgeInsets.symmetric(vertical: 4),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 10),
-                              constraints: BoxConstraints(
-                                maxWidth:
-                                    MediaQuery.of(context).size.width * 0.75,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isMe
-                                    ? AppTheme.primaryGreen
-                                    : Colors.grey.shade100,
-                                borderRadius: BorderRadius.only(
-                                  topLeft: const Radius.circular(16),
-                                  topRight: const Radius.circular(16),
-                                  bottomLeft: isMe
-                                      ? const Radius.circular(16)
-                                      : Radius.zero,
-                                  bottomRight: isMe
-                                      ? Radius.zero
-                                      : const Radius.circular(16),
-                                ),
-                                border: isMe
-                                    ? null
-                                    : Border.all(color: Colors.grey.shade300),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: isMe
-                                    ? CrossAxisAlignment.end
-                                    : CrossAxisAlignment.start,
-                                children: [
-                                  if (!isMe)
-                                    Padding(
-                                      padding: const EdgeInsets.only(bottom: 2),
-                                      child: Text(
-                                        msg.senderName,
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.grey.shade700,
-                                        ),
-                                      ),
-                                    ),
-                                  Text(
-                                    msg.text,
-                                    style: TextStyle(
-                                      color:
-                                          isMe ? Colors.white : Colors.black87,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '${msg.createdAt.hour.toString().padLeft(2, '0')}:${msg.createdAt.minute.toString().padLeft(2, '0')}',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: isMe
-                                          ? Colors.white70
-                                          : Colors.grey.shade500,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                  final presets = widget.isHelper 
+                      ? ChatMessage.helperPresets 
+                      : ChatMessage.recyclerPresets;
+
+                  return Column(
+                    children: [
+                      Container(
+                        height: 40,
+                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        child: ListView.separated(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          scrollDirection: Axis.horizontal,
+                          itemCount: presets.length,
+                          separatorBuilder: (_, __) => const SizedBox(width: 8),
+                          itemBuilder: (context, index) {
+                            final preset = presets[index];
+                            return ActionChip(
+                              label: Text(preset, style: const TextStyle(fontSize: 12)),
+                              backgroundColor: AppTheme.primaryGreen.withOpacity(0.08),
+                              side: BorderSide(
+                                  color: AppTheme.primaryGreen.withOpacity(0.3)),
+                              onPressed: () {
+                                _handleSendPressed(types.PartialText(text: preset));
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                      Expanded(
+                        child: Chat(
+                          messages: flyerMessages,
+                          onSendPressed: _handleSendPressed,
+                          user: _currentUser,
+                          showUserAvatars: true,
+                          showUserNames: true,
+                          inputOptions: const InputOptions(
+                            sendButtonVisibilityMode: SendButtonVisibilityMode.always,
+                          ),
+                          l10n: const ChatL10nEn(
+                            inputPlaceholder: 'Type a message...',
+                          ),
+                          theme: DefaultChatTheme(
+                            primaryColor: AppTheme.primaryGreen,
+                            secondaryColor: const Color(0xFFF0F0F0),
+                            backgroundColor: Colors.white,
+                            inputBackgroundColor: const Color(0xFFF5F5F5),
+                            inputTextColor: Colors.black87,
+                            inputBorderRadius: BorderRadius.circular(24),
+                            inputMargin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            inputPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                            messageBorderRadius: 18,
+                            dateDividerTextStyle: const TextStyle(
+                              color: Colors.black54,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
                             ),
-                          );
-                        },
+                          ),
+                        ),
                       ),
+                    ],
+                  );
+                },
               ),
-              // Preset Quick Message Chips
-              Container(
-                height: 40,
-                margin: const EdgeInsets.only(bottom: 8),
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: presets.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 8),
-                  itemBuilder: (context, index) {
-                    final preset = presets[index];
-                    return ActionChip(
-                      label: Text(preset, style: const TextStyle(fontSize: 12)),
-                      backgroundColor: AppTheme.primaryGreen.withValues(alpha: 0.08),
-                      side: BorderSide(
-                          color: AppTheme.primaryGreen.withValues(alpha: 0.3)),
-                      onPressed: () {
-                        if (preset.endsWith(': ')) {
-                          _textController.text = preset;
-                        } else {
-                          _sendMessage(preset, isPreset: true);
-                        }
-                      },
-                    );
-                  },
-                ),
-              ),
-              // Input row
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _textController,
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: (t) => _sendMessage(t),
-                      decoration: InputDecoration(
-                        hintText: 'Type a message...',
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(24)),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton.filled(
-                    onPressed: _isSending
-                        ? null
-                        : () => _sendMessage(_textController.text),
-                    icon: _isSending
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                                color: Colors.white, strokeWidth: 2),
-                          )
-                        : const Icon(Icons.send, size: 20),
-                  ),
-                ],
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

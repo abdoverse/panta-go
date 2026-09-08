@@ -1,3 +1,4 @@
+import "package:flutter_chat_types/flutter_chat_types.dart" as types;
 class ChatMessage {
   final String id;
   final String requestId;
@@ -7,6 +8,7 @@ class ChatMessage {
   final String text;
   final bool isPreset;
   final DateTime createdAt;
+  final bool isRead;
 
   ChatMessage({
     required this.id,
@@ -17,6 +19,7 @@ class ChatMessage {
     required this.text,
     this.isPreset = false,
     required this.createdAt,
+    this.isRead = false,
   });
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
@@ -31,6 +34,7 @@ class ChatMessage {
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
           : DateTime.now(),
+      isRead: json['isRead'] == true,
     );
   }
 
@@ -44,6 +48,7 @@ class ChatMessage {
       'text': text,
       'isPreset': isPreset,
       'createdAt': createdAt.toIso8601String(),
+      'isRead': isRead,
     };
   }
 
@@ -62,4 +67,18 @@ class ChatMessage {
     "🔔 Please ring the doorbell",
     "👍 Thank you so much!",
   ];
+
+  types.TextMessage toFlyerMessage() {
+    return types.TextMessage(
+      author: types.User(
+        id: senderId,
+        firstName: senderName,
+        role: senderRole == 'helper' ? types.Role.agent : types.Role.user,
+      ),
+      createdAt: createdAt.millisecondsSinceEpoch,
+      id: id,
+      text: text,
+      status: isRead ? types.Status.seen : types.Status.delivered,
+    );
+  }
 }

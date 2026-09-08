@@ -8,3 +8,4 @@
 6. [x] When a helper opens their App,  jobs closer to their geographical location should be prioritized and shown at the top of the list. This will improve user experience by making it easier for helpers to find relevant jobs nearby.
 7. [x] do a cool animation when the helper completes a job. It can be a confetti animation or something similar to celebrate the completion of the task and enhance user satisfaction.
 8. 
+8. [ ] Fix Emoji Rendering on Flutter Web: Emojis sent in the chatbox currently render as black-and-white symbols or black boxes after being sent. Investigate Flutter Web CanvasKit font fallback issues with the custom 'Inter' Google Font, or find a reliable multi-platform emoji rendering package.

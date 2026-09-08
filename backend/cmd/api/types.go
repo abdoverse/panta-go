@@ -82,6 +82,7 @@ type ChatMessage struct {
 	Text       string `json:"text" dynamodbav:"text"`
 	IsPreset   bool   `json:"isPreset" dynamodbav:"isPreset"`
 	CreatedAt  string `json:"createdAt" dynamodbav:"createdAt"`
+	IsRead     bool   `json:"isRead" dynamodbav:"isRead"`
 }
 
 type SendChatMessagePayload struct {

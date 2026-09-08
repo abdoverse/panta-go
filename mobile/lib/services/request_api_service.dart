@@ -191,6 +191,26 @@ class RequestApiService {
     }
     return null;
   }
+  Future<bool> markMessagesAsRead({
+    required String token,
+    required String requestId,
+  }) async {
+    try {
+      final response = await http.post(
+        ApiConfig.apiUri('/api/v1/chat/read'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode({'requestId': requestId}),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error marking messages as read: $e');
+      return false;
+    }
+  }
+
 
   Future<RecyclingRequest?> cancelRequest({
     required String token,

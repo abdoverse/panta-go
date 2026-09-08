@@ -146,6 +146,13 @@ class PantaProvider extends ChangeNotifier {
     if (changed) {
       notifyListeners();
     }
+    
+    // Also notify the backend so the sender gets read receipts
+    _authService.getToken().then((token) {
+      if (token != null && token.isNotEmpty) {
+        _requestApiService.markMessagesAsRead(token: token, requestId: requestId);
+      }
+    });
   }
 
   String? _activeChatRequestId;
@@ -1086,8 +1093,24 @@ class PantaProvider extends ChangeNotifier {
       if (req.messages.isNotEmpty) {
         for (final msg in req.messages) {
           final existing = _chatByRequestId[msg.requestId] ?? [];
-          if (!existing.any((m) => m.id == msg.id)) {
+          final existingIdx = existing.indexWhere((m) => m.id == msg.id);
+          
+          if (existingIdx == -1) {
             _appendChatMessage(msg, notifyBanner: false);
+          } else if (msg.isRead && !existing[existingIdx].isRead) {
+            // Update the existing message if it was marked as read
+            existing[existingIdx] = msg;
+            
+            // Also update it in the request state if needed
+            final reqIdx = _requestState.requests.indexWhere((r) => r.id == req.id);
+            if (reqIdx != -1) {
+              final msgs = List<ChatMessage>.from(_requestState.requests[reqIdx].messages);
+              final msgIdx = msgs.indexWhere((m) => m.id == msg.id);
+              if (msgIdx != -1) {
+                msgs[msgIdx] = msg;
+                _requestState.requests[reqIdx] = _requestState.requests[reqIdx].copyWith(messages: msgs);
+              }
+            }
           }
         }
       }
