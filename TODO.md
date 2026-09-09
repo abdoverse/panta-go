@@ -11,6 +11,7 @@
 9. [ ] Enable location access to fully work on phone and laptop
 10. [ ] Add under profile, "About Panta" to contain the actual released version of the app
 11. [ ] Add a feedback section where any user can leave feedback to the team
+12. [ ] Allow users to edit their first and last name in Profile with multi-language support (Arabic, Chinese, and other Unicode special characters)
 
 ## Production Readiness
 - [ ] Use real BankID certificates and keys
