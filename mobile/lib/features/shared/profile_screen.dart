@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
@@ -34,6 +35,7 @@ class ProfileScreen extends StatelessWidget {
     final reliabilityRating = provider.helperReliabilityRating;
     final savedAddresses = provider.savedAddresses;
     final requestTemplates = provider.requestTemplates;
+    final email = provider.currentUserEmail?.trim();
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.profileTitle)),
@@ -42,311 +44,387 @@ class ProfileScreen extends StatelessWidget {
         padding: EdgeInsets.zero,
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
-        children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                children: [
-                  CircleAvatar(
-                    radius: 36,
-                    backgroundColor: AppTheme.accentLeaf,
-                    child: Icon(
-                      avatarIcon,
-                      size: 34,
-                      color: AppTheme.primaryGreen,
+          children: [
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    CircleAvatar(
+                      radius: 36,
+                      backgroundColor: AppTheme.accentLeaf,
+                      child: Icon(
+                        avatarIcon,
+                        size: 34,
+                        color: AppTheme.primaryGreen,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    resolvedName,
-                    style: Theme.of(context).textTheme.headlineSmall,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
+                    const SizedBox(height: 16),
+                    Text(
+                      resolvedName,
+                      style: Theme.of(context).textTheme.headlineSmall,
+                      textAlign: TextAlign.center,
                     ),
-                    decoration: BoxDecoration(
-                      color: AppTheme.accentLeaf,
-                      borderRadius: BorderRadius.circular(999),
+                    TextButton.icon(
+                      onPressed: () => _showEditNameDialog(context, provider),
+                      icon: const Icon(Icons.edit_outlined, size: 16),
+                      label: const Text('Edit name'),
                     ),
-                    child: Text(
-                      subtitle,
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                            color: AppTheme.primaryGreen,
-                          ),
-                    ),
-                  ),
-                  if (provider.isBankIdVerified) ...[
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE8F5E9),
-                        border: Border.all(
-                          color: AppTheme.primaryGreen.withValues(alpha: 0.5),
-                        ),
+                        color: AppTheme.accentLeaf,
                         borderRadius: BorderRadius.circular(999),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.verified_rounded,
-                            size: 18,
-                            color: AppTheme.primaryGreen,
+                      child: Text(
+                        subtitle,
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                              color: AppTheme.primaryGreen,
+                            ),
+                      ),
+                    ),
+                    if (provider.isBankIdVerified) ...[
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE8F5E9),
+                          border: Border.all(
+                            color: AppTheme.primaryGreen.withValues(alpha: 0.5),
                           ),
-                          const SizedBox(width: 6),
-                          Text(
-                            l10n.bankIdVerifiedBadge,
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelMedium
-                                ?.copyWith(
-                                  color: AppTheme.primaryGreen,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.verified_rounded,
+                              size: 18,
+                              color: AppTheme.primaryGreen,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              l10n.bankIdVerifiedBadge,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelMedium
+                                  ?.copyWith(
+                                    color: AppTheme.primaryGreen,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            if (email != null && email.isNotEmpty) ...[
+              _ProfileItem(
+                icon: Icons.email_outlined,
+                title: "Email",
+                subtitle: email,
+              ),
+              const SizedBox(height: 12),
+            ],
+            if (!provider.isBankIdVerified) ...[
+              const SizedBox(height: 16),
+              _BankIdVerificationCard(isHelper: isHelper),
+            ],
+            const SizedBox(height: 20),
+            if (isHelper) ...[
+              Text(
+                l10n.helperStats,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 12),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _HelperStatTile(
+                              icon: Icons.task_alt_rounded,
+                              label: l10n.completedJobs,
+                              value: '$completedJobs',
+                              iconColor: AppTheme.primaryGreen,
+                              backgroundColor: AppTheme.accentLeaf,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _HelperStatTile(
+                              icon: Icons.cancel_outlined,
+                              label: l10n.cancelledPickups,
+                              value: '$canceledPickups',
+                              iconColor: Theme.of(context).colorScheme.error,
+                              backgroundColor: const Color(0xFFFEE2E2),
+                            ),
                           ),
                         ],
                       ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-          if (!provider.isBankIdVerified) ...[
-            const SizedBox(height: 16),
-            _BankIdVerificationCard(isHelper: isHelper),
-          ],
-          const SizedBox(height: 20),
-          if (isHelper) ...[
-            Text(
-              l10n.helperStats,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 12),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _HelperStatTile(
-                            icon: Icons.task_alt_rounded,
-                            label: l10n.completedJobs,
-                            value: '$completedJobs',
-                            iconColor: AppTheme.primaryGreen,
-                            backgroundColor: AppTheme.accentLeaf,
-                          ),
+                      const SizedBox(height: 12),
+                      _HelperRatingCard(
+                        rating: reliabilityRating,
+                        completedJobs: completedJobs,
+                        canceledPickups: canceledPickups,
+                      ),
+                      const SizedBox(height: 8),
+                      _HelperSummaryRow(
+                        icon: Icons.insights_rounded,
+                        title: l10n.reliabilityContext,
+                        value: l10n.reliabilitySummary(
+                          completedJobs,
+                          canceledPickups,
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _HelperStatTile(
-                            icon: Icons.cancel_outlined,
-                            label: l10n.cancelledPickups,
-                            value: '$canceledPickups',
-                            iconColor: Theme.of(context).colorScheme.error,
-                            backgroundColor: const Color(0xFFFEE2E2),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+            if (!isHelper) ...[
+              Text(
+                'Pickup shortcuts',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 12),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      _HelperSummaryRow(
+                        icon: Icons.location_on_outlined,
+                        title: 'Saved addresses',
+                        value: '${savedAddresses.length}',
+                      ),
+                      if (savedAddresses.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            savedAddresses
+                                .map((item) => item.label)
+                                .take(2)
+                                .join(' • '),
+                            style: Theme.of(context).textTheme.bodyMedium,
                           ),
                         ),
                       ],
-                    ),
-                    const SizedBox(height: 12),
-                    _HelperRatingCard(
-                      rating: reliabilityRating,
-                      completedJobs: completedJobs,
-                      canceledPickups: canceledPickups,
-                    ),
-                    const SizedBox(height: 8),
-                    _HelperSummaryRow(
-                      icon: Icons.insights_rounded,
-                      title: l10n.reliabilityContext,
-                      value: l10n.reliabilitySummary(
-                        completedJobs,
-                        canceledPickups,
+                      const SizedBox(height: 12),
+                      _HelperSummaryRow(
+                        icon: Icons.copy_all_rounded,
+                        title: 'Request templates',
+                        value: '${requestTemplates.length}',
                       ),
-                    ),
-                  ],
+                      if (requestTemplates.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            requestTemplates
+                                .map((item) => item.name)
+                                .take(2)
+                                .join(' • '),
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-          ],
-          if (!isHelper) ...[
+              const SizedBox(height: 20),
+            ],
             Text(
-              'Pickup shortcuts',
+              'About Panta',
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 12),
             Card(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    _HelperSummaryRow(
-                      icon: Icons.location_on_outlined,
-                      title: 'Saved addresses',
-                      value: '${savedAddresses.length}',
-                    ),
-                    if (savedAddresses.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          savedAddresses
-                              .map((item) => item.label)
-                              .take(2)
-                              .join(' • '),
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 12),
-                    _HelperSummaryRow(
-                      icon: Icons.copy_all_rounded,
-                      title: 'Request templates',
-                      value: '${requestTemplates.length}',
-                    ),
-                    if (requestTemplates.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          requestTemplates
-                              .map((item) => item.name)
-                              .take(2)
-                              .join(' • '),
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      ),
-                    ],
-                  ],
+              child: FutureBuilder<PackageInfo>(
+                future: PackageInfo.fromPlatform(),
+                builder: (context, snapshot) => _ProfileItem(
+                  icon: Icons.info_outline_rounded,
+                  title: 'About Panta',
+                  subtitle: snapshot.hasData
+                      ? "Version ${snapshot.data!.version} (${snapshot.data!.buildNumber})"
+                      : 'Loading version…',
                 ),
               ),
             ),
             const SizedBox(height: 20),
-          ],
-          Text(
-            l10n.account,
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 12),
-          Card(
-            child: Column(
-              children: [
-                _ProfileItem(
-                  icon: Icons.settings_outlined,
-                  title: l10n.settings,
-                  subtitle: l10n.manageAppPreferences,
-                ),
-                const Divider(height: 1),
-                _ProfileItem(
-                  icon: Icons.language_rounded,
-                  title: l10n.language,
-                  subtitle: provider.locale.languageCode == 'sv'
-                      ? l10n.swedish
-                      : l10n.english,
-                  onTap: () => _showLanguagePicker(context, provider),
-                ),
-                const Divider(height: 1),
-                _ProfileItem(
-                  icon: Icons.notifications_none_rounded,
-                  title: l10n.notifications,
-                  subtitle: l10n.stayUpdatedOnActivity,
-                ),
-                const Divider(height: 1),
-                _ProfileItem(
-                  icon: Icons.eco_outlined,
-                  title: l10n.impactStats,
-                  subtitle: l10n.trackRecyclingContribution,
-                ),
-                const Divider(height: 1),
-                _ProfileItem(
-                  icon: Icons.help_outline_rounded,
-                  title: l10n.helpSupport,
-                  subtitle: l10n.getHelpWhenYouNeedIt,
-                ),
-              ],
+            Text(
+              l10n.account,
+              style: Theme.of(context).textTheme.titleMedium,
             ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Demo & Local Testing Tools',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 12),
-          Card(
-            color: const Color(0xFFF1F8E9),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: const BorderSide(color: Color(0xFFAED581), width: 1.2),
+            const SizedBox(height: 12),
+            Card(
+              child: Column(
+                children: [
+                  _ProfileItem(
+                    icon: Icons.settings_outlined,
+                    title: l10n.settings,
+                    subtitle: l10n.manageAppPreferences,
+                  ),
+                  const Divider(height: 1),
+                  _ProfileItem(
+                    icon: Icons.language_rounded,
+                    title: l10n.language,
+                    subtitle: provider.locale.languageCode == 'sv'
+                        ? l10n.swedish
+                        : l10n.english,
+                    onTap: () => _showLanguagePicker(context, provider),
+                  ),
+                  const Divider(height: 1),
+                  _ProfileItem(
+                    icon: Icons.notifications_none_rounded,
+                    title: l10n.notifications,
+                    subtitle: l10n.stayUpdatedOnActivity,
+                  ),
+                  const Divider(height: 1),
+                  _ProfileItem(
+                    icon: Icons.eco_outlined,
+                    title: l10n.impactStats,
+                    subtitle: l10n.trackRecyclingContribution,
+                  ),
+                  const Divider(height: 1),
+                  _ProfileItem(
+                    icon: Icons.help_outline_rounded,
+                    title: l10n.helpSupport,
+                    subtitle: l10n.getHelpWhenYouNeedIt,
+                  ),
+                ],
+              ),
             ),
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.swap_horiz_rounded, color: AppTheme.primaryGreen),
-                  title: Text(isHelper ? 'Switch to Recycler (Anna)' : 'Switch to Helper (Erik)'),
-                  subtitle: const Text('Switch role in 1 click to test marketplace interaction'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () async {
-                    await provider.switchDemoRole();
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            isHelper ? 'Switched to Recycler (Anna)' : 'Switched to Helper (Erik)',
+            const SizedBox(height: 20),
+            Text(
+              'Demo & Local Testing Tools',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
+            Card(
+              color: const Color(0xFFF1F8E9),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: const BorderSide(color: Color(0xFFAED581), width: 1.2),
+              ),
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.swap_horiz_rounded,
+                        color: AppTheme.primaryGreen),
+                    title: Text(isHelper
+                        ? 'Switch to Recycler (Anna)'
+                        : 'Switch to Helper (Erik)'),
+                    subtitle: const Text(
+                        'Switch role in 1 click to test marketplace interaction'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () async {
+                      await provider.switchDemoRole();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              isHelper
+                                  ? 'Switched to Recycler (Anna)'
+                                  : 'Switched to Helper (Erik)',
+                            ),
                           ),
-                        ),
-                      );
-                    }
-                  },
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.refresh_rounded, color: Color(0xFF235971)),
-                  title: const Text('Re-seed Sample Requests'),
-                  subtitle: const Text('Populate pending, accepted, and completed requests with chat & photos'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () async {
-                    final ok = await provider.seedDemoData();
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(ok ? 'Sample requests re-seeded!' : 'Failed to seed requests'),
-                        ),
-                      );
-                    }
-                  },
-                ),
-              ],
+                        );
+                      }
+                    },
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.refresh_rounded,
+                        color: Color(0xFF235971)),
+                    title: const Text('Re-seed Sample Requests'),
+                    subtitle: const Text(
+                        'Populate pending, accepted, and completed requests with chat & photos'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () async {
+                      final ok = await provider.seedDemoData();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(ok
+                                ? 'Sample requests re-seeded!'
+                                : 'Failed to seed requests'),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
-          Card(
-            child: _ProfileItem(
-              icon: Icons.logout_rounded,
-              title: l10n.logOut,
-              subtitle: l10n.returnToSignInScreen,
-              textColor: Theme.of(context).colorScheme.error,
-              onTap: () async {
-                await context.read<PantaProvider>().logout();
-              },
+            const SizedBox(height: 20),
+            Card(
+              child: _ProfileItem(
+                icon: Icons.logout_rounded,
+                title: l10n.logOut,
+                subtitle: l10n.returnToSignInScreen,
+                textColor: Theme.of(context).colorScheme.error,
+                onTap: () async {
+                  await context.read<PantaProvider>().logout();
+                },
+              ),
             ),
-          ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showEditNameDialog(
+      BuildContext context, PantaProvider provider) async {
+    final controller =
+        TextEditingController(text: provider.currentUserDisplayName);
+    final updatedName = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Edit name'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLength: 100,
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(labelText: 'First and last name'),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, controller.text),
+              child: const Text('Save')),
         ],
       ),
-    ),
-  );
-}
+    );
+    controller.dispose();
+    if (updatedName == null || !context.mounted) return;
+    final error = await provider.updateDisplayName(updatedName);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error ?? 'Name updated.')),
+      );
+    }
+  }
 
   Future<void> _showLanguagePicker(
     BuildContext context,
@@ -654,10 +732,11 @@ class _BankIdVerificationCard extends StatelessWidget {
                     children: [
                       Text(
                         l10n.bankIdVerificationTitle,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: const Color(0xFF1C3F60),
-                            ),
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF1C3F60),
+                                ),
                       ),
                       const SizedBox(height: 2),
                       Text(

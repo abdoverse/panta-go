@@ -93,6 +93,7 @@ class PantaProvider extends ChangeNotifier {
   List<SavedAddress> get savedAddresses => _savedAddresses;
   List<RequestTemplate> get requestTemplates => _requestTemplates;
   String? get currentUserDisplayName => _authState.currentUserDisplayName;
+  String? get currentUserEmail => _authState.currentUserEmail;
   Locale get locale => _locale;
 
   // For User Dashboard
@@ -236,6 +237,20 @@ class PantaProvider extends ChangeNotifier {
 
     _locale = savedLocale;
     notifyListeners();
+  }
+
+  Future<String?> updateDisplayName(String displayName) async {
+    final normalizedName = displayName.trim();
+    if (normalizedName.isEmpty || normalizedName.length > 100) {
+      return 'Enter a name between 1 and 100 characters.';
+    }
+
+    final error = await _authService.updateDisplayName(normalizedName);
+    if (error == null) {
+      _authState.updateDisplayName(normalizedName);
+      notifyListeners();
+    }
+    return error;
   }
 
   Future<void> _initialize() async {
@@ -1241,6 +1256,7 @@ class PantaProvider extends ChangeNotifier {
       personalNumber: personalNumber,
       verifiedAt: verifiedAt,
     );
+    _authState.currentUserEmail = await _authService.getCurrentEmail();
   }
 
   void _setLoading(bool value) {

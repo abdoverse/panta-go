@@ -67,8 +67,10 @@ class AuthService {
   }
 
   bool get isBankIdVerified => _customJwtPayload?['bankIdVerified'] == true;
-  String? get bankIdPersonalNumber => _customJwtPayload?['bankIdPersonalNumber']?.toString();
-  String? get bankIdVerifiedAt => _customJwtPayload?['bankIdVerifiedAt']?.toString();
+  String? get bankIdPersonalNumber =>
+      _customJwtPayload?['bankIdPersonalNumber']?.toString();
+  String? get bankIdVerifiedAt =>
+      _customJwtPayload?['bankIdVerifiedAt']?.toString();
 
   Future<void> setMockSessionForTesting({
     required String role,
@@ -77,7 +79,8 @@ class AuthService {
     String? bankIdPersonalNumber,
     String? bankIdVerifiedAt,
   }) async {
-    final mockId = 'mock-${role.toLowerCase()}-${username.toLowerCase().replaceAll(' ', '-')}';
+    final mockId =
+        'mock-${role.toLowerCase()}-${username.toLowerCase().replaceAll(' ', '-')}';
     _customJwtPayload = {
       'role': role,
       'nickname': role,
@@ -309,7 +312,9 @@ class AuthService {
       return null;
     }
     final payload = session.getIdToken().payload;
-    return payload?['sub'] ?? payload?['userId'] ?? payload?['cognito:username'];
+    return payload?['sub'] ??
+        payload?['userId'] ??
+        payload?['cognito:username'];
   }
 
   // Get Current Sub/Username (delegates to canonical user ID / UUID)
@@ -323,7 +328,8 @@ class AuthService {
       if (name != null && name.isNotEmpty) {
         return name;
       }
-      final username = _customJwtPayload!['cognito:username']?.toString().trim();
+      final username =
+          _customJwtPayload!['cognito:username']?.toString().trim();
       if (username != null && username.isNotEmpty) {
         return username;
       }
@@ -351,12 +357,51 @@ class AuthService {
     return null;
   }
 
+  Future<String?> getCurrentEmail() async {
+    if (_customJwtPayload != null) {
+      return _customJwtPayload!['email']?.toString().trim();
+    }
+    final session = await _loadSession();
+    return session?.getIdToken().payload?['email']?.toString().trim();
+  }
+
+  Future<String?> updateDisplayName(String displayName) async {
+    final normalizedName = displayName.trim();
+    if (normalizedName.isEmpty || normalizedName.length > 100) {
+      return 'Enter a name between 1 and 100 characters.';
+    }
+
+    if (_customJwtPayload != null) {
+      _customJwtPayload!['name'] = normalizedName;
+      return null;
+    }
+
+    final session = await _loadSession();
+    final currentUser = _currentUser;
+    if (session == null || currentUser == null) {
+      return 'You need to sign in again before updating your name.';
+    }
+
+    try {
+      final updated = await currentUser.updateAttributes([
+        CognitoUserAttribute(name: 'name', value: normalizedName),
+      ]);
+      if (!updated) {
+        return 'Could not update your name. Please try again.';
+      }
+      return null;
+    } catch (_) {
+      return 'Could not update your name. Please try again.';
+    }
+  }
+
   Future<bool?> getCurrentUserIsHelper() async {
     if (_customJwtPayload != null) {
-      final role = (_customJwtPayload!['role'] ?? _customJwtPayload!['nickname'])
-          ?.toString()
-          .trim()
-          .toLowerCase();
+      final role =
+          (_customJwtPayload!['role'] ?? _customJwtPayload!['nickname'])
+              ?.toString()
+              .trim()
+              .toLowerCase();
       if (role == 'helper') {
         return true;
       }
@@ -383,17 +428,23 @@ class AuthService {
 
   Future<bool> getCurrentUserIsAdmin() async {
     if (_customJwtPayload != null) {
-      final role = (_customJwtPayload!['role'] ?? _customJwtPayload!['nickname'])
-          ?.toString()
-          .trim()
-          .toLowerCase();
+      final role =
+          (_customJwtPayload!['role'] ?? _customJwtPayload!['nickname'])
+              ?.toString()
+              .trim()
+              .toLowerCase();
       return role == 'admin';
     }
     final session = await _loadSession();
     if (session == null) {
       return false;
     }
-    final role = session.getIdToken().payload?['nickname']?.toString().trim().toLowerCase();
+    final role = session
+        .getIdToken()
+        .payload?['nickname']
+        ?.toString()
+        .trim()
+        .toLowerCase();
     return role == 'admin';
   }
 

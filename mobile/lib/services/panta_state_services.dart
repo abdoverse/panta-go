@@ -85,6 +85,7 @@ List<RecyclingRequest> sortRequestsByDistance(
 class PantaAuthState {
   String? currentUserId;
   String? currentUserDisplayName;
+  String? currentUserEmail;
   bool isHelper = false;
   bool isAdmin = false;
   bool bankIdVerified = false;
@@ -106,6 +107,7 @@ class PantaAuthState {
   }) {
     currentUserId = userId;
     currentUserDisplayName = displayName;
+    currentUserEmail = null;
     isHelper = helper;
     isAdmin = admin;
     if (verifiedBankId != null) {
@@ -133,6 +135,10 @@ class PantaAuthState {
     }
   }
 
+  void updateDisplayName(String displayName) {
+    currentUserDisplayName = displayName;
+  }
+
   void cachePendingSignup({
     required String? email,
     required String? username,
@@ -149,6 +155,7 @@ class PantaAuthState {
   void clearSession() {
     currentUserId = null;
     currentUserDisplayName = null;
+    currentUserEmail = null;
     isHelper = false;
     isAdmin = false;
     bankIdVerified = false;
