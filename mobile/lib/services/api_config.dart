@@ -17,13 +17,15 @@ class ApiConfig {
       throw StateError('API_BASE_URL must be a valid http or https URL.');
     }
 
-    if (uri.scheme != "https" && !_isLocalNetworkHost(uri.host)) {
+    final isLocalHost = uri.host == "localhost" ||
+        uri.host == "127.0.0.1" ||
+        uri.host == "10.0.2.2";
+    if (uri.scheme != "https" && !isLocalHost) {
       throw StateError(
         "Panta requires HTTPS for remote API traffic. "
-        "Use a secure API_BASE_URL or a local network host.",
+        "Use a secure API_BASE_URL or a local emulator host.",
       );
     }
-
     return uri.replace(path: '', query: null, fragment: null);
   }
 
@@ -41,26 +43,9 @@ class ApiConfig {
     final wsScheme = baseUri.scheme == 'https' ? 'wss' : 'ws';
     return baseUri.replace(
       scheme: wsScheme,
-      path: '/api/v1/ws',
+      path: "/api/v1/ws",
       queryParameters: queryParameters,
     );
-  }
-
-  static bool _isLocalNetworkHost(String host) {
-    if (host == "localhost" || host == "127.0.0.1" || host == "10.0.2.2") {
-      return true;
-    }
-    final octets = host.split(".");
-    if (octets.length != 4) return false;
-    final values = octets.map(int.tryParse).toList();
-    if (values.any((value) => value == null || value < 0 || value > 255)) {
-      return false;
-    }
-    final first = values[0]!;
-    final second = values[1]!;
-    return first == 10 ||
-        (first == 172 && second >= 16 && second <= 31) ||
-        (first == 192 && second == 168);
   }
 
   static const String userPoolId = 'eu-north-1_Rg7i36e8Q';
