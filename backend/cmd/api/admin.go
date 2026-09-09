@@ -74,11 +74,11 @@ func initAdminLogs() {
 			Timestamp: now.Add(-45 * time.Minute).Format(time.RFC3339),
 			Level:     "INFO",
 			Category:  "MARKET_LIMIT",
-			Message:   "Anti-spam protection rules initialized: Personal Recycler cap 10, Helper cap 15",
+			Message:   "Anti-spam protection rules initialized: Personal Recycler cap 20, Helper cap 30",
 			City:      "Sweden (National)",
 			Details: map[string]interface{}{
-				"recyclerMax": 10,
-				"helperMax":   15,
+				"recyclerMax": 20,
+				"helperMax":   30,
 				"mode":        "personal_account_quota",
 			},
 		},
@@ -172,8 +172,8 @@ func handleAdminOverview(w http.ResponseWriter, r *http.Request) {
 
 	// Calculate summary metrics
 	summary := AdminSummary{
-		RecyclerLimit: 10,
-		HelperLimit:   15,
+		RecyclerLimit: 20,
+		HelperLimit:   30,
 	}
 
 	recyclerSet := make(map[string]bool)
@@ -360,11 +360,11 @@ func handleAdminSimulateLog(w http.ResponseWriter, r *http.Request) {
 		city     string
 		format   string
 	}{
-		{"INFO", "ANTI_SPAM", "Stockholm", "Recycler quota audit: User Anna verified at %d/10 active pickups (anti-spam healthy)"},
+		{"INFO", "ANTI_SPAM", "Stockholm", "Recycler quota audit: User Anna verified at %d/20 active pickups (anti-spam healthy)"},
 		{"INFO", "DISPATCH", "Stockholm", "Proximity match: Helper Erik assigned to pickup near Sveavägen (ETA %d mins)"},
 		{"WARN", "GEO_HEALTH", "Malmö", "Elevated pickup demand detected in Malmö Möllevången: %d pending requests queued"},
 		{"SUCCESS", "PAYOUT", "Göteborg", "BankID verified receipt processed: %.2f SEK return pant released via Swish"},
-		{"METRIC", "MARKET_LIMIT", "Stockholm", "Helper pool capacity check: %d active jobs among 8 registered helpers (within 15 max limit)"},
+		{"METRIC", "MARKET_LIMIT", "Stockholm", "Helper pool capacity check: %d active jobs among 8 registered helpers (within 30 max limit)"},
 		{"INFO", "GEO_HEALTH", "Uppsala", "New recycling cluster formed in Uppsala Luthagen: %d pickups available"},
 	}
 

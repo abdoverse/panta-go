@@ -10,12 +10,12 @@ import (
 
 func TestMarketConfigProfiles(t *testing.T) {
 	se := getMarketConfig("SE")
-	if se.MarketCode != "SE" || se.Currency != "SEK" || se.CurrencySymbol != "kr" || se.MaxActiveRequestsPerRecycler != 10 || se.MaxActiveJobsPerHelper != 15 {
+	if se.MarketCode != "SE" || se.Currency != "SEK" || se.CurrencySymbol != "kr" || se.MaxActiveRequestsPerRecycler != 20 || se.MaxActiveJobsPerHelper != 30 {
 		t.Fatalf("Unexpected SE config: %+v", se)
 	}
 
 	no := getMarketConfig("NO")
-	if no.MarketCode != "NO" || no.Currency != "NOK" || no.CurrencySymbol != "kr" || no.MaxActiveRequestsPerRecycler != 10 || no.MaxActiveJobsPerHelper != 15 {
+	if no.MarketCode != "NO" || no.Currency != "NOK" || no.CurrencySymbol != "kr" || no.MaxActiveRequestsPerRecycler != 20 || no.MaxActiveJobsPerHelper != 30 {
 		t.Fatalf("Unexpected NO config: %+v", no)
 	}
 

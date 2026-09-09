@@ -10,14 +10,14 @@ import 'package:panta/providers/panta_provider.dart';
 
 void main() {
   group('Market Quota & Active Request Limit Tests (plan-74)', () {
-    test('PantaProvider calculates active requests count and creation eligibility (10 recycler / 15 helper)', () async {
+    test('PantaProvider calculates active requests count and creation eligibility (20 recycler / 30 helper)', () async {
       SharedPreferences.setMockInitialValues(const {});
       final provider = PantaProvider();
       await provider.restoreSession();
 
       expect(provider.activeRequestsCount, 0);
-      expect(provider.maxActiveRequests, 10);
-      expect(provider.maxActiveHelperJobs, 15);
+      expect(provider.maxActiveRequests, 20);
+      expect(provider.maxActiveHelperJobs, 30);
       expect(provider.canCreateRequest, isTrue);
 
       final now = DateTime.now();
@@ -54,8 +54,8 @@ void main() {
       expect(provider.activeRequestsCount, 2);
       expect(provider.canCreateRequest, isTrue);
 
-      // Add 8 more active requests to reach limit of 10
-      for (int i = 4; i <= 11; i++) {
+      // Add 18 more active requests to reach limit of 20
+      for (int i = 4; i <= 21; i++) {
         provider.requests.add(
           RecyclingRequest(
             id: 'req-$i',
@@ -68,11 +68,11 @@ void main() {
         );
       }
 
-      expect(provider.activeRequestsCount, 10);
+      expect(provider.activeRequestsCount, 20);
       expect(provider.canCreateRequest, isFalse);
     });
 
-    testWidgets('CreateRequestPage shows quota banner and disables button when limit of 10 is reached', (WidgetTester tester) async {
+    testWidgets('CreateRequestPage shows quota banner and disables button when limit of 20 is reached', (WidgetTester tester) async {
       SharedPreferences.setMockInitialValues(const {});
       final provider = PantaProvider();
       await tester.runAsync(() async {
@@ -83,8 +83,8 @@ void main() {
 
       final now = DateTime.now();
 
-      // Seed 10 active requests
-      for (int i = 1; i <= 10; i++) {
+      // Seed 20 active requests
+      for (int i = 1; i <= 20; i++) {
         provider.requests.add(
           RecyclingRequest(
             id: 'quota-req-$i',
@@ -97,7 +97,7 @@ void main() {
         );
       }
 
-      expect(provider.activeRequestsCount, 10);
+      expect(provider.activeRequestsCount, 20);
       expect(provider.canCreateRequest, isFalse);
 
       await tester.pumpWidget(
@@ -117,7 +117,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Active Market Limit Reached (10/10)'), findsOneWidget);
+      expect(find.textContaining('Active Market Limit Reached (20/20)'), findsOneWidget);
       expect(find.text('Market limit reached'), findsOneWidget);
 
       final buttonFinder = find.widgetWithText(ElevatedButton, 'Market limit reached');
