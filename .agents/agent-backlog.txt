@@ -1,7 +1,7 @@
 # Agent Backlog
 # Managed by Panta Autonomous Multi-Agent Swarm (PantaSwarm).
 # Last heartbeat at: 2026-09-06T19:07:00.000000+00:00
-# Loop status: active | approved=0 | pending=15 | in_progress=0
+# Loop status: active | approved=0 | pending=16 | in_progress=0
 # Approve work by changing an item's status from pending to approved.
 # Fields: id | status | priority | complexity | dependencies | title
 
@@ -30,3 +30,6 @@ plan-89 | pending | high | medium | none | Add AWS WAF rules and backend HTTP ra
 plan-90 | pending | medium | small | none | Inject standard HTTP security headers (HSTS, CSP, nosniff, frame options)
 plan-91 | pending | high | medium | none | Migrate in-memory BankID sessions to DynamoDB with TTL for multi-instance scalability
 plan-92 | pending | high | medium | none | Configure ECS high availability, autoscaling (min 2 tasks), and zero-downtime rollout settings
+plan-93 | pending | high | large | none | Official VAT and tax compliance architecture (initial 0% phase followed by rule-based take-rate and VAT/MOMS calculation)
+  Goal:
+  Implement legal tax/VAT framework for Sweden/EU (Skatteverket & DAC7): support initial 0% platform fee launch phase, followed by business-rule-based monetization percentage with automated 25% Swedish MOMS/VAT calculation on platform service revenues and tax-compliant invoicing.

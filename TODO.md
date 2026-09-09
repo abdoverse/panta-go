@@ -32,3 +32,7 @@
 7. [ ] Add HTTP security headers middleware: Inject HSTS (`Strict-Transport-Security`), CSP (`Content-Security-Policy`), `X-Frame-Options: DENY`, and `X-Content-Type-Options: nosniff`
 8. [ ] Distributed state for BankID sessions and WebSockets: Persist BankID order refs in DynamoDB with TTL instead of in-memory maps; add multi-instance pub/sub support
 9. [ ] Configure ECS high availability & zero-downtime deployments: Scale to `min: 2, max: 4` tasks with autoscaling, `minimumHealthyPercent: 100`, and production target group draining
+10. [ ] Official VAT & Tax Compliance (Swedish Skatteverket & EU digital platform rules):
+    - **Initial Launch Phase (0% Fee)**: Free tier with zero platform commission or service charges for recyclers and helpers.
+    - **Mature Market Monetization**: Dynamic business-rule-based take-rate / commission percentage applied to transactions once volume and liquidity milestones are reached.
+    - **VAT & Tax Calculation**: Automated calculation and bookkeeping of Swedish MOMS (25% VAT on digital intermediary service fees) and relevant tax reporting (including EU DAC7 digital platform reporting compliance and invoice generation).
