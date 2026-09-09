@@ -148,8 +148,10 @@ class _MarketplaceView extends StatelessWidget {
             actions: [
               if (provider.helperImpactSummary.streak.currentStreakWeeks > 0)
                 Container(
-                  margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  margin:
+                      const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
                     color: Colors.orange.shade700,
                     borderRadius: BorderRadius.circular(12),
@@ -243,6 +245,12 @@ class _MarketplaceView extends StatelessWidget {
                               width: 18,
                               height: 18,
                               child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          else if (!provider.isSortingJobsByDistance)
+                            TextButton.icon(
+                              onPressed: provider.refreshHelperLocation,
+                              icon: const Icon(Icons.my_location_rounded),
+                              label: const Text('Enable'),
                             ),
                         ],
                       ),
@@ -254,9 +262,7 @@ class _MarketplaceView extends StatelessWidget {
                           padding: const EdgeInsets.all(40),
                           child: Text(l10n.noJobsAvailable),
                         ),
-                      )
-                          .animate()
-                          .fadeIn()
+                      ).animate().fadeIn()
                     else
                       ResponsiveCardGrid(
                         children: jobs
@@ -423,4 +429,3 @@ class _HistoryView extends StatelessWidget {
     );
   }
 }
-
