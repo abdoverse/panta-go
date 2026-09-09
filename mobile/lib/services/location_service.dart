@@ -96,7 +96,7 @@ class LocationService {
         Uri.parse('$_baseUrl?q=$query&format=json&addressdetails=1&limit=5'),
         headers: {
           // User-Agent is required by Nominatim
-          'User-Agent': 'PantaGo_Recycling_App/1.0',
+          'User-Agent': 'Panta_Recycling_App/1.0',
         },
       );
 

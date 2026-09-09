@@ -17,36 +17,36 @@ func TestParseS3ImageReference(t *testing.T) {
 	}{
 		{
 			name:       "AWS Console S3 object URL with prefix param",
-			input:      "https://269172689438-eywgkjb7.eu-north-1.console.aws.amazon.com/s3/object/panta-go-request-images?region=eu-north-1&prefix=requests/20260909190032-85a15cb9/images/original.jpg",
-			wantBucket: "panta-go-request-images",
+			input:      "https://269172689438-eywgkjb7.eu-north-1.console.aws.amazon.com/s3/object/panta-request-images?region=eu-north-1&prefix=requests/20260909190032-85a15cb9/images/original.jpg",
+			wantBucket: "panta-request-images",
 			wantKey:    "requests/20260909190032-85a15cb9/images/original.jpg",
 			wantOk:     true,
 		},
 		{
 			name:       "AWS Console S3 bucket URL with prefix param",
-			input:      "https://eu-north-1.console.aws.amazon.com/s3/buckets/panta-go-request-images?prefix=requests/test-123/images/original.png",
-			wantBucket: "panta-go-request-images",
+			input:      "https://eu-north-1.console.aws.amazon.com/s3/buckets/panta-request-images?prefix=requests/test-123/images/original.png",
+			wantBucket: "panta-request-images",
 			wantKey:    "requests/test-123/images/original.png",
 			wantOk:     true,
 		},
 		{
 			name:       "AWS S3 URI format",
-			input:      "s3://panta-go-request-images/requests/20260909190032-85a15cb9/images/original.jpg",
-			wantBucket: "panta-go-request-images",
+			input:      "s3://panta-request-images/requests/20260909190032-85a15cb9/images/original.jpg",
+			wantBucket: "panta-request-images",
 			wantKey:    "requests/20260909190032-85a15cb9/images/original.jpg",
 			wantOk:     true,
 		},
 		{
 			name:       "S3 virtual hosted URL with presigned params",
-			input:      "https://panta-go-request-images.s3.eu-north-1.amazonaws.com/requests/20260909190032-85a15cb9/images/original.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAT...",
-			wantBucket: "panta-go-request-images",
+			input:      "https://panta-request-images.s3.eu-north-1.amazonaws.com/requests/20260909190032-85a15cb9/images/original.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAT...",
+			wantBucket: "panta-request-images",
 			wantKey:    "requests/20260909190032-85a15cb9/images/original.jpg",
 			wantOk:     true,
 		},
 		{
 			name:       "S3 path style URL",
-			input:      "https://s3.eu-north-1.amazonaws.com/panta-go-request-images/requests/20260909190032-85a15cb9/images/original.jpg",
-			wantBucket: "panta-go-request-images",
+			input:      "https://s3.eu-north-1.amazonaws.com/panta-request-images/requests/20260909190032-85a15cb9/images/original.jpg",
+			wantBucket: "panta-request-images",
 			wantKey:    "requests/20260909190032-85a15cb9/images/original.jpg",
 			wantOk:     true,
 		},
@@ -126,12 +126,12 @@ func TestResolveImageURL(t *testing.T) {
 	}{
 		{
 			name:    "AWS Console URL resolves to proxy route",
-			input:   "https://269172689438-eywgkjb7.eu-north-1.console.aws.amazon.com/s3/object/panta-go-request-images?region=eu-north-1&prefix=requests/20260909190032-85a15cb9/images/original.jpg",
+			input:   "https://269172689438-eywgkjb7.eu-north-1.console.aws.amazon.com/s3/object/panta-request-images?region=eu-north-1&prefix=requests/20260909190032-85a15cb9/images/original.jpg",
 			wantURL: "/api/v1/images/requests/20260909190032-85a15cb9/images/original.jpg",
 		},
 		{
 			name:    "S3 URI resolves to proxy route",
-			input:   "s3://panta-go-request-images/requests/20260909190032-85a15cb9/images/original.jpg",
+			input:   "s3://panta-request-images/requests/20260909190032-85a15cb9/images/original.jpg",
 			wantURL: "/api/v1/images/requests/20260909190032-85a15cb9/images/original.jpg",
 		},
 		{
@@ -177,7 +177,7 @@ func TestPrepareRequestImageReferenceStripsAWSConsole(t *testing.T) {
 	ctx := context.Background()
 	claims := &Claims{UserID: "user-123"}
 
-	consoleURL := "https://269172689438-eywgkjb7.eu-north-1.console.aws.amazon.com/s3/object/panta-go-request-images?region=eu-north-1&prefix=requests/20260909190032-85a15cb9/images/original.jpg"
+	consoleURL := "https://269172689438-eywgkjb7.eu-north-1.console.aws.amazon.com/s3/object/panta-request-images?region=eu-north-1&prefix=requests/20260909190032-85a15cb9/images/original.jpg"
 	gotKey, err := prepareRequestImageReference(ctx, claims, "20260909190032-85a15cb9", "", consoleURL)
 	if err != nil {
 		t.Fatalf("prepareRequestImageReference failed: %v", err)

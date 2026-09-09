@@ -9,7 +9,7 @@ test('request images bucket allows browser image reads through CORS', () => {
   const template = Template.fromStack(stack);
 
   template.hasResourceProperties('AWS::S3::Bucket', {
-    BucketName: 'panta-go-request-images',
+    BucketName: 'panta-request-images',
     CorsConfiguration: {
       CorsRules: Match.arrayWith([
         Match.objectLike({
@@ -29,7 +29,7 @@ test('requests table exposes ownership and access query indexes', () => {
   const template = Template.fromStack(stack);
 
   template.hasResourceProperties('AWS::DynamoDB::Table', {
-    TableName: 'panta-go-requests',
+    TableName: 'panta-requests',
     GlobalSecondaryIndexes: Match.arrayWith([
       Match.objectLike({
         IndexName: 'requests-by-creator',
@@ -77,7 +77,7 @@ test('backend service stays on the minimum safe ECS Express footprint', () => {
     },
     PrimaryContainer: Match.objectLike({
       AwsLogsConfiguration: Match.objectLike({
-        LogStreamPrefix: 'PantaGoBackendService',
+        LogStreamPrefix: 'PantaBackendService',
       }),
     }),
   });

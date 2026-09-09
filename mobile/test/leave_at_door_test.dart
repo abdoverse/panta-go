@@ -34,12 +34,12 @@ void main() {
       final now = DateTime.now();
       final completed = req.copyWith(
         status: RequestStatus.pickedUp,
-        dropoffPhotoUrl: 'https://cdn.panta-go.com/proofs/photo_123.jpg',
+        dropoffPhotoUrl: 'https://cdn.panta-app.com/proofs/photo_123.jpg',
         dropoffConfirmedAt: now,
       );
 
       expect(completed.leaveAtDoor, isTrue);
-      expect(completed.dropoffPhotoUrl, 'https://cdn.panta-go.com/proofs/photo_123.jpg');
+      expect(completed.dropoffPhotoUrl, 'https://cdn.panta-app.com/proofs/photo_123.jpg');
       expect(completed.dropoffConfirmedAt, now);
       expect(completed.status, RequestStatus.pickedUp);
     });

@@ -12,7 +12,7 @@ import (
 
 func generateTestAdminToken() string {
 	if len(jwtSecret) == 0 {
-		jwtSecret = []byte("local-dev-jwt-secret-key-panta-go-change-in-prod")
+		jwtSecret = []byte("local-dev-jwt-secret-key-panta-change-in-prod")
 	}
 	claims := &Claims{
 		Role:            "admin",
@@ -32,7 +32,7 @@ func generateTestAdminToken() string {
 
 func generateTestUserToken(role string) string {
 	if len(jwtSecret) == 0 {
-		jwtSecret = []byte("local-dev-jwt-secret-key-panta-go-change-in-prod")
+		jwtSecret = []byte("local-dev-jwt-secret-key-panta-change-in-prod")
 	}
 	claims := &Claims{
 		Role:            role,

@@ -27,8 +27,8 @@ fuser -k 3000/tcp 2>/dev/null || true
 
 echo "Starting Go Backend on port 8080..."
 cd "$BACKEND_DIR"
-TABLE_NAME=panta-go-requests \
-IMAGE_BUCKET_NAME=panta-go-request-images \
+TABLE_NAME=panta-requests \
+IMAGE_BUCKET_NAME=panta-request-images \
 AWS_REGION=eu-north-1 \
 COGNITO_USER_POOL_ID=eu-north-1_Rg7i36e8Q \
 PORT=8080 \

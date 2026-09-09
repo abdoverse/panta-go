@@ -92,8 +92,8 @@ func parseS3ImageReference(reference string) (bucket string, key string, ok bool
 	}
 
 	// 2. Check for AWS Management Console URL
-	// e.g. https://269172689438-eywgkjb7.eu-north-1.console.aws.amazon.com/s3/object/panta-go-request-images?region=eu-north-1&prefix=requests/20260909190032-85a15cb9/images/original.jpg
-	// e.g. https://eu-north-1.console.aws.amazon.com/s3/buckets/panta-go-request-images?prefix=requests/...
+	// e.g. https://269172689438-eywgkjb7.eu-north-1.console.aws.amazon.com/s3/object/panta-request-images?region=eu-north-1&prefix=requests/20260909190032-85a15cb9/images/original.jpg
+	// e.g. https://eu-north-1.console.aws.amazon.com/s3/buckets/panta-request-images?prefix=requests/...
 	if strings.Contains(trimmed, ".console.aws.amazon.com/s3/") || strings.Contains(trimmed, "console.aws.amazon.com") {
 		parsed, err := url.Parse(trimmed)
 		if err == nil {

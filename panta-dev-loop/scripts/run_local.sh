@@ -100,8 +100,8 @@ start_backend() {
 
     echo "🚀 Starting Go backend on port $BACKEND_PORT..."
     cd "$BACKEND_DIR"
-    TABLE_NAME=panta-go-requests \
-    IMAGE_BUCKET_NAME=panta-go-request-images \
+    TABLE_NAME=panta-requests \
+    IMAGE_BUCKET_NAME=panta-request-images \
     AWS_REGION=eu-north-1 \
     COGNITO_USER_POOL_ID=eu-north-1_Rg7i36e8Q \
     PORT="$BACKEND_PORT" \

@@ -6,7 +6,7 @@ import 'package:panta/services/request_api_service.dart';
 void main() {
   group('Request Image URL Sanitization & Resolution Tests', () {
     const awsConsoleUrl =
-        'https://269172689438-eywgkjb7.eu-north-1.console.aws.amazon.com/s3/object/panta-go-request-images?region=eu-north-1&prefix=requests/20260909190032-85a15cb9/images/original.jpg';
+        'https://269172689438-eywgkjb7.eu-north-1.console.aws.amazon.com/s3/object/panta-request-images?region=eu-north-1&prefix=requests/20260909190032-85a15cb9/images/original.jpg';
 
     test('RequestApiService.parseImageUrl converts AWS Console URL to /api/v1/images/ path', () {
       final parsed = RequestApiService.parseImageUrl(awsConsoleUrl);

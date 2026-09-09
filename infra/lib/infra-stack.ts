@@ -17,8 +17,8 @@ export class InfraStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const requestsTableName = 'panta-go-requests';
-    const requestImagesBucketName = 'panta-go-request-images';
+    const requestsTableName = 'panta-requests';
+    const requestImagesBucketName = 'panta-request-images';
     const backendCpu = '256';
     const backendMemory = '512';
     const steadyStateTaskCount = 1;
@@ -110,7 +110,7 @@ export class InfraStack extends cdk.Stack {
     const firebaseServiceAccountSecret = secretsmanager.Secret.fromSecretNameV2(
       this,
       'FirebaseServiceAccountSecret',
-      'panta-go/firebase-service-account',
+      'panta/firebase-service-account',
     );
 
     const taskExecutionRole = new iam.Role(this, 'PantaExpressExecutionRole', {
@@ -163,8 +163,8 @@ export class InfraStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
-    const expressService = new ecs.CfnExpressGatewayService(this, 'PantaGoBackendService', {
-      serviceName: 'panta-go-backend',
+    const expressService = new ecs.CfnExpressGatewayService(this, 'PantaBackendService', {
+      serviceName: 'panta-backend',
       // ECS Express / Fargate already runs at the smallest supported task size.
       cpu: backendCpu,
       memory: backendMemory,
@@ -191,7 +191,7 @@ export class InfraStack extends cdk.Stack {
         ],
         awsLogsConfiguration: {
           logGroup: logGroup.logGroupName,
-          logStreamPrefix: 'PantaGoBackendService',
+          logStreamPrefix: 'PantaBackendService',
         },
       },
       scalingTarget: {
@@ -365,7 +365,7 @@ export class InfraStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'ServiceUrl', {
       value: expressService.attrEndpoint,
       description: 'The URL of the ECS Express service',
-      exportName: 'PantaGoBackendServiceUrl',
+      exportName: 'PantaBackendServiceUrl',
     });
 
     new cdk.CfnOutput(this, 'RequestImagesBucketName', {

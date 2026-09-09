@@ -4,7 +4,7 @@
 Panta is a high-grade recycling platform connecting household recyclers with verified local helpers (pantare) in Sweden.
 - **Backend**: Go REST API (`backend/cmd/api`) running on port 8080.
 - **Frontend**: Flutter Web & Mobile (`mobile/`) running on port 3000.
-- **Infrastructure**: AWS CDK TypeScript stack (`infra/`). DynamoDB (`panta-go-requests`), S3 (`panta-go-request-images`), Cognito in region `eu-north-1`.
+- **Infrastructure**: AWS CDK TypeScript stack (`infra/`). DynamoDB (`panta-requests`), S3 (`panta-request-images`), Cognito in region `eu-north-1`.
 - **Changelog**: Maintained at [`CHANGELOG.md`](CHANGELOG.md).
 
 ---
