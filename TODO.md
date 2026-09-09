@@ -16,13 +16,19 @@
 14. [ ] Implement GDPR-compliant cookie support and consent banner adhering to Swedish legal standards for online businesses
 
 ## Production Readiness
-- [ ] Use real BankID certificates and keys
-- [ ] Set market limits
-- [ ] Comprehensive GDPR Compliance:
-  - **Right to Erasure / Right to be Forgotten (Article 17)**: Self-serve account deletion and automated purge of all personal data across DynamoDB, S3, Cognito, and system logs
-  - **Right of Access & Portability (Articles 15 & 20)**: Self-serve Data Subject Access Request (DSAR) export in machine-readable JSON format
-  - **Right to Rectification (Article 16)**: Seamless updating and correction of personal identity, names, and contact details
-  - **Storage Limitation & Automated Retention (Article 5(1)(e))**: Scheduled retention and deletion policies for chat history, delivery proof images, and location trails
-  - **Data Minimization & Identifier Masking (Article 5(1)(c))**: Pseudonymization and masking of Swedish personal identity numbers (`personnummer`) and banking data at rest and in transit
-  - **Security of Processing & Encryption (Article 32)**: Mandatory TLS 1.3 in transit and AES-256-GCM / AWS KMS encryption at rest across all data stores
-  - **Records of Processing & Audit Trails (Articles 30 & 33)**: Durable audit logging of administrative access, data modification/erasure events, and 72-hour breach notification readiness
+1. [ ] Use real BankID certificates and keys
+2. [ ] Set market limits
+3. [ ] Comprehensive GDPR Compliance:
+   - **Right to Erasure / Right to be Forgotten (Article 17)**: Self-serve account deletion and automated purge of all personal data across DynamoDB, S3, Cognito, and system logs
+   - **Right of Access & Portability (Articles 15 & 20)**: Self-serve Data Subject Access Request (DSAR) export in machine-readable JSON format
+   - **Right to Rectification (Article 16)**: Seamless updating and correction of personal identity, names, and contact details
+   - **Storage Limitation & Automated Retention (Article 5(1)(e))**: Scheduled retention and deletion policies for chat history, delivery proof images, and location trails
+   - **Data Minimization & Identifier Masking (Article 5(1)(c))**: Pseudonymization and masking of Swedish personal identity numbers (`personnummer`) and banking data at rest and in transit
+   - **Security of Processing & Encryption (Article 32)**: Mandatory TLS 1.3 in transit and AES-256-GCM / AWS KMS encryption at rest across all data stores
+   - **Records of Processing & Audit Trails (Articles 30 & 33)**: Durable audit logging of administrative access, data modification/erasure events, and 72-hour breach notification readiness
+4. [ ] Lockdown Auth in production: Disable mock `/api/v1/login` and require real AWS Cognito SRP / OAuth2 authentication
+5. [ ] Disable dev & simulation endpoints in production: Block `/api/v1/auth/bankid/simulate-complete` and `/api/v1/demo/seed`
+6. [ ] Add AWS WAF & backend rate limiting: Attach WAF rules (IP rate limit, OWASP Top 10) to ECS gateway and add Go HTTP rate-limiting middleware
+7. [ ] Add HTTP security headers middleware: Inject HSTS (`Strict-Transport-Security`), CSP (`Content-Security-Policy`), `X-Frame-Options: DENY`, and `X-Content-Type-Options: nosniff`
+8. [ ] Distributed state for BankID sessions and WebSockets: Persist BankID order refs in DynamoDB with TTL instead of in-memory maps; add multi-instance pub/sub support
+9. [ ] Configure ECS high availability & zero-downtime deployments: Scale to `min: 2, max: 4` tasks with autoscaling, `minimumHealthyPercent: 100`, and production target group draining
