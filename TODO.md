@@ -14,6 +14,7 @@
 12. [ ] Allow users to edit their first and last name in Profile with multi-language support (Arabic, Chinese, and other Unicode special characters)
 13. [ ] Display user's email address on the Profile page
 14. [ ] Implement GDPR-compliant cookie support and consent banner adhering to Swedish legal standards for online businesses
+15. [ ] Remove all "-go" residue from resource names (DynamoDB tables, S3 buckets, ECS service, Secrets Manager, CloudWatch log groups: rename to panta-requests, panta-request-images, etc.)
 
 ## Production Readiness
 1. [ ] Use real BankID certificates and keys
