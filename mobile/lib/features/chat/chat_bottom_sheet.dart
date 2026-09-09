@@ -82,16 +82,18 @@ class _ChatBottomSheetState extends State<ChatBottomSheet> {
     final text = message.text.trim();
     if (text.isEmpty) return;
     await context.read<PantaProvider>().sendChatMessage(
-      widget.request.id,
-      text,
-      isPreset: false,
-    );
+          widget.request.id,
+          text,
+          isPreset: false,
+        );
   }
 
   String get _otherPersonName {
     if (widget.isHelper) {
       final name = widget.request.creatorName;
-      return name != null && name.isNotEmpty ? name.split(' ').first : 'Recycler';
+      return name != null && name.isNotEmpty
+          ? name.split(' ').first
+          : 'Recycler';
     } else {
       final name = widget.request.helperName;
       return name != null && name.isNotEmpty ? name.split(' ').first : 'Helper';
@@ -211,7 +213,8 @@ class _ChatBottomSheetState extends State<ChatBottomSheet> {
               ),
 
               // ── Divider ──────────────────────────────────────────────────
-              const Divider(height: 1, thickness: 1, color: AppTheme.borderSubtle),
+              const Divider(
+                  height: 1, thickness: 1, color: AppTheme.borderSubtle),
 
               // ── Quick Presets ─────────────────────────────────────────────
               Consumer<PantaProvider>(
@@ -223,7 +226,8 @@ class _ChatBottomSheetState extends State<ChatBottomSheet> {
                   return SizedBox(
                     height: 52,
                     child: ListView.separated(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
                       scrollDirection: Axis.horizontal,
                       itemCount: presets.length,
                       separatorBuilder: (_, __) => const SizedBox(width: 8),
@@ -234,12 +238,14 @@ class _ChatBottomSheetState extends State<ChatBottomSheet> {
                             _handleSendPressed(types.PartialText(text: preset));
                           },
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 6),
                             decoration: BoxDecoration(
                               color: AppTheme.accentLeaf,
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color: AppTheme.primaryGreen.withValues(alpha: 0.15),
+                                color: AppTheme.primaryGreen
+                                    .withValues(alpha: 0.15),
                               ),
                             ),
                             alignment: Alignment.center,
@@ -259,7 +265,8 @@ class _ChatBottomSheetState extends State<ChatBottomSheet> {
                 },
               ),
 
-              const Divider(height: 1, thickness: 1, color: AppTheme.borderSubtle),
+              const Divider(
+                  height: 1, thickness: 1, color: AppTheme.borderSubtle),
 
               // ── Flyer Chat ───────────────────────────────────────────────
               Expanded(
@@ -270,21 +277,29 @@ class _ChatBottomSheetState extends State<ChatBottomSheet> {
                       orElse: () => widget.request,
                     );
 
-                    final flyerMessages = req.messages.reversed
+                    final chatMessages =
+                        provider.getChatMessages(widget.request.id);
+                    final visibleMessages =
+                        chatMessages.isNotEmpty ? chatMessages : req.messages;
+                    final flyerMessages = visibleMessages.reversed
                         .map((m) => m.toFlyerMessage())
                         .toList();
 
                     return Chat(
+                      key: ValueKey(
+                          flyerMessages.map((message) => message.id).join(',')),
                       messages: flyerMessages,
                       onSendPressed: _handleSendPressed,
                       user: _currentUser,
                       showUserAvatars: false,
                       showUserNames: false,
                       inputOptions: const InputOptions(
-                        sendButtonVisibilityMode: SendButtonVisibilityMode.always,
+                        sendButtonVisibilityMode:
+                            SendButtonVisibilityMode.always,
                       ),
                       l10n: const ChatL10nEn(
                         inputPlaceholder: 'Type a message...',
+                        emptyChatPlaceholder: 'No messages yet',
                       ),
                       theme: DefaultChatTheme(
                         primaryColor: AppTheme.primaryGreen,
@@ -296,7 +311,8 @@ class _ChatBottomSheetState extends State<ChatBottomSheet> {
                         inputBorderRadius: BorderRadius.circular(28),
                         inputMargin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                         inputPadding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 8,
+                          horizontal: 8,
+                          vertical: 8,
                         ),
                         inputTextStyle: const TextStyle(
                           fontSize: 15,
@@ -308,11 +324,13 @@ class _ChatBottomSheetState extends State<ChatBottomSheet> {
                           hintText: 'Type a message...',
                           hintStyle: TextStyle(
                             fontSize: 15,
-                            color: AppTheme.textSecondary.withValues(alpha: 0.7),
+                            color:
+                                AppTheme.textSecondary.withValues(alpha: 0.7),
                           ),
                           border: InputBorder.none,
                           contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 12,
+                            horizontal: 12,
+                            vertical: 12,
                           ),
                         ),
                         // Message bubble styling

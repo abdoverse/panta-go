@@ -41,7 +41,7 @@ class ChatApiService {
     return null;
   }
 
-  Future<List<ChatMessage>> fetchChatMessages({
+  Future<List<ChatMessage>?> fetchChatMessages({
     required String token,
     required String requestId,
   }) async {
@@ -68,6 +68,6 @@ class ChatApiService {
     } catch (e) {
       debugPrint('Error fetching chat messages: $e');
     }
-    return [];
+    return null;
   }
 }

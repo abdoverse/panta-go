@@ -97,10 +97,12 @@ class PantaProvider extends ChangeNotifier {
 
   // For User Dashboard
   List<RecyclingRequest> get myRequests => _requestState.requests;
-  List<RecyclingRequest> get ongoingRequests =>
-      _requestState.requests.where((r) => r.status != RequestStatus.pickedUp).toList();
-  List<RecyclingRequest> get previousRequests =>
-      _requestState.requests.where((r) => r.status == RequestStatus.pickedUp).toList();
+  List<RecyclingRequest> get ongoingRequests => _requestState.requests
+      .where((r) => r.status != RequestStatus.pickedUp)
+      .toList();
+  List<RecyclingRequest> get previousRequests => _requestState.requests
+      .where((r) => r.status == RequestStatus.pickedUp)
+      .toList();
   int get activeRequestsCount => ongoingRequests.length;
   int get maxActiveRequests => 20;
   int get maxActiveHelperJobs => 30;
@@ -114,18 +116,24 @@ class PantaProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  String get currencyCode => AppConstants.getProfileForMarket(_currentMarket).currencyCode;
-  String get currencySymbol => AppConstants.getProfileForMarket(_currentMarket).currencySymbol;
+  String get currencyCode =>
+      AppConstants.getProfileForMarket(_currentMarket).currencyCode;
+  String get currencySymbol =>
+      AppConstants.getProfileForMarket(_currentMarket).currencySymbol;
 
   String formatCurrency(num amount, {String? currency, String? symbol}) {
-    final sym = symbol ?? (currency != null ? AppConstants.getProfileForMarket(currency).currencySymbol : currencySymbol);
+    final sym = symbol ??
+        (currency != null
+            ? AppConstants.getProfileForMarket(currency).currencySymbol
+            : currencySymbol);
     return '${amount.toStringAsFixed(2)} $sym';
   }
 
   // --- In-App Chat Notifications & Badges ---
   String? get currentUserId => _authState.currentUserId;
   ChatMessage? get lastIncomingChatMessage => _lastIncomingChatMessage;
-  bool hasUnreadChat(String requestId) => _unreadChatRequestIds.contains(requestId);
+  bool hasUnreadChat(String requestId) =>
+      _unreadChatRequestIds.contains(requestId);
   int getUnreadChatCount(String requestId) => _unreadChatCounts[requestId] ?? 0;
   int get totalUnreadChatCount =>
       _unreadChatCounts.values.fold(0, (sum, count) => sum + count);
@@ -146,11 +154,12 @@ class PantaProvider extends ChangeNotifier {
     if (changed) {
       notifyListeners();
     }
-    
+
     // Also notify the backend so the sender gets read receipts
     _authService.getToken().then((token) {
       if (token != null && token.isNotEmpty) {
-        _requestApiService.markMessagesAsRead(token: token, requestId: requestId);
+        _requestApiService.markMessagesAsRead(
+            token: token, requestId: requestId);
       }
     });
   }
@@ -239,7 +248,8 @@ class PantaProvider extends ChangeNotifier {
   void handleRealtimeMessage(String rawMessage) {
     try {
       final decoded = json.decode(rawMessage);
-      if (decoded is Map<String, dynamic> && decoded['type'] == 'chat-message') {
+      if (decoded is Map<String, dynamic> &&
+          decoded['type'] == 'chat-message') {
         final messageJson = decoded['message'];
         if (messageJson is Map<String, dynamic>) {
           final newMsg = ChatMessage.fromJson(messageJson);
@@ -247,10 +257,13 @@ class PantaProvider extends ChangeNotifier {
           return;
         }
       }
-      if (decoded is Map<String, dynamic> && decoded['type'] == 'helper-arrived-at-door') {
+      if (decoded is Map<String, dynamic> &&
+          decoded['type'] == 'helper-arrived-at-door') {
         final reqId = decoded['requestId']?.toString();
-        final title = decoded['title']?.toString() ?? 'Ding-Dong! Helper is at your door 🛎️';
-        final message = decoded['message']?.toString() ?? 'Your helper has arrived for recycling pickup.';
+        final title = decoded['title']?.toString() ??
+            'Ding-Dong! Helper is at your door 🛎️';
+        final message = decoded['message']?.toString() ??
+            'Your helper has arrived for recycling pickup.';
         if (reqId != null) {
           final arrivalMsg = ChatMessage(
             id: 'arrival-$reqId-${DateTime.now().millisecondsSinceEpoch}',
@@ -275,10 +288,13 @@ class PantaProvider extends ChangeNotifier {
           return;
         }
       }
-      if (decoded is Map<String, dynamic> && decoded['type'] == 'push-notification') {
+      if (decoded is Map<String, dynamic> &&
+          decoded['type'] == 'push-notification') {
         final reqId = decoded['requestId']?.toString();
-        final title = decoded['title']?.toString() ?? 'Ding-Dong! Helper is at your door 🛎️';
-        final body = decoded['body']?.toString() ?? 'Your helper has arrived for recycling pickup.';
+        final title = decoded['title']?.toString() ??
+            'Ding-Dong! Helper is at your door 🛎️';
+        final body = decoded['body']?.toString() ??
+            'Your helper has arrived for recycling pickup.';
         if (reqId != null) {
           final pushMsg = ChatMessage(
             id: 'push-$reqId-${DateTime.now().millisecondsSinceEpoch}',
@@ -411,7 +427,8 @@ class PantaProvider extends ChangeNotifier {
   }
 
   Future<String?> loginAdmin() async {
-    return loginDirect(role: 'admin', username: 'Admin Operator', seedIfEmpty: false);
+    return loginDirect(
+        role: 'admin', username: 'Admin Operator', seedIfEmpty: false);
   }
 
   Future<bool> seedDemoData() async {
@@ -436,7 +453,8 @@ class PantaProvider extends ChangeNotifier {
   Future<void> switchDemoRole() async {
     final nextRole = isAdmin ? 'user' : (isHelper ? 'user' : 'helper');
     final nextUsername = nextRole == 'helper' ? 'Erik Helper' : 'Anna Recycler';
-    await loginDirect(role: nextRole, username: nextUsername, seedIfEmpty: false);
+    await loginDirect(
+        role: nextRole, username: nextUsername, seedIfEmpty: false);
   }
 
   Future<String?> login(String email, String password, bool asHelper) async {
@@ -695,7 +713,8 @@ class PantaProvider extends ChangeNotifier {
         if (kIsWeb && vapidKey == null) {
           debugPrint('Skipping web push token: FIREBASE_WEB_VAPID_KEY unset.');
         }
-        fcmToken = await FirebaseMessaging.instance.getToken(vapidKey: vapidKey);
+        fcmToken =
+            await FirebaseMessaging.instance.getToken(vapidKey: vapidKey);
       }
     } catch (e) {
       debugPrint("Failed to get FCM token: $e");
@@ -840,7 +859,8 @@ class PantaProvider extends ChangeNotifier {
     final token = await _authService.getToken();
     if (token == null) return false;
 
-    final updated = await _requestApiService.acceptRequest(token: token, id: id);
+    final updated =
+        await _requestApiService.acceptRequest(token: token, id: id);
     if (updated != null) {
       _requestState.upsert(updated);
       notifyListeners();
@@ -879,7 +899,8 @@ class PantaProvider extends ChangeNotifier {
     final token = await _authService.getToken();
     if (token == null) return false;
 
-    final updated = await _requestApiService.cancelRequest(token: token, id: id);
+    final updated =
+        await _requestApiService.cancelRequest(token: token, id: id);
     if (updated != null) {
       _requestState.upsert(updated);
       notifyListeners();
@@ -995,14 +1016,26 @@ class PantaProvider extends ChangeNotifier {
       token: token,
       requestId: requestId,
     );
-    _chatByRequestId[requestId] = list;
-    final index = _requestState.requests.indexWhere((r) => r.id == requestId);
-    if (index != -1) {
-      _requestState.requests[index] =
-          _requestState.requests[index].copyWith(messages: list);
+    if (list != null) {
+      final currentMessages = getChatMessages(requestId);
+      final serverMessageIds = list.map((message) => message.id).toSet();
+      final mergedMessages = [
+        ...list,
+        ...currentMessages.where(
+          (message) => serverMessageIds.add(message.id),
+        ),
+      ]..sort((first, second) => first.createdAt.compareTo(second.createdAt));
+
+      _chatByRequestId[requestId] = mergedMessages;
+      final index = _requestState.requests.indexWhere((r) => r.id == requestId);
+      if (index != -1) {
+        _requestState.requests[index] =
+            _requestState.requests[index].copyWith(messages: mergedMessages);
+      }
+      notifyListeners();
+      return mergedMessages;
     }
-    notifyListeners();
-    return list;
+    return getChatMessages(requestId);
   }
 
   void handleIncomingChatMessage(ChatMessage msg) {
@@ -1019,13 +1052,19 @@ class PantaProvider extends ChangeNotifier {
 
     // 1. Match against current user's authenticated ID / UUID
     final myId = _authState.currentUserId?.trim().toLowerCase();
-    if (myId != null && myId.isNotEmpty && senderId.isNotEmpty && myId == senderId) {
+    if (myId != null &&
+        myId.isNotEmpty &&
+        senderId.isNotEmpty &&
+        myId == senderId) {
       return true;
     }
 
     // 2. Match against current user's display name
     final myName = _authState.currentUserDisplayName?.trim().toLowerCase();
-    if (myName != null && myName.isNotEmpty && senderName.isNotEmpty && myName == senderName) {
+    if (myName != null &&
+        myName.isNotEmpty &&
+        senderName.isNotEmpty &&
+        myName == senderName) {
       return true;
     }
 
@@ -1035,29 +1074,40 @@ class PantaProvider extends ChangeNotifier {
     if (_authState.isHelper && senderRole == 'helper') {
       return true;
     }
-    if (!_authState.isHelper && !_authState.isAdmin && (senderRole == 'user' || senderRole == 'recycler')) {
+    if (!_authState.isHelper &&
+        !_authState.isAdmin &&
+        (senderRole == 'user' || senderRole == 'recycler')) {
       return true;
     }
 
     // 4. Cross-check against request participants
-    final index = _requestState.requests.indexWhere((r) => r.id == msg.requestId);
+    final index =
+        _requestState.requests.indexWhere((r) => r.id == msg.requestId);
     if (index != -1) {
       final req = _requestState.requests[index];
       if (_authState.isHelper) {
-        if (req.helperId != null && req.helperId!.isNotEmpty && senderId.isNotEmpty &&
+        if (req.helperId != null &&
+            req.helperId!.isNotEmpty &&
+            senderId.isNotEmpty &&
             req.helperId!.trim().toLowerCase() == senderId) {
           return true;
         }
-        if (req.helperName != null && req.helperName!.isNotEmpty && senderName.isNotEmpty &&
+        if (req.helperName != null &&
+            req.helperName!.isNotEmpty &&
+            senderName.isNotEmpty &&
             req.helperName!.trim().toLowerCase() == senderName) {
           return true;
         }
       } else {
-        if (req.creatorId != null && req.creatorId!.isNotEmpty && senderId.isNotEmpty &&
+        if (req.creatorId != null &&
+            req.creatorId!.isNotEmpty &&
+            senderId.isNotEmpty &&
             req.creatorId!.trim().toLowerCase() == senderId) {
           return true;
         }
-        if (req.creatorName != null && req.creatorName!.isNotEmpty && senderName.isNotEmpty &&
+        if (req.creatorName != null &&
+            req.creatorName!.isNotEmpty &&
+            senderName.isNotEmpty &&
             req.creatorName!.trim().toLowerCase() == senderName) {
           return true;
         }
@@ -1075,10 +1125,12 @@ class PantaProvider extends ChangeNotifier {
     final existing = _chatByRequestId[msg.requestId] ?? [];
     final isNew = !existing.any((m) => m.id == msg.id);
     if (isNew) {
-      _chatByRequestId[msg.requestId] = List<ChatMessage>.from(existing)..add(msg);
+      _chatByRequestId[msg.requestId] = List<ChatMessage>.from(existing)
+        ..add(msg);
     }
 
-    final index = _requestState.requests.indexWhere((r) => r.id == msg.requestId);
+    final index =
+        _requestState.requests.indexWhere((r) => r.id == msg.requestId);
     if (index != -1) {
       final req = _requestState.requests[index];
       if (!req.messages.any((m) => m.id == msg.id)) {
@@ -1110,21 +1162,24 @@ class PantaProvider extends ChangeNotifier {
         for (final msg in req.messages) {
           final existing = _chatByRequestId[msg.requestId] ?? [];
           final existingIdx = existing.indexWhere((m) => m.id == msg.id);
-          
+
           if (existingIdx == -1) {
             _appendChatMessage(msg, notifyBanner: false);
           } else if (msg.isRead && !existing[existingIdx].isRead) {
             // Update the existing message if it was marked as read
             existing[existingIdx] = msg;
-            
+
             // Also update it in the request state if needed
-            final reqIdx = _requestState.requests.indexWhere((r) => r.id == req.id);
+            final reqIdx =
+                _requestState.requests.indexWhere((r) => r.id == req.id);
             if (reqIdx != -1) {
-              final msgs = List<ChatMessage>.from(_requestState.requests[reqIdx].messages);
+              final msgs = List<ChatMessage>.from(
+                  _requestState.requests[reqIdx].messages);
               final msgIdx = msgs.indexWhere((m) => m.id == msg.id);
               if (msgIdx != -1) {
                 msgs[msgIdx] = msg;
-                _requestState.requests[reqIdx] = _requestState.requests[reqIdx].copyWith(messages: msgs);
+                _requestState.requests[reqIdx] =
+                    _requestState.requests[reqIdx].copyWith(messages: msgs);
               }
             }
           }
@@ -1170,7 +1225,8 @@ class PantaProvider extends ChangeNotifier {
       }
     }
 
-    final bool resolvedAdmin = adminOverride ?? await _authService.getCurrentUserIsAdmin();
+    final bool resolvedAdmin =
+        adminOverride ?? await _authService.getCurrentUserIsAdmin();
 
     _authState.updateSession(
       userId: await _authService.getCurrentUsername(),

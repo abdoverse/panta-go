@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e # Exit on error
 
-echo "Deploying Panta Go Infrastructure..."
+echo "Deploying Panta Infrastructure..."
 
 # Navigate to script directory
 cd "$(dirname "$0")"

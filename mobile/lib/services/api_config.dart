@@ -1,6 +1,6 @@
 class ApiConfig {
   static const String _defaultBaseUrl =
-      'https://pa-ec5659fcd7824996910b75e3c67c48e2.ecs.eu-north-1.on.aws';
+      'https://pa-b4e8e272d1194dae93b9d860991c7e74.ecs.eu-north-1.on.aws';
 
   static String get baseUrl => _normalizedBaseUri.toString();
 
@@ -17,18 +17,33 @@ class ApiConfig {
       throw StateError('API_BASE_URL must be a valid http or https URL.');
     }
 
-    final isLocalHost = uri.host == 'localhost' ||
-        uri.host == '127.0.0.1' ||
-        uri.host == '10.0.2.2' ||
-        uri.host.startsWith('192.168.');
-    if (uri.scheme != 'https' && !isLocalHost) {
+    if (uri.scheme != 'https' && !_isLocalNetworkHost(uri.host)) {
       throw StateError(
         'Panta requires HTTPS for remote API traffic. '
-        'Use a secure API_BASE_URL or a local emulator host.',
+        'Use a secure API_BASE_URL or a local network host.',
       );
     }
 
     return uri.replace(path: '', query: null, fragment: null);
+  }
+
+  static bool _isLocalNetworkHost(String host) {
+    if (host == 'localhost' || host == '127.0.0.1' || host == '10.0.2.2') {
+      return true;
+    }
+
+    final octets = host.split('.');
+    if (octets.length != 4) return false;
+    final values = octets.map(int.tryParse).toList();
+    if (values.any((value) => value == null || value < 0 || value > 255)) {
+      return false;
+    }
+
+    final first = values[0]!;
+    final second = values[1]!;
+    return first == 10 ||
+        (first == 172 && second >= 16 && second <= 31) ||
+        (first == 192 && second == 168);
   }
 
   static Uri apiUri(String path, {Map<String, String>? queryParameters}) {
@@ -53,10 +68,13 @@ class ApiConfig {
   static const String clientId = '7qmiaaqn1dhhfedhr7kcgvp074';
   static const String region = 'eu-north-1';
 
-  static bool get hasCognitoConfig => userPoolId.isNotEmpty && clientId.isNotEmpty;
+  static bool get hasCognitoConfig =>
+      userPoolId.isNotEmpty && clientId.isNotEmpty;
   static String? get firebaseWebVapidKey {
-    const val = String.fromEnvironment('FIREBASE_WEB_VAPID_KEY', defaultValue: '');
+    const val =
+        String.fromEnvironment('FIREBASE_WEB_VAPID_KEY', defaultValue: '');
     return val.isEmpty ? null : val;
   }
+
   static bool get hasFirebaseWebVapidKey => firebaseWebVapidKey != null;
 }
