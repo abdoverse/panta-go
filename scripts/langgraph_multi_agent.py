@@ -94,7 +94,7 @@ DEFAULT_AGENT_LOG_DIR = (
     else ".copilot/agent-logs"
 )
 
-VALID_CATEGORIES = ("backend", "frontend", "both")
+VALID_CATEGORIES = ("backend", "frontend", "both", "production readiness")
 VALID_PLAN_STATUSES = ("planned", "approved")
 VALID_BACKLOG_STATUSES = ("pending", "approved", "in_progress", "done")
 VALID_PRIORITIES = ("high", "medium", "low")
@@ -446,7 +446,7 @@ def parse_backlog_text(content: str) -> list[BacklogItem]:
 
     for raw_line in content.splitlines():
         line = raw_line.rstrip()
-        section_match = re.match(r"^##\s+(backend|frontend|both)\s*$", line, re.IGNORECASE)
+        section_match = re.match(r"^##\s+(backend|frontend|both|production readiness)\s*$", line, re.IGNORECASE)
         if section_match:
             current_category = section_match.group(1).lower()
             current_item = None
@@ -553,7 +553,7 @@ def parse_plan_text(content: str) -> list[PlanItem]:
 
     for raw_line in content.splitlines():
         line = raw_line.rstrip()
-        section_match = re.match(r"^##\s+(backend|frontend|both)\s*$", line, re.IGNORECASE)
+        section_match = re.match(r"^##\s+(backend|frontend|both|production readiness)\s*$", line, re.IGNORECASE)
         if section_match:
             current_category = section_match.group(1).lower()
             current_plan = None
@@ -812,7 +812,7 @@ Rules:
         self.log("tester", f"Running automated validation test suites for category: {category}")
         failures = []
 
-        if category in ("backend", "both"):
+        if category in ("backend", "both", "production readiness"):
             code, out = self.tools.run_command("go test ./...", cwd="my-app/backend", timeout=60)
             if code != 0:
                 self.log("tester", f"Go backend test failed:\n{out}")
