@@ -120,12 +120,10 @@ start_frontend() {
     fi
 
     local web_build_dir="$FRONTEND_DIR/build/web"
-    if [ ! -f "$web_build_dir/main.dart.js" ]; then
-        echo "🔨 Building optimized Flutter web release bundle..."
-        cd "$FRONTEND_DIR"
-        flutter build web --release --dart-define=API_BASE_URL="http://localhost:$BACKEND_PORT"
-        cd "$PROJECT_ROOT"
-    fi
+    echo "🔨 Building Flutter web bundle for the local backend..."
+    cd "$FRONTEND_DIR"
+    flutter build web --release --dart-define=API_BASE_URL="http://localhost:$BACKEND_PORT"
+    cd "$PROJECT_ROOT"
 
     echo "🚀 Starting fast Flutter web server on port $FRONTEND_PORT..."
     nohup python3 -m http.server "$FRONTEND_PORT" \
