@@ -1,7 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
@@ -46,9 +50,20 @@ class _BankIdDialogState extends State<BankIdDialog> {
   bool _isInitiating = false;
   bool _isPolling = false;
   bool _isSuccess = false;
+  bool _isSimulating = false;
   String? _errorMessage;
   String? _hintCode;
+
+  String? _orderRef;
+  String? _autoStartToken;
+  String? _qrStartToken;
+  String? _qrStartSecret;
+  String? _currentQrString;
+  String? _mode;
+  DateTime? _authStartTime;
+
   Timer? _pollingTimer;
+  Timer? _qrAnimationTimer;
 
   @override
   void initState() {
@@ -61,8 +76,17 @@ class _BankIdDialogState extends State<BankIdDialog> {
   @override
   void dispose() {
     _pollingTimer?.cancel();
+    _qrAnimationTimer?.cancel();
     _personalNumberController.dispose();
     super.dispose();
+  }
+
+  String _computeBankIdQrCode(String qrStartToken, String qrStartSecret, int seconds) {
+    final key = utf8.encode(qrStartSecret);
+    final bytes = utf8.encode(seconds.toString());
+    final hmacSha256 = Hmac(sha256, key);
+    final digest = hmacSha256.convert(bytes);
+    return 'bankid.$qrStartToken.$seconds.$digest';
   }
 
   Future<void> _startBankId() async {
@@ -84,15 +108,38 @@ class _BankIdDialogState extends State<BankIdDialog> {
       if (res == null || res.orderRef.isEmpty) {
         setState(() {
           _isInitiating = false;
-          _errorMessage = 'Could not initiate BankID order. Please check server.';
+          _errorMessage = 'Kunde inte initiera BankID. Kontrollera anslutningen.';
         });
         return;
       }
+
+      _orderRef = res.orderRef;
+      _autoStartToken = res.autoStartToken;
+      _qrStartToken = res.qrStartToken;
+      _qrStartSecret = res.qrStartSecret;
+      _mode = res.mode;
+      _currentQrString = res.qrCode;
+      _authStartTime = DateTime.now();
 
       setState(() {
         _isInitiating = false;
         _isPolling = true;
       });
+
+      // Start 1-second animated QR refresh according to BankID v6 standard
+      if (_qrStartToken != null && _qrStartSecret != null) {
+        _qrAnimationTimer?.cancel();
+        _qrAnimationTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+          if (!mounted || _qrStartToken == null || _qrStartSecret == null || _authStartTime == null) {
+            timer.cancel();
+            return;
+          }
+          final elapsed = DateTime.now().difference(_authStartTime!).inSeconds;
+          setState(() {
+            _currentQrString = _computeBankIdQrCode(_qrStartToken!, _qrStartSecret!, elapsed);
+          });
+        });
+      }
 
       _startPolling(res.orderRef);
     } catch (e) {
@@ -105,7 +152,7 @@ class _BankIdDialogState extends State<BankIdDialog> {
 
   void _startPolling(String orderRef) {
     _pollingTimer?.cancel();
-    _pollingTimer = Timer.periodic(const Duration(milliseconds: 900), (timer) async {
+    _pollingTimer = Timer.periodic(const Duration(milliseconds: 1000), (timer) async {
       if (!mounted) {
         timer.cancel();
         return;
@@ -118,9 +165,10 @@ class _BankIdDialogState extends State<BankIdDialog> {
 
       if (collectRes == null) {
         timer.cancel();
+        _qrAnimationTimer?.cancel();
         setState(() {
           _isPolling = false;
-          _errorMessage = 'Failed to check BankID status.';
+          _errorMessage = 'Kunde inte verifiera BankID-status.';
         });
         return;
       }
@@ -131,12 +179,16 @@ class _BankIdDialogState extends State<BankIdDialog> {
 
       if (collectRes.isComplete) {
         timer.cancel();
+        _qrAnimationTimer?.cancel();
         await _handleSuccess(collectRes);
       } else if (collectRes.status == 'failed') {
         timer.cancel();
+        _qrAnimationTimer?.cancel();
         setState(() {
           _isPolling = false;
-          _errorMessage = 'BankID authentication was canceled or timed out.';
+          _errorMessage = collectRes.hintCode == 'userCancel'
+              ? 'BankID-identifieringen avbröts.'
+              : 'BankID-identifieringen misslyckades eller löpte ut.';
         });
       }
     });
@@ -169,7 +221,7 @@ class _BankIdDialogState extends State<BankIdDialog> {
       if (!verified && mounted) {
         setState(() {
           _isSuccess = false;
-          _errorMessage = 'Failed to verify current account with BankID.';
+          _errorMessage = 'Kunde inte koppla BankID till nuvarande konto.';
         });
         return;
       }
@@ -181,75 +233,150 @@ class _BankIdDialogState extends State<BankIdDialog> {
     }
   }
 
+  Future<void> _simulateApproval() async {
+    if (_orderRef == null) return;
+    setState(() => _isSimulating = true);
+
+    final provider = context.read<PantaProvider>();
+    final pNumber = _personalNumberController.text.trim();
+    final res = await provider.simulateCompleteBankId(
+      orderRef: _orderRef!,
+      personalNumber: pNumber.isNotEmpty ? pNumber : null,
+    );
+
+    if (!mounted) return;
+    setState(() => _isSimulating = false);
+
+    if (res != null && res.isComplete) {
+      _pollingTimer?.cancel();
+      _qrAnimationTimer?.cancel();
+      await _handleSuccess(res);
+    } else {
+      setState(() {
+        _errorMessage = 'Kunde inte simulera godkännande.';
+      });
+    }
+  }
+
+  Future<void> _launchSameDeviceBankId() async {
+    if (_autoStartToken == null) return;
+    final uri = Uri.parse('bankid:///?autostarttoken=$_autoStartToken&redirect=null');
+    try {
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('BankID-appen hittades inte på denna enhet.'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Kunde inte öppna BankID-appen.'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  void _handleCancel() {
+    _pollingTimer?.cancel();
+    _qrAnimationTimer?.cancel();
+    if (_orderRef != null) {
+      context.read<PantaProvider>().cancelBankId(orderRef: _orderRef!);
+    }
+    Navigator.of(context).pop(false);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
+    final l10n = AppLocalizations.of(context);
 
-    return AlertDialog(
+    return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-      content: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 380),
+      elevation: 8,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+        constraints: const BoxConstraints(maxWidth: 420),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // BankID Branding Header
-            Center(
-              child: Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF235971), // Authentic Swedish BankID navy
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF235971).withValues(alpha: 0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF235971), // Authentic Swedish BankID navy
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.fingerprint_rounded,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'BankID',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF235971),
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE8F1F5),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        _mode == 'test' ? 'TESTMILJÖ (v6.0 API)' : 'SÄKER IDENTIFIERING',
+                        style: const TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF235971),
+                          letterSpacing: 0.5,
+                        ),
+                      ),
                     ),
                   ],
                 ),
-                child: const Icon(
-                  Icons.verified_user_rounded,
-                  color: Colors.white,
-                  size: 34,
-                ),
-              ),
+              ],
             ),
-            const SizedBox(height: 16),
-            Text(
-              'BankID',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFF1C3F60),
-                  ),
-            ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 18),
+
             Text(
               widget.isLogin ? l10n.bankIdLogin : l10n.bankIdVerificationTitle,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppTheme.textSecondary,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.textPrimary,
                   ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
-            // Main State View
+            // Content Area
             if (_isSuccess) ...[
               Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppTheme.accentLeaf,
-                  borderRadius: BorderRadius.circular(16),
-                ),
+                padding: const EdgeInsets.symmetric(vertical: 24),
                 child: Column(
                   children: [
                     const Icon(
                       Icons.check_circle_rounded,
                       color: AppTheme.primaryGreen,
-                      size: 48,
+                      size: 52,
                     ),
                     const SizedBox(height: 12),
                     Text(
@@ -263,72 +390,132 @@ class _BankIdDialogState extends State<BankIdDialog> {
                 ),
               ),
             ] else if (_isPolling) ...[
-              // QR / Verification Handshake in progress
+              // Live Dynamic QR code and App Switch
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
                   color: AppTheme.surfaceMuted,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(18),
                   border: Border.all(color: Colors.grey.shade300),
                 ),
                 child: Column(
                   children: [
-                    // Mock QR Box with BankID animation
+                    // Dynamic animated QR box
                     Container(
-                      width: 140,
-                      height: 140,
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.04),
-                            blurRadius: 8,
+                            color: Colors.black.withValues(alpha: 0.06),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
                           ),
                         ],
                       ),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          const Icon(
-                            Icons.qr_code_2_rounded,
-                            size: 110,
-                            color: Color(0xFF1C3F60),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF235971),
-                              shape: BoxShape.circle,
+                      child: _currentQrString != null && _currentQrString!.isNotEmpty
+                          ? QrImageView(
+                              data: _currentQrString!,
+                              version: QrVersions.auto,
+                              size: 150,
+                              eyeStyle: const QrEyeStyle(
+                                eyeShape: QrEyeShape.square,
+                                color: Color(0xFF235971),
+                              ),
+                              dataModuleStyle: const QrDataModuleStyle(
+                                dataModuleShape: QrDataModuleShape.square,
+                                color: Color(0xFF1C3F60),
+                              ),
+                            )
+                          : const SizedBox(
+                              width: 150,
+                              height: 150,
+                              child: Center(
+                                child: CircularProgressIndicator(),
+                              ),
                             ),
-                            child: const Icon(
-                              Icons.lock_rounded,
-                              size: 16,
-                              color: Colors.white,
-                            ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Status Hint & Spinner
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF235971)),
                           ),
-                        ],
+                        ),
+                        const SizedBox(width: 10),
+                        Flexible(
+                          child: Text(
+                            _hintCode == 'userSign'
+                                ? 'Skriv in din säkerhetskod i BankID...'
+                                : 'Scanna QR-koden i BankID-appen',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF1C3F60),
+                                ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Same-device app launch button
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: _launchSameDeviceBankId,
+                        icon: const Icon(Icons.open_in_new_rounded, size: 16),
+                        label: const Text(
+                          'Öppna BankID på denna enhet',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF235971),
+                          side: const BorderSide(color: Color(0xFF235971)),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.5,
-                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF235971)),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      _hintCode == 'userSign'
-                          ? 'Skriv in din säkerhetskod i BankID...'
-                          : l10n.bankIdOpenApp,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    const SizedBox(height: 8),
+
+                    // Simulation button for test mode
+                    SizedBox(
+                      width: double.infinity,
+                      child: TextButton.icon(
+                        onPressed: _isSimulating ? null : _simulateApproval,
+                        icon: _isSimulating
+                            ? const SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.verified_user_outlined, size: 16),
+                        label: Text(
+                          _isSimulating ? 'Simulerar...' : 'Simulera godkännande (Testmiljö)',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.blueGrey[800],
                             fontWeight: FontWeight.w600,
-                            color: const Color(0xFF1C3F60),
                           ),
+                        ),
+                        style: TextButton.styleFrom(
+                          backgroundColor: Colors.blueGrey.withValues(alpha: 0.1),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -341,13 +528,13 @@ class _BankIdDialogState extends State<BankIdDialog> {
                 autofocus: true,
                 decoration: InputDecoration(
                   labelText: l10n.bankIdPersonalNumber,
-                  hintText: l10n.bankIdPersonalNumberHint,
+                  hintText: 'YYYYMMDDXXXX (valfritt för QR)',
                   prefixIcon: const Icon(Icons.badge_outlined),
                 ),
               ),
               const SizedBox(height: 12),
               Text(
-                l10n.bankIdTrustSubtitle,
+                'I BankID v6.0 kan du lämna personnumret tomt och scanna QR-koden direkt med appen.',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppTheme.textSecondary,
                     ),
@@ -356,12 +543,21 @@ class _BankIdDialogState extends State<BankIdDialog> {
 
             if (_errorMessage != null) ...[
               const SizedBox(height: 12),
-              Text(
-                _errorMessage!,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.error,
-                  fontSize: 13,
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red.shade200),
+                ),
+                child: Text(
+                  _errorMessage!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.red.shade900,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ],
@@ -399,10 +595,7 @@ class _BankIdDialogState extends State<BankIdDialog> {
               ],
               const SizedBox(height: 8),
               TextButton(
-                onPressed: () {
-                  _pollingTimer?.cancel();
-                  Navigator.of(context).pop(false);
-                },
+                onPressed: _handleCancel,
                 child: Text(
                   l10n.cancel,
                   style: const TextStyle(color: AppTheme.textSecondary),

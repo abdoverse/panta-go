@@ -9,13 +9,19 @@ class BankIdInitiateResponse {
   final String orderRef;
   final String autoStartToken;
   final String qrCode;
+  final String? qrStartToken;
+  final String? qrStartSecret;
   final String status;
+  final String mode;
 
   BankIdInitiateResponse({
     required this.orderRef,
     required this.autoStartToken,
     required this.qrCode,
+    this.qrStartToken,
+    this.qrStartSecret,
     required this.status,
+    this.mode = 'mock',
   });
 
   factory BankIdInitiateResponse.fromJson(Map<String, dynamic> json) {
@@ -23,7 +29,10 @@ class BankIdInitiateResponse {
       orderRef: json['orderRef']?.toString() ?? '',
       autoStartToken: json['autoStartToken']?.toString() ?? '',
       qrCode: json['qrCode']?.toString() ?? '',
+      qrStartToken: json['qrStartToken']?.toString(),
+      qrStartSecret: json['qrStartSecret']?.toString(),
       status: json['status']?.toString() ?? 'pending',
+      mode: json['mode']?.toString() ?? 'mock',
     );
   }
 }
@@ -194,5 +203,44 @@ class BankIdService {
       debugPrint('Error getting BankID verification status: $e');
     }
     return null;
+  }
+
+  Future<BankIdCollectResponse?> simulateComplete({
+    required String orderRef,
+    String? personalNumber,
+    String? displayName,
+  }) async {
+    try {
+      final response = await _client.post(
+        ApiConfig.apiUri('/api/v1/auth/bankid/simulate-complete'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'orderRef': orderRef,
+          if (personalNumber != null) 'personalNumber': personalNumber,
+          if (displayName != null) 'displayName': displayName,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body) as Map<String, dynamic>;
+        return BankIdCollectResponse.fromJson(data);
+      }
+      debugPrint('BankID simulateComplete failed: ${response.statusCode} ${response.body}');
+    } catch (e) {
+      debugPrint('Error simulating BankID complete: $e');
+    }
+    return null;
+  }
+
+  Future<void> cancel({required String orderRef}) async {
+    try {
+      await _client.post(
+        ApiConfig.apiUri('/api/v1/auth/bankid/cancel'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'orderRef': orderRef}),
+      );
+    } catch (e) {
+      debugPrint('Error canceling BankID: $e');
+    }
   }
 }

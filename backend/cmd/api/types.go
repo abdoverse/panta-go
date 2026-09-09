@@ -410,7 +410,10 @@ type BankIdInitiateResponse struct {
 	OrderRef       string `json:"orderRef"`
 	AutoStartToken string `json:"autoStartToken"`
 	QrCode         string `json:"qrCode"`
-	Status         string `json:"status"` // "pending"
+	QrStartToken   string `json:"qrStartToken,omitempty"`
+	QrStartSecret  string `json:"qrStartSecret,omitempty"`
+	Status         string `json:"status"`         // "pending"
+	Mode           string `json:"mode,omitempty"` // "test", "prod", "mock"
 }
 
 type BankIdCollectRequest struct {

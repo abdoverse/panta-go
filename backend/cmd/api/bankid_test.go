@@ -32,6 +32,7 @@ func TestMaskPersonalNumber(t *testing.T) {
 }
 
 func TestHandleBankIdInitiate(t *testing.T) {
+	t.Setenv("BANKID_MODE", "mock")
 	payload := BankIdInitiateRequest{
 		PersonalNumber: "199205121234",
 		Role:           "helper",
@@ -67,6 +68,7 @@ func TestHandleBankIdInitiate(t *testing.T) {
 }
 
 func TestHandleBankIdCollectLifecycle(t *testing.T) {
+	t.Setenv("BANKID_MODE", "mock")
 	// First initiate
 	initPayload := BankIdInitiateRequest{
 		PersonalNumber: "198503151234",

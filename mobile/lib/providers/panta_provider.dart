@@ -544,6 +544,22 @@ class PantaProvider extends ChangeNotifier {
     return _bankIdService.collect(orderRef: orderRef);
   }
 
+  Future<BankIdCollectResponse?> simulateCompleteBankId({
+    required String orderRef,
+    String? personalNumber,
+    String? displayName,
+  }) async {
+    return _bankIdService.simulateComplete(
+      orderRef: orderRef,
+      personalNumber: personalNumber,
+      displayName: displayName,
+    );
+  }
+
+  Future<void> cancelBankId({required String orderRef}) async {
+    return _bankIdService.cancel(orderRef: orderRef);
+  }
+
   Future<String?> completeBankIdLogin({
     required BankIdCollectResponse collectResponse,
     required bool asHelper,
