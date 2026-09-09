@@ -10,6 +10,7 @@ import '../../../providers/panta_provider.dart';
 import '../../chat/chat_bottom_sheet.dart';
 import '../../shared/widgets/location_actions.dart';
 import '../../tracking/live_map_tracking_view.dart';
+import '../../../services/api_config.dart';
 import '../create_request_page.dart';
 
 class UserRequestCard extends StatelessWidget {
@@ -771,21 +772,93 @@ class RequestImage extends StatelessWidget {
 
   const RequestImage({super.key, required this.imageUrl});
 
+  static String? resolveUrl(String? rawUrl) {
+    var url = rawUrl?.trim();
+    if (url == null || url.isEmpty || url == 'assets/images/generic.png') {
+      return null;
+    }
+    if (url.contains('.console.aws.amazon.com/s3/') ||
+        url.contains('console.aws.amazon.com')) {
+      final uri = Uri.tryParse(url);
+      final prefix = uri?.queryParameters['prefix'] ?? uri?.queryParameters['key'];
+      if (prefix != null && prefix.isNotEmpty) {
+        url = '/api/v1/images/$prefix';
+      }
+    }
+    if (url.startsWith('/')) {
+      return ApiConfig.apiUri(url).toString();
+    }
+    return url;
+  }
+
+  static void showPreview(BuildContext context, String fullUrl) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(16),
+        child: Stack(
+          alignment: Alignment.topRight,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                color: Colors.black,
+                constraints: const BoxConstraints(maxHeight: 500),
+                child: InteractiveViewer(
+                  child: Image.network(
+                    fullUrl,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => Container(
+                      color: Colors.white,
+                      padding: const EdgeInsets.all(32),
+                      child: const Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.broken_image_rounded, size: 48, color: Colors.grey),
+                          SizedBox(height: 8),
+                          Text('Image not available', style: TextStyle(color: Colors.grey)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: CircleAvatar(
+                backgroundColor: Colors.black54,
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white),
+                  onPressed: () => Navigator.of(dialogCtx).pop(),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final normalizedImageUrl = imageUrl?.trim();
-    if (normalizedImageUrl == null || normalizedImageUrl.isEmpty) {
+    final resolvedUrl = resolveUrl(imageUrl);
+    if (resolvedUrl == null) {
       return _fallbackImage();
     }
 
-    final hasRemoteSource = normalizedImageUrl.startsWith('http') ||
-        normalizedImageUrl.startsWith('data:image/');
+    final hasRemoteSource = resolvedUrl.startsWith('http') ||
+        resolvedUrl.startsWith('data:image/');
 
     if (hasRemoteSource) {
-      return Image.network(
-        normalizedImageUrl,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _fallbackImage(),
+      return InkWell(
+        onTap: () => showPreview(context, resolvedUrl),
+        child: Image.network(
+          resolvedUrl,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _fallbackImage(),
+        ),
       );
     }
 

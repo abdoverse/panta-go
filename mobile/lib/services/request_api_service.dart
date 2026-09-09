@@ -530,11 +530,19 @@ class RequestApiService {
   }
 
   static String? parseImageUrl(dynamic value) {
-    final imageUrl = value?.toString().trim();
+    var imageUrl = value?.toString().trim();
     if (imageUrl == null ||
         imageUrl.isEmpty ||
         imageUrl == 'assets/images/generic.png') {
       return null;
+    }
+    if (imageUrl.contains('.console.aws.amazon.com/s3/') ||
+        imageUrl.contains('console.aws.amazon.com')) {
+      final uri = Uri.tryParse(imageUrl);
+      final prefix = uri?.queryParameters['prefix'] ?? uri?.queryParameters['key'];
+      if (prefix != null && prefix.isNotEmpty) {
+        return '/api/v1/images/$prefix';
+      }
     }
     return imageUrl;
   }

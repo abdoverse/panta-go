@@ -79,6 +79,16 @@ func handleListRequests(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		requests[i].ImageUrl = resolvedURL
+		if requests[i].ReceiptImageUrl != "" {
+			if rUrl, err := resolveImageURL(r.Context(), requests[i].ReceiptImageUrl); err == nil {
+				requests[i].ReceiptImageUrl = rUrl
+			}
+		}
+		if requests[i].DropoffPhotoUrl != "" {
+			if dUrl, err := resolveImageURL(r.Context(), requests[i].DropoffPhotoUrl); err == nil {
+				requests[i].DropoffPhotoUrl = dUrl
+			}
+		}
 		if len(requests[i].Messages) > 0 {
 			requests[i].Messages = sanitizeAndDecryptMessages(requests[i].Messages, requests[i].ID)
 		}
