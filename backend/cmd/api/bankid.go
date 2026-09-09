@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
@@ -21,6 +22,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -42,11 +47,13 @@ type bankIdSession struct {
 }
 
 type BankIdVerifiedUser struct {
-	Username       string    `json:"username"`
-	PersonalNumber string    `json:"personalNumber"`
-	VerifiedAt     time.Time `json:"verifiedAt"`
-	DisplayName    string    `json:"displayName"`
-	Role           string    `json:"role"`
+	ID             string    `json:"id" dynamodbav:"id"`
+	Username       string    `json:"username" dynamodbav:"username"`
+	PersonalNumber string    `json:"personalNumber" dynamodbav:"personalNumber"`
+	VerifiedAt     time.Time `json:"verifiedAt" dynamodbav:"verifiedAt"`
+	DisplayName    string    `json:"displayName" dynamodbav:"displayName"`
+	Role           string    `json:"role" dynamodbav:"role"`
+	BankIdVerified bool      `json:"bankIdVerified" dynamodbav:"bankIdVerified"`
 }
 
 type bankIdRPAuthRequest struct {
@@ -236,26 +243,73 @@ func maskPersonalNumber(raw string) string {
 	return "19900101-****"
 }
 
-func isUserBankIdVerified(userID string) bool {
-	normalized := strings.TrimSpace(userID)
+func userVerificationKey(identifier string) string {
+	clean := strings.ToLower(strings.TrimSpace(identifier))
+	return "user-verification#" + clean
+}
+
+func loadBankIdVerifiedUser(ctx context.Context, identifier string) (*BankIdVerifiedUser, bool) {
+	normalized := strings.TrimSpace(identifier)
 	if normalized == "" {
-		return false
+		return nil, false
 	}
+
+	// 1. Check in-memory cache
 	verifiedUsersLock.RLock()
-	defer verifiedUsersLock.RUnlock()
-	_, ok := verifiedUsers[normalized]
+	user, ok := verifiedUsers[normalized]
+	if !ok {
+		user, ok = verifiedUsers[strings.ToLower(normalized)]
+	}
+	verifiedUsersLock.RUnlock()
+	if ok && user != nil {
+		return user, true
+	}
+
+	// 2. Query DynamoDB if available
+	if svc == nil || tableName == "" {
+		return nil, false
+	}
+
+	out, err := svc.GetItem(ctx, &dynamodb.GetItemInput{
+		TableName: aws.String(tableName),
+		Key: map[string]types.AttributeValue{
+			"id": &types.AttributeValueMemberS{Value: userVerificationKey(normalized)},
+		},
+	})
+	if err != nil || len(out.Item) == 0 {
+		return nil, false
+	}
+
+	var record BankIdVerifiedUser
+	if err := attributevalue.UnmarshalMap(out.Item, &record); err != nil {
+		log.Printf("Failed to unmarshal user verification from DynamoDB: %v", err)
+		return nil, false
+	}
+
+	// Cache in-memory
+	verifiedUsersLock.Lock()
+	verifiedUsers[normalized] = &record
+	verifiedUsers[strings.ToLower(normalized)] = &record
+	if record.Username != "" {
+		verifiedUsers[record.Username] = &record
+		verifiedUsers[strings.ToLower(record.Username)] = &record
+	}
+	if record.DisplayName != "" {
+		verifiedUsers[record.DisplayName] = &record
+		verifiedUsers[strings.ToLower(record.DisplayName)] = &record
+	}
+	verifiedUsersLock.Unlock()
+
+	return &record, true
+}
+
+func isUserBankIdVerified(userID string) bool {
+	_, ok := loadBankIdVerifiedUser(context.Background(), userID)
 	return ok
 }
 
 func getVerifiedUser(userID string) (*BankIdVerifiedUser, bool) {
-	normalized := strings.TrimSpace(userID)
-	if normalized == "" {
-		return nil, false
-	}
-	verifiedUsersLock.RLock()
-	defer verifiedUsersLock.RUnlock()
-	user, ok := verifiedUsers[normalized]
-	return user, ok
+	return loadBankIdVerifiedUser(context.Background(), userID)
 }
 
 func markUserBankIdVerified(userID, personalNumber, displayName, role string) *BankIdVerifiedUser {
@@ -263,20 +317,65 @@ func markUserBankIdVerified(userID, personalNumber, displayName, role string) *B
 	if normalized == "" {
 		normalized = displayName
 	}
-	verifiedUsersLock.Lock()
-	defer verifiedUsersLock.Unlock()
+
+	maskedPN := maskPersonalNumber(personalNumber)
+	now := time.Now().UTC()
 
 	user := &BankIdVerifiedUser{
+		ID:             userVerificationKey(normalized),
 		Username:       normalized,
-		PersonalNumber: maskPersonalNumber(personalNumber),
-		VerifiedAt:     time.Now().UTC(),
+		PersonalNumber: maskedPN,
+		VerifiedAt:     now,
 		DisplayName:    displayName,
 		Role:           role,
+		BankIdVerified: true,
 	}
+
+	verifiedUsersLock.Lock()
 	verifiedUsers[normalized] = user
+	verifiedUsers[strings.ToLower(normalized)] = user
 	if displayName != "" && displayName != normalized {
 		verifiedUsers[displayName] = user
+		verifiedUsers[strings.ToLower(displayName)] = user
 	}
+	verifiedUsersLock.Unlock()
+
+	// Persist to DynamoDB asynchronously
+	go func(u BankIdVerifiedUser, uid, dn string) {
+		if svc == nil || tableName == "" {
+			return
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		keysToSave := []string{userVerificationKey(uid)}
+		if dn != "" && strings.ToLower(dn) != strings.ToLower(uid) {
+			keysToSave = append(keysToSave, userVerificationKey(dn))
+		}
+		uuidVal := userUUID(uid)
+		if uuidVal != "" && uuidVal != uid {
+			keysToSave = append(keysToSave, userVerificationKey(uuidVal))
+		}
+		if dn != "" {
+			dnUUID := userUUID(dn)
+			if dnUUID != "" && dnUUID != dn {
+				keysToSave = append(keysToSave, userVerificationKey(dnUUID))
+			}
+		}
+
+		for _, key := range keysToSave {
+			u.ID = key
+			item, err := attributevalue.MarshalMap(u)
+			if err != nil {
+				continue
+			}
+			_, _ = svc.PutItem(ctx, &dynamodb.PutItemInput{
+				TableName: aws.String(tableName),
+				Item:      item,
+			})
+		}
+	}(*user, normalized, displayName)
+
 	return user
 }
 
@@ -799,12 +898,23 @@ func handleGetVerificationStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ownerID := claims.requestOwnerID()
-	verifiedUser, exists := getVerifiedUser(ownerID)
+	verifiedUser, exists := loadBankIdVerifiedUser(r.Context(), ownerID)
+	if !exists && claims.DisplayName != "" {
+		verifiedUser, exists = loadBankIdVerifiedUser(r.Context(), claims.DisplayName)
+	}
+	if !exists && claims.CognitoUsername != "" {
+		verifiedUser, exists = loadBankIdVerifiedUser(r.Context(), claims.CognitoUsername)
+	}
+	if !exists && claims.Email != "" {
+		verifiedUser, exists = loadBankIdVerifiedUser(r.Context(), claims.Email)
+	}
+
 	isVerified := claims.BankIdVerified
 	personalNumber := claims.BankIdPersonalNumber
 	verifiedAt := claims.BankIdVerifiedAt
 
-	if isVerified && exists {
+	if exists && verifiedUser != nil {
+		isVerified = true
 		personalNumber = verifiedUser.PersonalNumber
 		verifiedAt = verifiedUser.VerifiedAt.Format(time.RFC3339)
 	}

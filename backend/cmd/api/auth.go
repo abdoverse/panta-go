@@ -89,15 +89,34 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 		email = name
 	}
 	uID := userUUID(name)
+
+	bankIdVerified := false
+	bankIdPersonalNumber := ""
+	bankIdVerifiedAt := ""
+
+	if vUser, ok := loadBankIdVerifiedUser(r.Context(), uID); ok {
+		bankIdVerified = true
+		bankIdPersonalNumber = vUser.PersonalNumber
+		bankIdVerifiedAt = vUser.VerifiedAt.Format(time.RFC3339)
+	} else if vUser, ok := loadBankIdVerifiedUser(r.Context(), name); ok {
+		bankIdVerified = true
+		bankIdPersonalNumber = vUser.PersonalNumber
+		bankIdVerifiedAt = vUser.VerifiedAt.Format(time.RFC3339)
+	} else if vUser, ok := loadBankIdVerifiedUser(r.Context(), email); ok {
+		bankIdVerified = true
+		bankIdPersonalNumber = vUser.PersonalNumber
+		bankIdVerifiedAt = vUser.VerifiedAt.Format(time.RFC3339)
+	}
+
 	claims := &Claims{
 		Role:                 role,
 		CognitoUsername:      name,
 		DisplayName:          name,
 		Email:                email,
 		UserID:               uID,
-		BankIdVerified:       false,
-		BankIdPersonalNumber: "",
-		BankIdVerifiedAt:     "",
+		BankIdVerified:       bankIdVerified,
+		BankIdPersonalNumber: bankIdPersonalNumber,
+		BankIdVerifiedAt:     bankIdVerifiedAt,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   uID,
 			ExpiresAt: jwt.NewNumericDate(expirationTime),

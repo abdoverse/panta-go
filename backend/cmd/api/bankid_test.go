@@ -206,3 +206,59 @@ func TestHandleVerifyBankId(t *testing.T) {
 		t.Errorf("expected verified status to be true")
 	}
 }
+
+func TestBankIdVerificationPersistsAcrossLogin(t *testing.T) {
+	jwtSecret = []byte("test-secret-1234")
+
+	// 1. Mark Anna Recycler verified
+	markUserBankIdVerified("Anna Recycler", "198805201234", "Anna Recycler", "user")
+
+	// 2. Anna logs in with standard credentials / 1-click persona
+	loginBody, _ := json.Marshal(map[string]string{
+		"role":     "user",
+		"username": "Anna Recycler",
+	})
+	loginReq := httptest.NewRequest(http.MethodPost, "/api/v1/login", bytes.NewReader(loginBody))
+	loginRec := httptest.NewRecorder()
+	handleLogin(loginRec, loginReq)
+
+	if loginRec.Code != http.StatusOK {
+		t.Fatalf("expected status 200 on login, got %d", loginRec.Code)
+	}
+
+	var loginRes LoginResponse
+	if err := json.NewDecoder(loginRec.Body).Decode(&loginRes); err != nil {
+		t.Fatalf("failed to decode login response: %v", err)
+	}
+
+	claims, err := validateToken(loginRes.Token)
+	if err != nil {
+		t.Fatalf("failed to validate returned token: %v", err)
+	}
+
+	if !claims.BankIdVerified {
+		t.Errorf("expected Anna Recycler token claims to have BankIdVerified = true after re-login")
+	}
+	if claims.BankIdPersonalNumber != "19880520-****" {
+		t.Errorf("expected masked SSN 19880520-****, got %q", claims.BankIdPersonalNumber)
+	}
+
+	// 3. Brand new unverified user logs in
+	unverifiedBody, _ := json.Marshal(map[string]string{
+		"role":     "user",
+		"username": "New Unverified Person",
+	})
+	unvReq := httptest.NewRequest(http.MethodPost, "/api/v1/login", bytes.NewReader(unverifiedBody))
+	unvRec := httptest.NewRecorder()
+	handleLogin(unvRec, unvReq)
+
+	var unvRes LoginResponse
+	_ = json.NewDecoder(unvRec.Body).Decode(&unvRes)
+	unvClaims, err := validateToken(unvRes.Token)
+	if err != nil {
+		t.Fatalf("failed to validate unverified token: %v", err)
+	}
+	if unvClaims.BankIdVerified {
+		t.Errorf("unverified user should have BankIdVerified = false")
+	}
+}
