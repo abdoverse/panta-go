@@ -1,7 +1,7 @@
 # Agent Backlog
 # Managed by Panta Autonomous Multi-Agent Swarm (PantaSwarm).
 # Last heartbeat at: 2026-09-06T19:07:00.000000+00:00
-# Loop status: active | approved=0 | pending=4 | in_progress=0
+# Loop status: active | approved=0 | pending=5 | in_progress=0
 # Approve work by changing an item's status from pending to approved.
 # Fields: id | status | priority | complexity | dependencies | title
 
@@ -13,7 +13,7 @@ plan-80 | pending | high | medium | none | Enable location access to fully work 
 plan-81 | pending | medium | small | none | Add under profile "About Panta" to contain actual released app version
 
 ## both
-(empty)
+plan-82 | pending | medium | medium | none | User feedback section allowing any user to submit feedback to the team
 
 ## production readiness
 plan-78 | pending | high | medium | none | Use real BankID certificates and keys

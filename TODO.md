@@ -10,6 +10,7 @@
 8. [ ] Fix Emoji Rendering on Flutter Web: Emojis sent in the chatbox currently render as black-and-white symbols or black boxes after being sent. Investigate Flutter Web CanvasKit font fallback issues with the custom 'Inter' Google Font, or find a reliable multi-platform emoji rendering package.
 9. [ ] Enable location access to fully work on phone and laptop
 10. [ ] Add under profile, "About Panta" to contain the actual released version of the app
+11. [ ] Add a feedback section where any user can leave feedback to the team
 
 ## Production Readiness
 - [ ] Use real BankID certificates and keys
