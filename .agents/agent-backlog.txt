@@ -1,7 +1,7 @@
 # Agent Backlog
 # Managed by Panta Autonomous Multi-Agent Swarm (PantaSwarm).
 # Last heartbeat at: 2026-09-06T19:07:00.000000+00:00
-# Loop status: active | approved=0 | pending=7 | in_progress=0
+# Loop status: active | approved=0 | pending=8 | in_progress=0
 # Approve work by changing an item's status from pending to approved.
 # Fields: id | status | priority | complexity | dependencies | title
 
@@ -16,6 +16,7 @@ plan-84 | pending | medium | small | none | Display user email address on Profil
 ## both
 plan-82 | pending | medium | medium | none | User feedback section allowing any user to submit feedback to the team
 plan-83 | pending | medium | medium | none | Edit first and last name in Profile with Unicode support for Arabic, Chinese, and special characters
+plan-85 | pending | high | medium | none | GDPR-compliant cookie consent banner and legal cookie management adhering to Swedish/EU regulations
 
 ## production readiness
 plan-78 | pending | high | medium | none | Use real BankID certificates and keys

@@ -13,6 +13,7 @@
 11. [ ] Add a feedback section where any user can leave feedback to the team
 12. [ ] Allow users to edit their first and last name in Profile with multi-language support (Arabic, Chinese, and other Unicode special characters)
 13. [ ] Display user's email address on the Profile page
+14. [ ] Implement GDPR-compliant cookie support and consent banner adhering to Swedish legal standards for online businesses
 
 ## Production Readiness
 - [ ] Use real BankID certificates and keys
