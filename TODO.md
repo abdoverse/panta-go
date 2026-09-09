@@ -18,3 +18,11 @@
 ## Production Readiness
 - [ ] Use real BankID certificates and keys
 - [ ] Set market limits
+- [ ] Comprehensive GDPR Compliance:
+  - **Right to Erasure / Right to be Forgotten (Article 17)**: Self-serve account deletion and automated purge of all personal data across DynamoDB, S3, Cognito, and system logs
+  - **Right of Access & Portability (Articles 15 & 20)**: Self-serve Data Subject Access Request (DSAR) export in machine-readable JSON format
+  - **Right to Rectification (Article 16)**: Seamless updating and correction of personal identity, names, and contact details
+  - **Storage Limitation & Automated Retention (Article 5(1)(e))**: Scheduled retention and deletion policies for chat history, delivery proof images, and location trails
+  - **Data Minimization & Identifier Masking (Article 5(1)(c))**: Pseudonymization and masking of Swedish personal identity numbers (`personnummer`) and banking data at rest and in transit
+  - **Security of Processing & Encryption (Article 32)**: Mandatory TLS 1.3 in transit and AES-256-GCM / AWS KMS encryption at rest across all data stores
+  - **Records of Processing & Audit Trails (Articles 30 & 33)**: Durable audit logging of administrative access, data modification/erasure events, and 72-hour breach notification readiness

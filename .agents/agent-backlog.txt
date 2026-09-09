@@ -1,7 +1,7 @@
 # Agent Backlog
 # Managed by Panta Autonomous Multi-Agent Swarm (PantaSwarm).
 # Last heartbeat at: 2026-09-06T19:07:00.000000+00:00
-# Loop status: active | approved=0 | pending=8 | in_progress=0
+# Loop status: active | approved=0 | pending=9 | in_progress=0
 # Approve work by changing an item's status from pending to approved.
 # Fields: id | status | priority | complexity | dependencies | title
 
@@ -21,3 +21,6 @@ plan-85 | pending | high | medium | none | GDPR-compliant cookie consent banner 
 ## production readiness
 plan-78 | pending | high | medium | none | Use real BankID certificates and keys
 plan-79 | pending | high | medium | none | Set market limits
+plan-86 | pending | high | large | none | Comprehensive GDPR compliance (erasure, access/DSAR, rectification, retention & audit)
+  Goal:
+  Adhere to official GDPR requirements: Right to Erasure (Art. 17), Right of Access & Portability (Art. 15/20), Rectification (Art. 16), Storage Limitation & Retention (Art. 5(1)(e)), Data Minimization & SSN Masking (Art. 5(1)(c)), Encryption & Security (Art. 32), and Audit Logs (Art. 30).
