@@ -95,9 +95,9 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 		DisplayName:          name,
 		Email:                email,
 		UserID:               uID,
-		BankIdVerified:       isUserBankIdVerified(name) || strings.Contains(name, "Anna") || strings.Contains(name, "Erik") || role == "admin",
-		BankIdPersonalNumber: "19920512-****",
-		BankIdVerifiedAt:     time.Now().UTC().Format(time.RFC3339),
+		BankIdVerified:       false,
+		BankIdPersonalNumber: "",
+		BankIdVerifiedAt:     "",
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   uID,
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
@@ -145,10 +145,32 @@ func validateToken(tokenString string) (*Claims, error) {
 	var token *jwt.Token
 	var err error
 
+	// Inspect algorithm to avoid unnecessary or polluting JWKS lookups on HMAC tokens
+	parser := jwt.NewParser()
+	unverifiedToken, _, _ := parser.ParseUnverified(tokenString, &Claims{})
+	if unverifiedToken != nil {
+		if _, ok := unverifiedToken.Method.(*jwt.SigningMethodHMAC); ok {
+			token, err = jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (interface{}, error) {
+				if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+					return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+				}
+				return jwtSecret, nil
+			})
+			if err != nil {
+				return nil, err
+			}
+			if !token.Valid {
+				return nil, fmt.Errorf("token is invalid")
+			}
+			return claims, nil
+		}
+	}
+
 	if jwks != nil {
 		token, err = jwt.ParseWithClaims(tokenString, claims, jwks.Keyfunc)
 		if err != nil {
-			// Fallback to local / BankID HMAC validation
+			// Fallback to local / BankID HMAC validation with a clean claims instance
+			claims = &Claims{}
 			token, err = jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (interface{}, error) {
 				if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 					return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])

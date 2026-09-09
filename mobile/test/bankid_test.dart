@@ -180,5 +180,67 @@ void main() {
       expect(find.textContaining('19850512'), findsNothing);
       expect(find.textContaining('****'), findsNothing);
     });
+
+    testWidgets('ProfileScreen does NOT render BankID badge for standard email/password login', (WidgetTester tester) async {
+      final claims = {
+        'nickname': 'user',
+        'name': 'Anna Recycler',
+        'bankIdVerified': false,
+        'exp': DateTime.now().add(const Duration(hours: 1)).millisecondsSinceEpoch ~/ 1000,
+      };
+      final headerBase64 = base64Url.encode(utf8.encode(json.encode({'alg': 'HS256'})));
+      final payloadBase64 = base64Url.encode(utf8.encode(json.encode(claims)));
+      final signatureBase64 = base64Url.encode(utf8.encode('signature'));
+      final token = '$headerBase64.$payloadBase64.$signatureBase64';
+
+      SharedPreferences.setMockInitialValues({'panta_custom_jwt': token});
+
+      final authService = AuthService();
+      await authService.setCustomToken(token);
+      final provider = PantaProvider(authService: authService);
+      await provider.restoreSession();
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider.value(
+          value: provider,
+          child: const MaterialApp(
+            localizationsDelegates: [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(body: ProfileScreen(isHelper: false)),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Verified badge must NOT appear for email/password login
+      expect(
+        find.byWidgetPredicate(
+          (w) => w is Text && (w.data == 'Verifierad med BankID' || w.data == 'Verified with BankID'),
+        ),
+        findsNothing,
+      );
+      // Instead, BankID verification prompt card should be shown
+      expect(find.textContaining('BankID'), findsWidgets);
+    });
+
+    test('Requests created without BankID do NOT have verification flags', () {
+      final unverifiedReq = RecyclingRequest(
+        id: 'standard-req-1',
+        title: 'Standard user pickup',
+        scheduledFrom: DateTime.now(),
+        scheduledTo: DateTime.now().add(const Duration(hours: 1)),
+        location: 'Stockholm',
+        creatorBankIdVerified: false,
+        helperBankIdVerified: false,
+      );
+
+      expect(unverifiedReq.creatorBankIdVerified, isFalse);
+      expect(unverifiedReq.helperBankIdVerified, isFalse);
+    });
   });
 }

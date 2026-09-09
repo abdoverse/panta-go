@@ -33,14 +33,14 @@ void main() {
 
       // Verify header and quota banner
       expect(find.text('Panta Operations & Market Oversight'), findsOneWidget);
-      expect(find.textContaining('Personal Caps: 10 Recycler / 15 Helper'), findsWidgets);
+      expect(find.textContaining('Personal Caps: 20 Recycler / 30 Helper'), findsWidgets);
       expect(find.text('Anti-Spam & Anti-Hoarding Protection Active'), findsOneWidget);
 
       // Verify KPI Cards
       expect(find.text('Recycler Limit'), findsOneWidget);
       expect(find.text('Helper Limit'), findsOneWidget);
-      expect(find.textContaining('10 / user'), findsOneWidget);
-      expect(find.textContaining('15 / helper'), findsOneWidget);
+      expect(find.textContaining('20 / user'), findsOneWidget);
+      expect(find.textContaining('30 / helper'), findsOneWidget);
       expect(find.text('Active Pickups'), findsOneWidget);
 
       // Verify Sweden Map Section

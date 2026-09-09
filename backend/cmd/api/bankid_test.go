@@ -181,9 +181,18 @@ func TestHandleVerifyBankId(t *testing.T) {
 		t.Errorf("expected masked SSN, got %v", res["bankIdPersonalNumber"])
 	}
 
-	// Test Status endpoint
+	// Test Status endpoint with the newly returned BankID-verified session token
+	tokenStr, ok := res["token"].(string)
+	if !ok || tokenStr == "" {
+		t.Fatalf("expected refreshed token in response")
+	}
+	refreshedClaims, err := validateToken(tokenStr)
+	if err != nil {
+		t.Fatalf("failed to validate refreshed token: %v", err)
+	}
+
 	statusReq := httptest.NewRequest(http.MethodGet, "/api/v1/users/verification-status", nil)
-	statusReq = statusReq.WithContext(ctx)
+	statusReq = statusReq.WithContext(context.WithValue(req.Context(), userContextKey, refreshedClaims))
 	statusW := httptest.NewRecorder()
 
 	handleGetVerificationStatus(statusW, statusReq)

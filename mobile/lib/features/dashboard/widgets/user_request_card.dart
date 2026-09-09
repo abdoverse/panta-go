@@ -122,7 +122,7 @@ class UserRequestCard extends StatelessWidget {
                               ),
                             ),
                           ),
-                          if (request.helperBankIdVerified) ...[
+                          if (request.creatorBankIdVerified) ...[
                             const SizedBox(width: 6),
                             Container(
                               padding: const EdgeInsets.symmetric(
@@ -147,6 +147,41 @@ class UserRequestCard extends StatelessWidget {
                                   SizedBox(width: 4),
                                   Text(
                                     'BankID',
+                                    style: TextStyle(
+                                      color: AppTheme.primaryGreen,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                          if (request.helperBankIdVerified) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE8F5E9),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: AppTheme.primaryGreen.withValues(alpha: 0.4),
+                                ),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.verified_rounded,
+                                    size: 12,
+                                    color: AppTheme.primaryGreen,
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Helper BankID',
                                     style: TextStyle(
                                       color: AppTheme.primaryGreen,
                                       fontSize: 10,

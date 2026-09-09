@@ -86,6 +86,37 @@ func TestHandleLogin(t *testing.T) {
 			t.Fatal("handleLogin() returned an empty token")
 		}
 	})
+
+	t.Run("standard email/password login is not BankID verified", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/login", strings.NewReader(`{"role":"user","username":"Anna Recycler"}`))
+		recorder := httptest.NewRecorder()
+
+		handleLogin(recorder, req)
+
+		if recorder.Code != http.StatusOK {
+			t.Fatalf("handleLogin() status = %d, want %d", recorder.Code, http.StatusOK)
+		}
+
+		var response LoginResponse
+		if err := json.NewDecoder(recorder.Body).Decode(&response); err != nil {
+			t.Fatalf("decode login response: %v", err)
+		}
+
+		claims, err := validateToken(response.Token)
+		if err != nil {
+			t.Fatalf("validateToken failed: %v", err)
+		}
+
+		if claims.BankIdVerified {
+			t.Errorf("expected standard login BankIdVerified to be false, got true")
+		}
+		if claims.BankIdPersonalNumber != "" {
+			t.Errorf("expected empty personal number for standard login, got %q", claims.BankIdPersonalNumber)
+		}
+		if claims.BankIdVerifiedAt != "" {
+			t.Errorf("expected empty verifiedAt for standard login, got %q", claims.BankIdVerifiedAt)
+		}
+	})
 }
 
 func TestResolveJWTSecret(t *testing.T) {

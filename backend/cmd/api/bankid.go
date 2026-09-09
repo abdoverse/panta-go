@@ -800,11 +800,11 @@ func handleGetVerificationStatus(w http.ResponseWriter, r *http.Request) {
 
 	ownerID := claims.requestOwnerID()
 	verifiedUser, exists := getVerifiedUser(ownerID)
-	isVerified := claims.BankIdVerified || exists
+	isVerified := claims.BankIdVerified
 	personalNumber := claims.BankIdPersonalNumber
 	verifiedAt := claims.BankIdVerifiedAt
 
-	if exists {
+	if isVerified && exists {
 		personalNumber = verifiedUser.PersonalNumber
 		verifiedAt = verifiedUser.VerifiedAt.Format(time.RFC3339)
 	}

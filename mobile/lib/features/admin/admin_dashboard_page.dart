@@ -168,7 +168,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         timestamp: now.subtract(const Duration(minutes: 5)).toIso8601String(),
         level: 'INFO',
         category: 'MARKET_LIMIT',
-        message: 'Personal quota enforced: 10 max requests per Recycler, 15 active jobs per Helper',
+        message: 'Personal quota enforced: 20 max requests per Recycler, 30 active jobs per Helper',
         city: 'Sweden (National)',
       ),
       AdminLogModel(
@@ -176,7 +176,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         timestamp: now.subtract(const Duration(minutes: 15)).toIso8601String(),
         level: 'METRIC',
         category: 'ANTI_SPAM',
-        message: 'National spam check: All accounts within 10/15 limit. Violations: 0',
+        message: 'National spam check: All accounts within 20/30 limit. Violations: 0',
         city: 'Stockholm',
       ),
       AdminLogModel(
@@ -273,7 +273,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             Text(
-              'Personal Caps: 10 Recycler / 15 Helper',
+              'Personal Caps: 20 Recycler / 30 Helper',
               style: TextStyle(fontSize: 12, color: Colors.white70),
             ),
           ],

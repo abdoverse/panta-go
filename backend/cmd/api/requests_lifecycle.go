@@ -62,7 +62,7 @@ func handleAcceptRequest(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	helperVerified := claims.BankIdVerified || isUserBankIdVerified(claims.helperID())
+	helperVerified := claims.BankIdVerified
 	out, err := svc.UpdateItem(context.TODO(), &dynamodb.UpdateItemInput{
 		TableName: aws.String(tableName),
 		Key: map[string]types.AttributeValue{

@@ -336,7 +336,7 @@ func handleCreateRequest(w http.ResponseWriter, r *http.Request) {
 		req.SplitPercentage = 70.0
 	}
 	req.Status = "pending"
-	req.CreatorBankIdVerified = claims.BankIdVerified || isUserBankIdVerified(claims.requestOwnerID())
+	req.CreatorBankIdVerified = claims.BankIdVerified
 
 	item, err := attributevalue.MarshalMap(req)
 	if err != nil {
@@ -375,12 +375,18 @@ func handleDemoSeed(w http.ResponseWriter, r *http.Request) {
 	helperID := userUUID("erik.helper@example.com")
 	helperName := "Erik Helper"
 
+	callerIsBankIdVerified := false
+	isUser := false
+	isHelper := false
 	if tokenString, err := bearerTokenFromRequest(r); err == nil && tokenString != "" {
 		if claims, err := validateToken(tokenString); err == nil && claims != nil {
+			callerIsBankIdVerified = claims.BankIdVerified
 			if claims.isHelper() {
+				isHelper = true
 				helperID = claims.helperID()
 				helperName = claims.notificationName()
 			} else {
+				isUser = true
 				creatorID = claims.requestOwnerID()
 				creatorName = claims.notificationName()
 			}
@@ -414,9 +420,29 @@ func handleDemoSeed(w http.ResponseWriter, r *http.Request) {
 			Market:                "SE",
 			SplitPercentage:       70.0,
 			Status:                "pending",
-			CreatorBankIdVerified: true,
+			CreatorBankIdVerified: isUser && callerIsBankIdVerified,
 			ScheduledFrom:         now,
 			ScheduledTo:           now.Add(2 * time.Hour),
+			ImageUrl:              "assets/images/generic.png",
+		},
+		{
+			ID:                    "demo-bankid-1",
+			CreatorID:             userUUID("johan.bankid@example.com"),
+			CreatorName:           "Johan Bergström",
+			Title:                 "BankID Verified: Sorterade burkar & flaskor",
+			Location:              "Kungsgatan 14, Stockholm",
+			LocationLatitude:      &lat1,
+			LocationLongitude:     &lon1,
+			Description:           "2 stora pantkassar färdigsorterade vid entrén. Verifierad med BankID.",
+			Reward:                55.0,
+			Currency:              "SEK",
+			CurrencySymbol:        "kr",
+			Market:                "SE",
+			SplitPercentage:       70.0,
+			Status:                "pending",
+			CreatorBankIdVerified: true,
+			ScheduledFrom:         now,
+			ScheduledTo:           now.Add(3 * time.Hour),
 			ImageUrl:              "assets/images/generic.png",
 		},
 		{
@@ -440,8 +466,8 @@ func handleDemoSeed(w http.ResponseWriter, r *http.Request) {
 			Milestone:             "on_the_way",
 			LeaveAtDoor:           true,
 			DoorInstructions:      "Leave behind inner courtyard door code 4821",
-			CreatorBankIdVerified: true,
-			HelperBankIdVerified:  true,
+			CreatorBankIdVerified: isUser && callerIsBankIdVerified,
+			HelperBankIdVerified:  isHelper && callerIsBankIdVerified,
 			ScheduledFrom:         now,
 			ScheduledTo:           now.Add(1 * time.Hour),
 			ImageUrl:              "assets/images/generic.png",
@@ -492,8 +518,8 @@ func handleDemoSeed(w http.ResponseWriter, r *http.Request) {
 			DropoffPhotoUrl:       "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=400&q=80",
 			ReceiptScannedAt:      &yesterday,
 			DropoffConfirmedAt:    &yesterday,
-			CreatorBankIdVerified: true,
-			HelperBankIdVerified:  true,
+			CreatorBankIdVerified: isUser && callerIsBankIdVerified,
+			HelperBankIdVerified:  isHelper && callerIsBankIdVerified,
 			ScheduledFrom:         yesterday.Add(-2 * time.Hour),
 			ScheduledTo:           yesterday.Add(-1 * time.Hour),
 			ImageUrl:              "assets/images/generic.png",

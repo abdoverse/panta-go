@@ -73,6 +73,9 @@ class AuthService {
   Future<void> setMockSessionForTesting({
     required String role,
     required String username,
+    bool bankIdVerified = false,
+    String? bankIdPersonalNumber,
+    String? bankIdVerifiedAt,
   }) async {
     final mockId = 'mock-${role.toLowerCase()}-${username.toLowerCase().replaceAll(' ', '-')}';
     _customJwtPayload = {
@@ -82,9 +85,9 @@ class AuthService {
       'cognito:username': username,
       'userId': mockId,
       'sub': mockId,
-      'bankIdVerified': true,
-      'bankIdPersonalNumber': '19900101-****',
-      'bankIdVerifiedAt': DateTime.now().toIso8601String(),
+      'bankIdVerified': bankIdVerified,
+      'bankIdPersonalNumber': bankIdPersonalNumber,
+      'bankIdVerifiedAt': bankIdVerifiedAt,
     };
     _customJwtToken = 'mock.jwt.token';
   }
@@ -136,6 +139,12 @@ class AuthService {
     try {
       _session = await cognitoUser.authenticateUser(authDetails);
       _currentUser = cognitoUser;
+      _customJwtToken = null;
+      _customJwtPayload = null;
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove(_customJwtStorageKey);
+      } catch (_) {}
       return null;
     } on CognitoClientException catch (e) {
       return _friendlyAuthError(e.message);
