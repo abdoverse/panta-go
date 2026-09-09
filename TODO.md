@@ -9,6 +9,7 @@
 7. [x] do a cool animation when the helper completes a job. It can be a confetti animation or something similar to celebrate the completion of the task and enhance user satisfaction.
 8. [ ] Fix Emoji Rendering on Flutter Web: Emojis sent in the chatbox currently render as black-and-white symbols or black boxes after being sent. Investigate Flutter Web CanvasKit font fallback issues with the custom 'Inter' Google Font, or find a reliable multi-platform emoji rendering package.
 9. [ ] Enable location access to fully work on phone and laptop
+10. [ ] Add under profile, "About Panta" to contain the actual released version of the app
 
 ## Production Readiness
 - [ ] Use real BankID certificates and keys
