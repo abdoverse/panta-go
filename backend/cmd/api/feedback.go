@@ -51,17 +51,23 @@ func handleAdminFeedback(w http.ResponseWriter, r *http.Request) {
 			Limit:     aws.Int32(200),
 		})
 		if err != nil {
-			http.Error(w, "Failed to load feedback", http.StatusInternalServerError)
-			return
-		}
-		var stored []feedbackSubmission
-		if err := attributevalue.UnmarshalListOfMaps(out.Items, &stored); err != nil {
-			http.Error(w, "Failed to decode feedback", http.StatusInternalServerError)
-			return
-		}
-		for _, item := range stored {
-			if item.Type == "feedback" {
-				items = append(items, item)
+			if os.Getenv("APP_ENV") != "development" {
+				http.Error(w, "Failed to load feedback", http.StatusInternalServerError)
+				return
+			}
+			localFeedbackStore.Lock()
+			items = append(items, localFeedbackStore.items...)
+			localFeedbackStore.Unlock()
+		} else {
+			var stored []feedbackSubmission
+			if err := attributevalue.UnmarshalListOfMaps(out.Items, &stored); err != nil {
+				http.Error(w, "Failed to decode feedback", http.StatusInternalServerError)
+				return
+			}
+			for _, item := range stored {
+				if item.Type == "feedback" {
+					items = append(items, item)
+				}
 			}
 		}
 	} else if os.Getenv("APP_ENV") == "development" {
