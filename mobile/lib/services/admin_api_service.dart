@@ -3,6 +3,35 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'api_config.dart';
 
+class AdminFeedbackModel {
+  final String id;
+  final String userId;
+  final String category;
+  final String message;
+  final bool contactRequested;
+  final String createdAt;
+
+  const AdminFeedbackModel({
+    required this.id,
+    required this.userId,
+    required this.category,
+    required this.message,
+    required this.contactRequested,
+    required this.createdAt,
+  });
+
+  factory AdminFeedbackModel.fromJson(Map<String, dynamic> json) {
+    return AdminFeedbackModel(
+      id: json['id']?.toString() ?? '',
+      userId: json['userId']?.toString() ?? '',
+      category: json['category']?.toString() ?? 'General',
+      message: json['message']?.toString() ?? '',
+      contactRequested: json['contactRequested'] == true,
+      createdAt: json['createdAt']?.toString() ?? '',
+    );
+  }
+}
+
 class AdminMarketSummary {
   final int totalRequests;
   final int activeRequests;
@@ -43,11 +72,13 @@ class AdminMarketSummary {
       completedRequests: (json['completedRequests'] as num?)?.toInt() ?? 0,
       cancelledRequests: (json['cancelledRequests'] as num?)?.toInt() ?? 0,
       totalPantAmount: (json['totalPantAmount'] as num?)?.toDouble() ?? 0.0,
-      totalRecyclerPayout: (json['totalRecyclerPayout'] as num?)?.toDouble() ?? 0.0,
+      totalRecyclerPayout:
+          (json['totalRecyclerPayout'] as num?)?.toDouble() ?? 0.0,
       totalHelperPayout: (json['totalHelperPayout'] as num?)?.toDouble() ?? 0.0,
       recyclerLimit: (json['recyclerLimit'] as num?)?.toInt() ?? 20,
       helperLimit: (json['helperLimit'] as num?)?.toInt() ?? 30,
-      activeRecyclersCount: (json['activeRecyclersCount'] as num?)?.toInt() ?? 0,
+      activeRecyclersCount:
+          (json['activeRecyclersCount'] as num?)?.toInt() ?? 0,
       activeHelpersCount: (json['activeHelpersCount'] as num?)?.toInt() ?? 0,
     );
   }
@@ -151,6 +182,30 @@ class AdminApiService {
   final http.Client _client;
 
   AdminApiService({http.Client? client}) : _client = client ?? http.Client();
+
+  Future<List<AdminFeedbackModel>> fetchFeedback(
+      {required String token}) async {
+    try {
+      final response = await _client.get(
+        ApiConfig.apiUri('/api/v1/admin/feedback'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final data = json.decode(response.body) as Map<String, dynamic>;
+        return (data['feedback'] as List<dynamic>? ?? [])
+            .whereType<Map<String, dynamic>>()
+            .map(AdminFeedbackModel.fromJson)
+            .toList();
+      }
+      debugPrint('Admin feedback failed: ${response.statusCode}');
+    } catch (e) {
+      debugPrint('Admin feedback error: $e');
+    }
+    return [];
+  }
 
   Future<AdminOverviewData?> fetchOverview({required String token}) async {
     try {

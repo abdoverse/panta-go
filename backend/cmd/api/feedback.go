@@ -31,6 +31,48 @@ var localFeedbackStore = struct {
 
 func registerFeedbackRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/v1/feedback", authMiddleware(handleFeedback))
+	mux.HandleFunc("/api/v1/admin/feedback", authMiddleware(handleAdminFeedback))
+}
+
+func handleAdminFeedback(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	claims, ok := currentClaims(r)
+	if !ok || claims == nil || !claims.isAdmin() {
+		http.Error(w, "Forbidden: admin access required", http.StatusForbidden)
+		return
+	}
+	items := make([]feedbackSubmission, 0)
+	if svc != nil && tableName != "" {
+		out, err := svc.Scan(r.Context(), &dynamodb.ScanInput{
+			TableName: aws.String(tableName),
+			Limit:     aws.Int32(200),
+		})
+		if err != nil {
+			http.Error(w, "Failed to load feedback", http.StatusInternalServerError)
+			return
+		}
+		var stored []feedbackSubmission
+		if err := attributevalue.UnmarshalListOfMaps(out.Items, &stored); err != nil {
+			http.Error(w, "Failed to decode feedback", http.StatusInternalServerError)
+			return
+		}
+		for _, item := range stored {
+			if item.Type == "feedback" {
+				items = append(items, item)
+			}
+		}
+	} else if os.Getenv("APP_ENV") == "development" {
+		localFeedbackStore.Lock()
+		items = append(items, localFeedbackStore.items...)
+		localFeedbackStore.Unlock()
+	}
+	for left, right := 0, len(items)-1; left < right; left, right = left+1, right-1 {
+		items[left], items[right] = items[right], items[left]
+	}
+	jsonResponse(w, http.StatusOK, map[string]interface{}{"feedback": items})
 }
 
 func handleFeedback(w http.ResponseWriter, r *http.Request) {

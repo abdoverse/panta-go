@@ -23,11 +23,12 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   );
   List<CityTrendModel> _cities = [];
   List<AdminLogModel> _logs = [];
+  List<AdminFeedbackModel> _feedback = [];
   CityTrendModel? _selectedCity;
 
   bool _isLoading = true;
   bool _isSimulating = false;
-  
+
   @override
   void initState() {
     super.initState();
@@ -37,12 +38,13 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   Future<void> _loadAdminData() async {
     setState(() {
       _isLoading = true;
-          });
+    });
 
     try {
       final token = await _authService.getToken() ?? '';
       final overview = await _adminApiService.fetchOverview(token: token);
       final logs = await _adminApiService.fetchLogs(token: token);
+      final feedback = await _adminApiService.fetchFeedback(token: token);
 
       if (overview != null) {
         setState(() {
@@ -55,6 +57,12 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       } else {
         // Fallback demo data if backend is offline or in mock mode
         _loadFallbackData();
+      }
+
+      if (feedback.isNotEmpty) {
+        setState(() {
+          _feedback = feedback;
+        });
       }
 
       if (logs.isNotEmpty) {
@@ -168,7 +176,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         timestamp: now.subtract(const Duration(minutes: 5)).toIso8601String(),
         level: 'INFO',
         category: 'MARKET_LIMIT',
-        message: 'Personal quota enforced: 20 max requests per Recycler, 30 active jobs per Helper',
+        message:
+            'Personal quota enforced: 20 max requests per Recycler, 30 active jobs per Helper',
         city: 'Sweden (National)',
       ),
       AdminLogModel(
@@ -176,7 +185,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         timestamp: now.subtract(const Duration(minutes: 15)).toIso8601String(),
         level: 'METRIC',
         category: 'ANTI_SPAM',
-        message: 'National spam check: All accounts within 20/30 limit. Violations: 0',
+        message:
+            'National spam check: All accounts within 20/30 limit. Violations: 0',
         city: 'Stockholm',
       ),
       AdminLogModel(
@@ -184,7 +194,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         timestamp: now.subtract(const Duration(minutes: 30)).toIso8601String(),
         level: 'SUCCESS',
         category: 'PAYOUT',
-        message: 'Disbursed 70/30 pant revenue: 175.00 SEK to Anna Recycler, 75.00 SEK to Erik Helper',
+        message:
+            'Disbursed 70/30 pant revenue: 175.00 SEK to Anna Recycler, 75.00 SEK to Erik Helper',
         city: 'Stockholm',
       ),
     ];
@@ -207,7 +218,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Simulated Event Logged [${newLog.category}]: ${newLog.message}'),
+              content: Text(
+                  'Simulated Event Logged [${newLog.category}]: ${newLog.message}'),
               backgroundColor: AppTheme.primaryGreen,
               duration: const Duration(seconds: 4),
             ),
@@ -229,7 +241,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           timestamp: DateTime.now().toUtc().toIso8601String(),
           level: 'INFO',
           category: 'DISPATCH',
-          message: 'Simulated pickup accepted in Stockholm Vasastan (ETA: 12 min)',
+          message:
+              'Simulated pickup accepted in Stockholm Vasastan (ETA: 12 min)',
           city: 'Stockholm',
         );
         setState(() {
@@ -319,6 +332,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                     _buildCityBreakdownSection(),
                     const SizedBox(height: 20),
                     _buildLogsSection(),
+                    const SizedBox(height: 20),
+                    _buildFeedbackSection(),
                     const SizedBox(height: 80),
                   ],
                 ),
@@ -339,7 +354,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             : const Icon(Icons.bolt, color: Colors.white),
         label: Text(
           _isSimulating ? 'Simulating...' : 'Simulate Market Event',
-          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+          style:
+              const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
       ),
     );
@@ -355,7 +371,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.shield_outlined, color: AppTheme.primaryGreen, size: 28),
+          const Icon(Icons.shield_outlined,
+              color: AppTheme.primaryGreen, size: 28),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -371,7 +388,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 ),
                 Text(
                   'Personal recycler market cap: ${_summary.recyclerLimit} active requests | Personal helper cap: ${_summary.helperLimit} active jobs.',
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF2E7D32)),
+                  style:
+                      const TextStyle(fontSize: 12, color: Color(0xFF2E7D32)),
                 ),
               ],
             ),
@@ -412,7 +430,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             _buildKpiCard(
               title: 'Active Pickups',
               value: '${_summary.activeRequests}',
-              subtitle: '${_summary.pendingRequests} pend / ${_summary.inProgressRequests} in transit',
+              subtitle:
+                  '${_summary.pendingRequests} pend / ${_summary.inProgressRequests} in transit',
               icon: Icons.local_shipping,
               color: Colors.blue.shade700,
             ),
@@ -527,7 +546,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                       Expanded(
                         child: Text(
                           'Sweden Country & City Map Visualization',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                              fontSize: 15, fontWeight: FontWeight.bold),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -567,7 +587,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                       ),
                       // City nodes on map
                       for (final city in _cities)
-                        _buildCityMapNode(city, constraints.maxWidth, constraints.maxHeight),
+                        _buildCityMapNode(
+                            city, constraints.maxWidth, constraints.maxHeight),
                     ],
                   );
                 },
@@ -587,7 +608,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
   Widget _buildCityMapNode(CityTrendModel city, double width, double height) {
     // Relative coordinates mapping Sweden Lat (55.5 - 60.5) and Lng (11.5 - 18.5)
-    final double relativeY = 1.0 - ((city.latitude - 55.4) / 4.8).clamp(0.05, 0.95);
+    final double relativeY =
+        1.0 - ((city.latitude - 55.4) / 4.8).clamp(0.05, 0.95);
     final double relativeX = ((city.longitude - 11.5) / 7.2).clamp(0.1, 0.9);
 
     final isSelected = _selectedCity?.cityName == city.cityName;
@@ -605,63 +627,66 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             _selectedCity = city;
           });
         },
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 250),
-                  width: isSelected ? 34 : 26,
-                  height: isSelected ? 34 : 26,
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.85),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isSelected ? Colors.white : color,
-                      width: isSelected ? 3 : 1.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: color.withValues(alpha: 0.4),
-                        blurRadius: isSelected ? 10 : 4,
-                        spreadRadius: isSelected ? 3 : 1,
-                      ),
-                    ],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              width: isSelected ? 34 : 26,
+              height: isSelected ? 34 : 26,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.85),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected ? Colors.white : color,
+                  width: isSelected ? 3 : 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.4),
+                    blurRadius: isSelected ? 10 : 4,
+                    spreadRadius: isSelected ? 3 : 1,
                   ),
-                  child: Center(
-                    child: Text(
-                      '${city.activeRequests}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                ],
+              ),
+              child: Center(
+                child: Text(
+                  '${city.activeRequests}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 2),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                  decoration: BoxDecoration(
-                    color: isSelected ? AppTheme.primaryGreen : Colors.white.withValues(alpha: 0.9),
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(
-                      color: isSelected ? AppTheme.primaryGreen : Colors.grey.shade400,
-                      width: 0.8,
-                    ),
-                  ),
-                  child: Text(
-                    city.cityName,
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                      color: isSelected ? Colors.white : Colors.black87,
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-        );
+            const SizedBox(height: 2),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AppTheme.primaryGreen
+                    : Colors.white.withValues(alpha: 0.9),
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(
+                  color:
+                      isSelected ? AppTheme.primaryGreen : Colors.grey.shade400,
+                  width: 0.8,
+                ),
+              ),
+              child: Text(
+                city.cityName,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                  color: isSelected ? Colors.white : Colors.black87,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildMapLegend() {
@@ -711,7 +736,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             children: [
               Text(
                 'Selected Node: ${city.cityName} (${city.countryCode})',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
               _buildStatusBadge(city.status),
             ],
@@ -720,10 +746,14 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildMetricPill('Active Requests', '${city.activeRequests}', Colors.blue.shade700),
-              _buildMetricPill('Pending', '${city.pendingRequests}', Colors.orange.shade700),
-              _buildMetricPill('Active Helpers', '${city.activeHelpers}', AppTheme.primaryGreen),
-              _buildMetricPill('Avg ETA', '${city.avgEtaMinutes} min', Colors.purple.shade700),
+              _buildMetricPill('Active Requests', '${city.activeRequests}',
+                  Colors.blue.shade700),
+              _buildMetricPill(
+                  'Pending', '${city.pendingRequests}', Colors.orange.shade700),
+              _buildMetricPill('Active Helpers', '${city.activeHelpers}',
+                  AppTheme.primaryGreen),
+              _buildMetricPill('Avg ETA', '${city.avgEtaMinutes} min',
+                  Colors.purple.shade700),
             ],
           ),
           if (city.districts.isNotEmpty) ...[
@@ -757,7 +787,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       children: [
         Text(
           value,
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: color),
+          style: TextStyle(
+              fontWeight: FontWeight.bold, fontSize: 16, color: color),
         ),
         Text(
           label,
@@ -791,7 +822,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: CircleAvatar(
-                  backgroundColor: _getStatusColor(city.status).withValues(alpha: 0.15),
+                  backgroundColor:
+                      _getStatusColor(city.status).withValues(alpha: 0.15),
                   child: Icon(
                     Icons.location_pin,
                     color: _getStatusColor(city.status),
@@ -799,7 +831,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 ),
                 title: Text(
                   city.cityName,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 14),
                 ),
                 subtitle: Text(
                   'Active: ${city.activeRequests} | Pending: ${city.pendingRequests} | Helpers: ${city.activeHelpers} | ETA: ~${city.avgEtaMinutes}m',
@@ -817,6 +850,67 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildFeedbackSection() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Row(children: [
+                  Icon(Icons.feedback_outlined, color: AppTheme.primaryGreen),
+                  SizedBox(width: 8),
+                  Text('User Feedback',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                ]),
+                Text('${_feedback.length} submissions',
+                    style: TextStyle(fontSize: 12, color: Colors.grey)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text('Feedback submitted by users in your market.',
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+            const SizedBox(height: 12),
+            if (_feedback.isEmpty)
+              const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Center(child: Text('No feedback received yet.')))
+            else
+              ..._feedback.take(20).map(_buildFeedbackItem),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFeedbackItem(AdminFeedbackModel feedback) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+          color: Colors.grey.shade50, borderRadius: BorderRadius.circular(10)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Chip(label: Text(feedback.category)),
+          const Spacer(),
+          if (feedback.contactRequested)
+            const Icon(Icons.contact_mail_outlined,
+                size: 18, color: AppTheme.primaryGreen),
+        ]),
+        Text(feedback.message),
+        const SizedBox(height: 6),
+        Text('${feedback.createdAt} • ${feedback.userId}',
+            style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+      ]),
     );
   }
 
@@ -838,7 +932,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                     SizedBox(width: 8),
                     Text(
                       'Live System & Audit Logs',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -916,7 +1011,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               children: [
                 Text(
                   log.message,
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                  style: const TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.w500),
                 ),
                 const SizedBox(height: 2),
                 Text(
