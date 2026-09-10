@@ -448,6 +448,16 @@ class AuthService {
     return role == 'admin';
   }
 
+  Future<void> clearLocalSession() async {
+    _customJwtToken = null;
+    _customJwtPayload = null;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_customJwtStorageKey);
+    } catch (_) {}
+    await _clearLocalSession();
+  }
+
   // Logout
   Future<void> logout() async {
     _customJwtToken = null;

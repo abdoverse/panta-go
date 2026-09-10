@@ -671,6 +671,9 @@ class PantaProvider extends ChangeNotifier {
       final list = await _requestApiService.fetchRequests(token: token);
       _syncIncomingMessagesFromList(list);
       _requestState.replaceAll(list);
+    } on UnauthorizedException {
+      await _authService.clearLocalSession();
+      _clearAuthenticatedState(notify: false);
     } finally {
       if (!silent) {
         _setLoading(false);

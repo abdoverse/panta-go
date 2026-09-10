@@ -8,6 +8,10 @@ import '../models/chat_message.dart';
 import '../models/request_model.dart';
 import 'api_config.dart';
 
+class UnauthorizedException implements Exception {
+  const UnauthorizedException();
+}
+
 class RequestApiService {
   final http.Client _client;
 
@@ -29,8 +33,14 @@ class RequestApiService {
             .map(parseRecyclingRequest)
             .toList();
       }
+      if (response.statusCode == 401) {
+        throw const UnauthorizedException();
+      }
       debugPrint('Failed to load requests: ${response.statusCode}');
     } catch (e) {
+      if (e is UnauthorizedException) {
+        rethrow;
+      }
       debugPrint('Error fetching requests: $e');
     }
     return [];
