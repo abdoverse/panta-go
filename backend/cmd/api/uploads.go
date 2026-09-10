@@ -11,8 +11,10 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	pathpkg "path"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -26,6 +28,16 @@ const (
 	requestImageUploadLimitBytes = 8 << 20
 	requestImageURLTTL           = 24 * time.Hour
 )
+
+var localImageStore = struct {
+	sync.RWMutex
+	items map[string]localImage
+}{items: make(map[string]localImage)}
+
+type localImage struct {
+	bytes       []byte
+	contentType string
+}
 
 var allowedImageContentTypes = map[string]string{
 	"image/jpeg": "jpg",
@@ -278,6 +290,18 @@ func finalizeUploadedRequestImage(ctx context.Context, ownerID string, requestID
 
 	finalKey := finalRequestImageKey(requestID, extension)
 	copySource := fmt.Sprintf("%s/%s", imageBucketName, uploadKey)
+	if os.Getenv("APP_ENV") == "development" {
+		localImageStore.Lock()
+		image, ok := localImageStore.items[uploadKey]
+		if ok {
+			localImageStore.items[finalKey] = image
+			delete(localImageStore.items, uploadKey)
+		}
+		localImageStore.Unlock()
+		if ok {
+			return finalKey, nil
+		}
+	}
 	if _, err := s3Client.CopyObject(ctx, &s3.CopyObjectInput{
 		Bucket:            aws.String(imageBucketName),
 		CopySource:        aws.String(copySource),
@@ -427,9 +451,14 @@ func handleRequestImageUpload(w http.ResponseWriter, r *http.Request) {
 			"source":      "multipart-upload",
 		},
 	); err != nil {
-		log.Printf("Failed to upload request image: %v", err)
-		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "Failed to upload request image"})
-		return
+		if os.Getenv("APP_ENV") != "development" {
+			log.Printf("Failed to upload request image: %v", err)
+			jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "Failed to upload request image"})
+			return
+		}
+		localImageStore.Lock()
+		localImageStore.items[uploadKey] = localImage{bytes: append([]byte(nil), fileBytes...), contentType: contentType}
+		localImageStore.Unlock()
 	}
 
 	jsonResponse(w, http.StatusCreated, map[string]string{"uploadKey": uploadKey})
@@ -483,6 +512,20 @@ func handleServeImage(w http.ResponseWriter, r *http.Request) {
 
 	if key == "" || strings.Contains(key, "..") {
 		http.Error(w, "Invalid image key", http.StatusBadRequest)
+		return
+	}
+
+	localImageStore.RLock()
+	local, found := localImageStore.items[key]
+	localImageStore.RUnlock()
+	if found && os.Getenv("APP_ENV") == "development" {
+		w.Header().Set("Content-Type", local.contentType)
+		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(local.bytes)))
+		if r.Method == http.MethodHead {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		_, _ = w.Write(local.bytes)
 		return
 	}
 
