@@ -104,7 +104,8 @@ start_backend() {
     IMAGE_BUCKET_NAME=panta-request-images \
     AWS_REGION=eu-north-1 \
     COGNITO_USER_POOL_ID=eu-north-1_Rg7i36e8Q \
-    PORT="$BACKEND_PORT" \
+    PORT="" \
+    APP_ENV=development \
     nohup go run . > "$BACKEND_LOG" 2>&1 &
 
     local b_pid=$!

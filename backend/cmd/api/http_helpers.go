@@ -215,6 +215,7 @@ func registerRoutes(mux *http.ServeMux) {
 	registerBankIdRoutes(mux)
 	registerUploadRoutes(mux)
 	registerRequestRoutes(mux)
+	registerFeedbackRoutes(mux)
 	registerRealtimeRoutes(mux)
 	registerAdminRoutes(mux)
 }

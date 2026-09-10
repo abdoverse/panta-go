@@ -302,6 +302,13 @@ class ProfileScreen extends StatelessWidget {
                     title: l10n.impactStats,
                     subtitle: l10n.trackRecyclingContribution,
                   ),
+                  _ProfileItem(
+                    icon: Icons.feedback_outlined,
+                    title: "Feedback",
+                    subtitle: "Tell the Panta team what to improve",
+                    onTap: () => _showFeedbackDialog(context, provider),
+                  ),
+                  const Divider(height: 1),
                   const Divider(height: 1),
                   _ProfileItem(
                     icon: Icons.help_outline_rounded,
@@ -389,6 +396,69 @@ class ProfileScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _showFeedbackDialog(
+      BuildContext context, PantaProvider provider) async {
+    final messageController = TextEditingController();
+    var category = "General";
+    var contactRequested = false;
+    final submitted = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text("Send feedback"),
+          content: SingleChildScrollView(
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              DropdownButtonFormField<String>(
+                initialValue: category,
+                decoration: const InputDecoration(labelText: "Category"),
+                items: const ["General", "Bug", "Idea", "Account"]
+                    .map((item) =>
+                        DropdownMenuItem(value: item, child: Text(item)))
+                    .toList(),
+                onChanged: (value) =>
+                    setState(() => category = value ?? "General"),
+              ),
+              TextField(
+                  controller: messageController,
+                  maxLines: 5,
+                  maxLength: 4000,
+                  decoration:
+                      const InputDecoration(labelText: "Your feedback")),
+              CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: contactRequested,
+                  title: const Text("I’m open to being contacted"),
+                  onChanged: (value) =>
+                      setState(() => contactRequested = value ?? false)),
+            ]),
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text("Cancel")),
+            FilledButton(
+                onPressed: () async {
+                  final ok = messageController.text.trim().isNotEmpty &&
+                      await provider.submitFeedback(
+                          category: category,
+                          message: messageController.text.trim(),
+                          contactRequested: contactRequested);
+                  if (dialogContext.mounted) Navigator.pop(dialogContext, ok);
+                },
+                child: const Text("Send")),
+          ],
+        ),
+      ),
+    );
+    messageController.dispose();
+    if (context.mounted && submitted != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(submitted
+              ? "Thanks for your feedback!"
+              : "Could not send feedback.")));
+    }
   }
 
   Future<void> _showEditNameDialog(

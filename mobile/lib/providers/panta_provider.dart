@@ -446,6 +446,19 @@ class PantaProvider extends ChangeNotifier {
         role: 'admin', username: 'Admin Operator', seedIfEmpty: false);
   }
 
+  Future<bool> submitFeedback(
+      {required String category,
+      required String message,
+      required bool contactRequested}) async {
+    final token = await _authService.getToken();
+    if (token == null) return false;
+    return _requestApiService.submitFeedback(
+        token: token,
+        category: category,
+        message: message,
+        contactRequested: contactRequested);
+  }
+
   Future<bool> seedDemoData() async {
     _setLoading(true);
     notifyListeners();

@@ -191,6 +191,7 @@ class RequestApiService {
     }
     return null;
   }
+
   Future<bool> markMessagesAsRead({
     required String token,
     required String requestId,
@@ -210,7 +211,6 @@ class RequestApiService {
       return false;
     }
   }
-
 
   Future<RecyclingRequest?> cancelRequest({
     required String token,
@@ -539,7 +539,8 @@ class RequestApiService {
     if (imageUrl.contains('.console.aws.amazon.com/s3/') ||
         imageUrl.contains('console.aws.amazon.com')) {
       final uri = Uri.tryParse(imageUrl);
-      final prefix = uri?.queryParameters['prefix'] ?? uri?.queryParameters['key'];
+      final prefix =
+          uri?.queryParameters['prefix'] ?? uri?.queryParameters['key'];
       if (prefix != null && prefix.isNotEmpty) {
         return '/api/v1/images/$prefix';
       }
@@ -569,6 +570,31 @@ class RequestApiService {
           ? double.tryParse(json['reward'].toString()) ?? 0.0
           : 0.0,
     );
+  }
+
+  Future<bool> submitFeedback(
+      {required String token,
+      required String category,
+      required String message,
+      required bool contactRequested}) async {
+    try {
+      final response = await _client.post(
+        ApiConfig.apiUri("/api/v1/feedback"),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer "
+        },
+        body: json.encode({
+          "category": category,
+          "message": message,
+          "contactRequested": contactRequested
+        }),
+      );
+      return response.statusCode == 201;
+    } catch (e) {
+      debugPrint("Error submitting feedback: ");
+      return false;
+    }
   }
 
   Future<bool> seedDemoData({String? token}) async {
