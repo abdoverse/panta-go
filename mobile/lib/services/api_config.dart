@@ -19,7 +19,8 @@ class ApiConfig {
 
     final isLocalHost = uri.host == "localhost" ||
         uri.host == "127.0.0.1" ||
-        uri.host == "10.0.2.2";
+        uri.host == "10.0.2.2" ||
+        _isPrivateLanHost(uri.host);
     if (uri.scheme != "https" && !isLocalHost) {
       throw StateError(
         "Panta requires HTTPS for remote API traffic. "
@@ -27,6 +28,18 @@ class ApiConfig {
       );
     }
     return uri.replace(path: '', query: null, fragment: null);
+  }
+
+  static bool _isPrivateLanHost(String host) {
+    final octets = host.split('.').map(int.tryParse).toList();
+    if (octets.length != 4 || octets.any((octet) => octet == null)) {
+      return false;
+    }
+    final first = octets[0]!;
+    final second = octets[1]!;
+    return first == 10 ||
+        (first == 172 && second >= 16 && second <= 31) ||
+        (first == 192 && second == 168);
   }
 
   static Uri apiUri(String path, {Map<String, String>? queryParameters}) {

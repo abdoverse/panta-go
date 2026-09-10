@@ -15,6 +15,9 @@ FRONTEND_LOG="$LOG_DIR/frontend.log"
 
 BACKEND_PORT=8080
 FRONTEND_PORT=3000
+LAN_IP="$(ip route get 1.1.1.1 2>/dev/null | awk '{for (i=1; i<=NF; i++) if ($i == "src") {print $(i+1); exit}}')"
+LAN_IP="${LAN_IP:-127.0.0.1}"
+API_BASE_URL="http://${LAN_IP}:${BACKEND_PORT}"
 
 mkdir -p "$LOG_DIR"
 
@@ -96,7 +99,7 @@ check_frontend_health() {
 seed_demo_data() {
     echo "🌱 Seeding realistic test requests into local backend..."
     if [ -f "$PROJECT_ROOT/panta-dev-loop/scripts/seed.js" ]; then
-        API_BASE_URL="http://localhost:$BACKEND_PORT" node "$PROJECT_ROOT/panta-dev-loop/scripts/seed.js"
+        API_BASE_URL="$API_BASE_URL" node "$PROJECT_ROOT/panta-dev-loop/scripts/seed.js"
     else
         curl -s -X POST "http://localhost:$BACKEND_PORT/api/v1/demo/seed" > /dev/null 2>&1 || true
         echo "✅ Seed endpoint triggered via curl"
@@ -134,7 +137,7 @@ start_frontend() {
     local web_build_dir="$FRONTEND_DIR/build/web"
     echo "🔨 Building Flutter web bundle for the local backend..."
     cd "$FRONTEND_DIR"
-    flutter build web --release --dart-define=API_BASE_URL="http://localhost:$BACKEND_PORT"
+    flutter build web --release --dart-define=API_BASE_URL="$API_BASE_URL"
     cd "$PROJECT_ROOT"
 
     echo "🚀 Starting fast Flutter web server on port $FRONTEND_PORT..."
@@ -192,8 +195,8 @@ show_instructions() {
     echo "=================================================================="
     echo "  🎉 PANTA APPLICATION IS LIVE LOCALLY!"
     echo "=================================================================="
-    echo "  Browser Test URL:  http://localhost:3000"
-    echo "  Backend API:       http://localhost:8080"
+    echo "  Browser Test URL:  http://${LAN_IP}:3000 (or http://localhost:3000)"
+    echo "  Backend API:       ${API_BASE_URL}"
     echo "------------------------------------------------------------------"
     echo "  HOW TO TEST THE FULL APPLICATION (NO CREDENTIALS NEEDED):"
     echo "  1. Open http://localhost:3000 in your browser."
