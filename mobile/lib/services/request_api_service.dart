@@ -592,7 +592,7 @@ class RequestApiService {
         ApiConfig.apiUri("/api/v1/feedback"),
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "Bearer "
+          "Authorization": "Bearer $token"
         },
         body: json.encode({
           "category": category,
