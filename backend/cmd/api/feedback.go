@@ -3,9 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
-	"os"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -23,11 +21,6 @@ type feedbackSubmission struct {
 	Contact   bool   `dynamodbav:"contactRequested" json:"contactRequested"`
 	CreatedAt string `dynamodbav:"createdAt" json:"createdAt"`
 }
-
-var localFeedbackStore = struct {
-	sync.Mutex
-	items []feedbackSubmission
-}{}
 
 func registerFeedbackRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/v1/feedback", authMiddleware(handleFeedback))
@@ -51,14 +44,10 @@ func handleAdminFeedback(w http.ResponseWriter, r *http.Request) {
 			Limit:     aws.Int32(200),
 		})
 		if err != nil {
-			if os.Getenv("APP_ENV") != "development" {
-				http.Error(w, "Failed to load feedback", http.StatusInternalServerError)
-				return
-			}
-			localFeedbackStore.Lock()
-			items = append(items, localFeedbackStore.items...)
-			localFeedbackStore.Unlock()
-		} else {
+			http.Error(w, "Failed to load feedback", http.StatusInternalServerError)
+			return
+		}
+		{
 			var stored []feedbackSubmission
 			if err := attributevalue.UnmarshalListOfMaps(out.Items, &stored); err != nil {
 				http.Error(w, "Failed to decode feedback", http.StatusInternalServerError)
@@ -70,10 +59,6 @@ func handleAdminFeedback(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
-	} else if os.Getenv("APP_ENV") == "development" {
-		localFeedbackStore.Lock()
-		items = append(items, localFeedbackStore.items...)
-		localFeedbackStore.Unlock()
 	}
 	for left, right := 0, len(items)-1; left < right; left, right = left+1, right-1 {
 		items[left], items[right] = items[right], items[left]
@@ -117,13 +102,8 @@ func handleFeedback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if _, err := svc.PutItem(r.Context(), &dynamodb.PutItemInput{TableName: aws.String(tableName), Item: item}); err != nil {
-		if os.Getenv("APP_ENV") != "development" {
-			http.Error(w, "Failed to save feedback", http.StatusInternalServerError)
-			return
-		}
-		localFeedbackStore.Lock()
-		localFeedbackStore.items = append(localFeedbackStore.items, feedback)
-		localFeedbackStore.Unlock()
+		http.Error(w, "Failed to save feedback", http.StatusInternalServerError)
+		return
 	}
 	jsonResponse(w, http.StatusCreated, feedback)
 }

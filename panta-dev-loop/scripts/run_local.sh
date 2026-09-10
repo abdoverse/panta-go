@@ -46,6 +46,17 @@ is_frontend_running() {
     return 1
 }
 
+check_cloud_credentials() {
+    if ! command -v aws >/dev/null 2>&1; then
+        echo "❌ AWS CLI is required for cloud-backed local data access."
+        return 1
+    fi
+    if ! aws sts get-caller-identity --region eu-north-1 >/dev/null 2>&1; then
+        echo "❌ AWS credentials are unavailable or expired. Run: aws sso login"
+        return 1
+    fi
+}
+
 check_backend_health() {
     local attempts=0
     local max_attempts=20
@@ -99,13 +110,13 @@ start_backend() {
     fi
 
     echo "🚀 Starting Go backend on port $BACKEND_PORT..."
+    check_cloud_credentials
     cd "$BACKEND_DIR"
     TABLE_NAME=panta-requests \
     IMAGE_BUCKET_NAME=panta-request-images \
     AWS_REGION=eu-north-1 \
     COGNITO_USER_POOL_ID=eu-north-1_Rg7i36e8Q \
     PORT="" \
-    APP_ENV=development \
     nohup go run . > "$BACKEND_LOG" 2>&1 &
 
     local b_pid=$!
