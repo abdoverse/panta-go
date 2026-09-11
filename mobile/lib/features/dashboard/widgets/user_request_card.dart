@@ -336,7 +336,7 @@ class UserRequestCard extends StatelessWidget {
                                   showDialog(
                                     context: context,
                                     builder: (ctx) => AlertDialog(
-                                      title: const Row(
+                                      title: Row(
                                         children: [
                                           Icon(
                                             Icons.photo_camera,
@@ -816,7 +816,7 @@ class RequestImage extends StatelessWidget {
                     errorBuilder: (_, __, ___) => Container(
                       color: Colors.white,
                       padding: const EdgeInsets.all(32),
-                      child: const Column(
+                      child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.broken_image_rounded,
