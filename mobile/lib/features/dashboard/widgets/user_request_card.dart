@@ -58,6 +58,18 @@ class UserRequestCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (index != null)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 12.0),
+                    child: Text(
+                      "#${index! + 1}",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[400],
+                      ),
+                    ),
+                  ),
                 SizedBox(
                   width: 60,
                   height: 60,
