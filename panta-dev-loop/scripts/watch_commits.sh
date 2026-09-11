@@ -18,7 +18,14 @@ play_sound() {
 while true; do
   current_commit="$(git -C "$PROJECT_ROOT" rev-parse HEAD 2>/dev/null || true)"
   if [[ -n "$current_commit" && -n "$last_commit" && "$current_commit" != "$last_commit" ]]; then
-    echo "New commit detected ($current_commit); rebuilding local stack."
+    changed_files="$(git -C "$PROJECT_ROOT" diff-tree --no-commit-id --name-only -r "$current_commit")"
+    if ! grep -qE '^(mobile|backend)/' <<< "$changed_files"; then
+      echo "New non-application commit detected ($current_commit); skipping rebuild."
+      last_commit="$current_commit"
+      sleep 5
+      continue
+    fi
+    echo "New application commit detected ($current_commit); rebuilding local stack."
     play_sound message-new-instant
     if "$RUN_LOCAL" restart; then
       echo "Local stack is running with the latest commit."
