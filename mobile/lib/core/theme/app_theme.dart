@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  static const Color primaryGreen = Color(0xFF166534);
-  static const Color primaryLight = Color(0xFF22C55E);
-  static const Color accentLeaf = Color(0xFFDFF7E8);
-  static const Color darkBackground = Color(0xFF0F172A);
+  static const Color primaryGreen = Color(0xFF146C43);
+  static const Color primaryLight = Color(0xFF2FA36B);
+  static const Color accentLeaf = Color(0xFFE7F4EC);
+  static const Color darkBackground = Color(0xFF102A20);
   static const Color surfaceWhite = Color(0xFFFFFFFF);
-  static const Color surfaceGrey = Color(0xFFF8FAFC);
-  static const Color surfaceMuted = Color(0xFFF1F5F9);
-  static const Color borderSubtle = Color(0xFFE2E8F0);
-  static const Color textPrimary = Color(0xFF0F172A);
-  static const Color textSecondary = Color(0xFF64748B);
+  static const Color surfaceGrey = Color(0xFFF7F8F7);
+  static const Color surfaceMuted = Color(0xFFF0F3F1);
+  static const Color borderSubtle = Color(0xFFE1E7E3);
+  static const Color textPrimary = Color(0xFF102A20);
+  static const Color textSecondary = Color(0xFF66756D);
 
   static ThemeData get lightTheme {
     final colorScheme = ColorScheme.fromSeed(
@@ -37,12 +37,12 @@ class AppTheme {
         displayLarge: baseTextTheme.displayLarge?.copyWith(
           color: textPrimary,
           fontWeight: FontWeight.w700,
-          letterSpacing: -1.4,
+          letterSpacing: -1.2,
         ),
         displayMedium: baseTextTheme.displayMedium?.copyWith(
           color: textPrimary,
           fontWeight: FontWeight.w700,
-          letterSpacing: -1.0,
+          letterSpacing: -0.8,
         ),
         headlineSmall: baseTextTheme.headlineSmall?.copyWith(
           color: textPrimary,
@@ -59,11 +59,11 @@ class AppTheme {
         ),
         bodyLarge: baseTextTheme.bodyLarge?.copyWith(
           color: textPrimary,
-          height: 1.4,
+          height: 1.5,
         ),
         bodyMedium: baseTextTheme.bodyMedium?.copyWith(
           color: textSecondary,
-          height: 1.45,
+          height: 1.55,
         ),
         labelLarge: baseTextTheme.labelLarge?.copyWith(
           fontWeight: FontWeight.w600,
@@ -91,7 +91,7 @@ class AppTheme {
           color: Colors.white,
           fontSize: 14,
           fontWeight: FontWeight.w500,
-          height: 1.4,
+          height: 1.5,
         ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(14),
@@ -237,7 +237,7 @@ class AppTheme {
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: surfaceWhite,
         surfaceTintColor: Colors.transparent,
-        height: 72,
+        height: 68,
         indicatorColor: primaryGreen.withValues(alpha: 0.12),
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {

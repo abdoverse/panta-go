@@ -378,14 +378,14 @@ class _QuickRequestLauncher extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(18),
         border:
             Border.all(color: AppTheme.primaryGreen.withValues(alpha: 0.12)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -411,14 +411,14 @@ class _QuickRequestLauncher extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Book in 30 seconds',
+                      context.l10n.startQuickRequest,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Use your recent pickup details and confirm in one tap.',
+                      context.l10n.keepPickupLocationOneTapAway,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: Colors.grey[700],
                       ),

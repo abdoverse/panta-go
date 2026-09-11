@@ -140,7 +140,7 @@ class AdaptiveNavigationScaffold extends StatelessWidget {
 
     if (!isWide) {
       return Scaffold(
-        backgroundColor: backgroundColor ?? const Color(0xFFF8F9FA),
+        backgroundColor: backgroundColor ?? AppTheme.surfaceGrey,
         body: body,
         bottomNavigationBar: NavigationBar(
           selectedIndex: selectedIndex,
@@ -160,7 +160,7 @@ class AdaptiveNavigationScaffold extends StatelessWidget {
     }
 
     return Scaffold(
-      backgroundColor: backgroundColor ?? const Color(0xFFF8F9FA),
+      backgroundColor: backgroundColor ?? AppTheme.surfaceGrey,
       body: Row(
         children: [
           NavigationRail(
@@ -168,7 +168,8 @@ class AdaptiveNavigationScaffold extends StatelessWidget {
             onDestinationSelected: onDestinationSelected,
             labelType: NavigationRailLabelType.all,
             backgroundColor: Colors.white,
-            elevation: 2,
+            elevation: 0,
+            indicatorColor: AppTheme.accentLeaf,
             leading: Column(
               children: [
                 const SizedBox(height: 16),
@@ -177,7 +178,7 @@ class AdaptiveNavigationScaffold extends StatelessWidget {
                   height: 48,
                   decoration: BoxDecoration(
                     color: AppTheme.accentLeaf,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(14),
                   ),
                   child: const Center(
                     child: Icon(

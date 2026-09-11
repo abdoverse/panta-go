@@ -330,15 +330,18 @@ class AuthService {
               _customJwtPayload!['cognito:username'])
           ?.toString();
       if (userId != null && userId.isNotEmpty) {
-        final prefs = await SharedPreferences.getInstance();
-        final names = prefs.getStringList(_customDisplayNamesStorageKey) ?? [];
-        for (final entry in names) {
-          final separator = entry.indexOf('\u0000');
-          if (separator >= 0 && entry.substring(0, separator) == userId) {
-            final savedName = entry.substring(separator + 1).trim();
-            if (savedName.isNotEmpty) return savedName;
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          final names =
+              prefs.getStringList(_customDisplayNamesStorageKey) ?? [];
+          for (final entry in names) {
+            final separator = entry.indexOf('\u0000');
+            if (separator >= 0 && entry.substring(0, separator) == userId) {
+              final savedName = entry.substring(separator + 1).trim();
+              if (savedName.isNotEmpty) return savedName;
+            }
           }
-        }
+        } catch (_) {}
       }
       final name = _customJwtPayload!['name']?.toString().trim();
       if (name != null && name.isNotEmpty) {
@@ -394,11 +397,14 @@ class AuthService {
               _customJwtPayload!['cognito:username'])
           ?.toString();
       if (userId != null && userId.isNotEmpty) {
-        final prefs = await SharedPreferences.getInstance();
-        final names = prefs.getStringList(_customDisplayNamesStorageKey) ?? [];
-        names.removeWhere((entry) => entry.startsWith('$userId\u0000'));
-        names.add('$userId\u0000$normalizedName');
-        await prefs.setStringList(_customDisplayNamesStorageKey, names);
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          final names =
+              prefs.getStringList(_customDisplayNamesStorageKey) ?? [];
+          names.removeWhere((entry) => entry.startsWith('$userId\u0000'));
+          names.add('$userId\u0000$normalizedName');
+          await prefs.setStringList(_customDisplayNamesStorageKey, names);
+        } catch (_) {}
       }
       return null;
     }
