@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart'
+    show FlutterMap, MapOptions, Marker, MarkerLayer, TileLayer;
+import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/theme/app_theme.dart';
@@ -568,30 +571,38 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             ),
             const SizedBox(height: 16),
             SizedBox(
-              height: 240,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return Stack(
-                    children: [
-                      // Stylized geographic background canvas
-                      Container(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF0F4F8),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey.shade300),
-                        ),
-                        child: CustomPaint(
-                          painter: _SwedenMapPainter(),
-                          size: Size.infinite,
-                        ),
-                      ),
-                      // City nodes on map
-                      for (final city in _cities)
-                        _buildCityMapNode(
-                            city, constraints.maxWidth, constraints.maxHeight),
-                    ],
-                  );
-                },
+              height: 300,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: FlutterMap(
+                  options: const MapOptions(
+                    initialCenter: LatLng(58.5, 15.0),
+                    initialZoom: 4.7,
+                    minZoom: 3.5,
+                    maxZoom: 12,
+                  ),
+                  children: [
+                    TileLayer(
+                      urlTemplate:
+                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'se.panta.app',
+                    ),
+                    MarkerLayer(
+                      markers: [
+                        for (final city in _cities)
+                          Marker(
+                            point: LatLng(city.latitude, city.longitude),
+                            width: 150,
+                            height: 70,
+                            child: GestureDetector(
+                              onTap: () => setState(() => _selectedCity = city),
+                              child: _buildCityMapMarker(city),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 12),
@@ -606,86 +617,28 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
-  Widget _buildCityMapNode(CityTrendModel city, double width, double height) {
-    // Relative coordinates mapping Sweden Lat (55.5 - 60.5) and Lng (11.5 - 18.5)
-    final double relativeY =
-        1.0 - ((city.latitude - 55.4) / 4.8).clamp(0.05, 0.95);
-    final double relativeX = ((city.longitude - 11.5) / 7.2).clamp(0.1, 0.9);
-
+  Widget _buildCityMapMarker(CityTrendModel city) {
     final isSelected = _selectedCity?.cityName == city.cityName;
-    final color = _getStatusColor(city.status);
-
-    final posX = width * relativeX;
-    final posY = height * relativeY;
-
-    return Positioned(
-      left: posX - 28,
-      top: posY - 28,
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            _selectedCity = city;
-          });
-        },
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              width: isSelected ? 34 : 26,
-              height: isSelected ? 34 : 26,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.85),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isSelected ? Colors.white : color,
-                  width: isSelected ? 3 : 1.5,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: color.withValues(alpha: 0.4),
-                    blurRadius: isSelected ? 10 : 4,
-                    spreadRadius: isSelected ? 3 : 1,
-                  ),
-                ],
-              ),
-              child: Center(
-                child: Text(
-                  '${city.activeRequests}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 2),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? AppTheme.primaryGreen
-                    : Colors.white.withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(4),
-                border: Border.all(
-                  color:
-                      isSelected ? AppTheme.primaryGreen : Colors.grey.shade400,
-                  width: 0.8,
-                ),
-              ),
-              child: Text(
-                city.cityName,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                  color: isSelected ? Colors.white : Colors.black87,
-                ),
-              ),
-            ),
-          ],
+    final color =
+        city.status == 'high_demand' ? Colors.red : AppTheme.primaryGreen;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border:
+                Border.all(color: isSelected ? color : Colors.white, width: 2),
+            boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
+          ),
+          child: Text(city.cityName,
+              style:
+                  const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
         ),
-      ),
+        Icon(Icons.location_on, color: color, size: isSelected ? 30 : 25),
+      ],
     );
   }
 
@@ -1070,57 +1023,4 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       ),
     );
   }
-}
-
-class _SwedenMapPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFFD6E4DE)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2;
-
-    final fillPaint = Paint()
-      ..color = const Color(0xFFE8F1EC)
-      ..style = PaintingStyle.fill;
-
-    // Stylized Sweden landmass silhouette
-    final path = Path();
-    path.moveTo(size.width * 0.45, size.height * 0.08); // Northern tip
-    path.lineTo(size.width * 0.60, size.height * 0.25);
-    path.lineTo(size.width * 0.68, size.height * 0.45);
-    path.lineTo(size.width * 0.72, size.height * 0.65); // Stockholm coast
-    path.lineTo(size.width * 0.65, size.height * 0.85); // South-east
-    path.lineTo(size.width * 0.48, size.height * 0.94); // Skåne / Malmö
-    path.lineTo(size.width * 0.35, size.height * 0.82); // Göteborg coast
-    path.lineTo(size.width * 0.38, size.height * 0.50);
-    path.lineTo(size.width * 0.42, size.height * 0.20);
-    path.close();
-
-    canvas.drawPath(path, fillPaint);
-    canvas.drawPath(path, paint);
-
-    // Subtle coordinate gridlines
-    final gridPaint = Paint()
-      ..color = Colors.grey.withValues(alpha: 0.15)
-      ..strokeWidth = 0.8;
-
-    for (double y = 0.2; y < 1.0; y += 0.2) {
-      canvas.drawLine(
-        Offset(0, size.height * y),
-        Offset(size.width, size.height * y),
-        gridPaint,
-      );
-    }
-    for (double x = 0.2; x < 1.0; x += 0.2) {
-      canvas.drawLine(
-        Offset(size.width * x, 0),
-        Offset(size.width * x, size.height),
-        gridPaint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
