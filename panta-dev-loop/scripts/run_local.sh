@@ -137,13 +137,14 @@ start_frontend() {
 
     local web_build_dir="$FRONTEND_DIR/build/web"
     if [ -z "$GOOGLE_MAPS_API_KEY" ]; then
-        echo "❌ GOOGLE_MAPS_API_KEY is required for the admin Google Map."
-        return 1
+        echo "⚠️ GOOGLE_MAPS_API_KEY is not configured; admin map will remain unavailable."
     fi
     echo "🔨 Building Flutter web bundle for the local backend..."
     cd "$FRONTEND_DIR"
     flutter build web --release --no-wasm-dry-run --dart-define=API_BASE_URL="$API_BASE_URL"
-    sed -i "s|__GOOGLE_MAPS_API_KEY__|$GOOGLE_MAPS_API_KEY|g" "$web_build_dir/index.html"
+    if [ -n "$GOOGLE_MAPS_API_KEY" ]; then
+        sed -i "s|__GOOGLE_MAPS_API_KEY__|$GOOGLE_MAPS_API_KEY|g" "$web_build_dir/index.html"
+    fi
     cd "$PROJECT_ROOT"
 
     echo "🚀 Starting fast Flutter web server on port $FRONTEND_PORT..."
