@@ -11,14 +11,16 @@ aws configure --profile panta-local-dev
 aws sts get-caller-identity --profile panta-local-dev
 ```
 
-Never commit `~/.aws/credentials` or access keys.
+Never commit `~/.aws/credentials`, access keys, or the Maps key. Restrict the Maps key by API, HTTP referrer, and development origins in Google Cloud Console.
 
 ## Install persistent service
 
 From the repository root:
 
 ```bash
-AWS_PROFILE_NAME=panta-local-dev ./panta-dev-loop/scripts/install_local_service.sh
+AWS_PROFILE_NAME=panta-local-dev \
+GOOGLE_MAPS_API_KEY=your-key-here \
+./panta-dev-loop/scripts/install_local_service.sh
 ```
 
 The installer renders a user service for the current clone path, enables it, and starts the stack. It survives terminal closure, SSH disconnects, logout (when lingering is available), and Codex sessions.

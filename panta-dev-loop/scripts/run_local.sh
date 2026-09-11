@@ -18,6 +18,7 @@ FRONTEND_PORT=3000
 LAN_IP="$(ip route get 1.1.1.1 2>/dev/null | awk '{for (i=1; i<=NF; i++) if ($i == "src") {print $(i+1); exit}}')"
 LAN_IP="${LAN_IP:-127.0.0.1}"
 API_BASE_URL="http://${LAN_IP}:${BACKEND_PORT}"
+GOOGLE_MAPS_API_KEY="${GOOGLE_MAPS_API_KEY:-}"
 
 mkdir -p "$LOG_DIR"
 
@@ -135,9 +136,14 @@ start_frontend() {
     fi
 
     local web_build_dir="$FRONTEND_DIR/build/web"
+    if [ -z "$GOOGLE_MAPS_API_KEY" ]; then
+        echo "❌ GOOGLE_MAPS_API_KEY is required for the admin Google Map."
+        return 1
+    fi
     echo "🔨 Building Flutter web bundle for the local backend..."
     cd "$FRONTEND_DIR"
     flutter build web --release --no-wasm-dry-run --dart-define=API_BASE_URL="$API_BASE_URL"
+    sed -i "s|__GOOGLE_MAPS_API_KEY__|$GOOGLE_MAPS_API_KEY|g" "$web_build_dir/index.html"
     cd "$PROJECT_ROOT"
 
     echo "🚀 Starting fast Flutter web server on port $FRONTEND_PORT..."

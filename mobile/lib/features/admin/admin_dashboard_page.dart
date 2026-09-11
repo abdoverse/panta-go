@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart'
-    show FlutterMap, MapOptions, Marker, MarkerLayer, TileLayer;
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/theme/app_theme.dart';
@@ -574,34 +572,27 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               height: 300,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: FlutterMap(
-                  options: const MapOptions(
-                    initialCenter: LatLng(58.5, 15.0),
-                    initialZoom: 4.7,
-                    minZoom: 3.5,
-                    maxZoom: 12,
+                child: GoogleMap(
+                  initialCameraPosition: const CameraPosition(
+                    target: LatLng(58.5, 15.0),
+                    zoom: 4.7,
                   ),
-                  children: [
-                    TileLayer(
-                      urlTemplate:
-                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      userAgentPackageName: 'se.panta.app',
-                    ),
-                    MarkerLayer(
-                      markers: [
-                        for (final city in _cities)
-                          Marker(
-                            point: LatLng(city.latitude, city.longitude),
-                            width: 150,
-                            height: 70,
-                            child: GestureDetector(
-                              onTap: () => setState(() => _selectedCity = city),
-                              child: _buildCityMapMarker(city),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
+                  zoomControlsEnabled: true,
+                  mapToolbarEnabled: false,
+                  myLocationButtonEnabled: false,
+                  markers: {
+                    for (final city in _cities)
+                      Marker(
+                        markerId: MarkerId(city.cityName),
+                        position: LatLng(city.latitude, city.longitude),
+                        infoWindow: InfoWindow(
+                          title: city.cityName,
+                          snippet:
+                              '${city.activeRequests} active pickups • ${city.status}',
+                        ),
+                        onTap: () => setState(() => _selectedCity = city),
+                      ),
+                  },
                 ),
               ),
             ),
@@ -614,31 +605,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildCityMapMarker(CityTrendModel city) {
-    final isSelected = _selectedCity?.cityName == city.cityName;
-    final color =
-        city.status == 'high_demand' ? Colors.red : AppTheme.primaryGreen;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            border:
-                Border.all(color: isSelected ? color : Colors.white, width: 2),
-            boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
-          ),
-          child: Text(city.cityName,
-              style:
-                  const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-        ),
-        Icon(Icons.location_on, color: color, size: isSelected ? 30 : 25),
-      ],
     );
   }
 

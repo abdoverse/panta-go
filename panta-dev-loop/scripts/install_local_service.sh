@@ -3,6 +3,7 @@ set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 AWS_PROFILE_NAME="${AWS_PROFILE_NAME:-panta-local-dev}"
+GOOGLE_MAPS_API_KEY="${GOOGLE_MAPS_API_KEY:-}"
 FLUTTER_BIN="${FLUTTER_BIN:-$(dirname "$(command -v flutter 2>/dev/null || printf '%s' /usr/bin/flutter)")}"
 HOME_BIN="${HOME_BIN:-$HOME/.local/bin}"
 UNIT_DIR="$HOME/.config/systemd/user"
@@ -15,6 +16,10 @@ if ! command -v systemctl >/dev/null 2>&1; then
 fi
 if ! command -v aws >/dev/null 2>&1; then
   echo "AWS CLI is required for cloud-backed local testing." >&2
+  exit 1
+fi
+if [ -z "$GOOGLE_MAPS_API_KEY" ]; then
+  echo "GOOGLE_MAPS_API_KEY is required for the admin Google Map." >&2
   exit 1
 fi
 if ! command -v flutter >/dev/null 2>&1; then

@@ -38,8 +38,7 @@ dependencies:
   flutter_chat_types: ^3.6.0
   qr_flutter: ^4.1.0
   crypto: ^3.0.7
-  flutter_map: ^8.3.2
-  latlong2: ^0.10.1
+  google_maps_flutter: ^2.18.0
 
 dev_dependencies:
   flutter_test:
