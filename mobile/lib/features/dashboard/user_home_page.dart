@@ -458,7 +458,7 @@ class _QuickRequestLauncher extends StatelessWidget {
                 );
               },
               icon: const Icon(Icons.bolt_rounded),
-              label: const Text('Start quick request'),
+              label: Text(context.l10n.startQuickRequest),
             ),
           ),
         ],

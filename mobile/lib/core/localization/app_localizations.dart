@@ -256,6 +256,12 @@ class AppLocalizations {
   String get requestCreated =>
       _isSwedish ? 'Förfrågan skapad!' : 'Request Created!';
   String get postRequest => _isSwedish ? 'Publicera förfrågan' : 'Post Request';
+  String get confirmQuickRequest =>
+      _isSwedish ? 'Bekräfta snabbförfrågan' : 'Confirm quick request';
+  String get marketLimitReached =>
+      _isSwedish ? 'Marknadsgränsen är nådd' : 'Market limit reached';
+  String get startQuickRequest =>
+      _isSwedish ? 'Starta snabbförfrågan' : 'Start quick request';
   String get couldNotPickPhoto => _isSwedish
       ? 'Det gick inte att välja bilden.'
       : 'Could not pick the photo.';

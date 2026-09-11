@@ -720,9 +720,9 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                         ? const CircularProgressIndicator(color: Colors.white)
                         : Text(
                             !provider.canCreateRequest
-                                ? 'Market limit reached'
+                                ? l10n.marketLimitReached
                                 : (_isQuickMode
-                                    ? 'Confirm quick request'
+                                    ? l10n.confirmQuickRequest
                                     : l10n.postRequest),
                             style: const TextStyle(
                               fontSize: 18,
