@@ -892,6 +892,14 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
+  String _formatFeedbackDate(String value) {
+    final parsed = DateTime.tryParse(value)?.toLocal();
+    if (parsed == null) return value;
+    String twoDigits(int number) => number.toString().padLeft(2, '0');
+    return '${parsed.year}-${twoDigits(parsed.month)}-${twoDigits(parsed.day)} '
+        '${twoDigits(parsed.hour)}:${twoDigits(parsed.minute)}';
+  }
+
   Widget _buildFeedbackItem(AdminFeedbackModel feedback) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -908,7 +916,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         ]),
         Text(feedback.message),
         const SizedBox(height: 6),
-        Text('${feedback.createdAt} • ${feedback.userId}',
+        Text(
+            '${_formatFeedbackDate(feedback.createdAt)} • ${feedback.userName.isEmpty ? 'Unknown user' : feedback.userName}',
             style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
       ]),
     );

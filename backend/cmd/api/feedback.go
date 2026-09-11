@@ -16,6 +16,7 @@ type feedbackSubmission struct {
 	ID        string `dynamodbav:"id" json:"id"`
 	Type      string `dynamodbav:"type" json:"type"`
 	UserID    string `dynamodbav:"userId" json:"userId"`
+	UserName  string `dynamodbav:"userName" json:"userName"`
 	Category  string `dynamodbav:"category" json:"category"`
 	Message   string `dynamodbav:"message" json:"message"`
 	Contact   bool   `dynamodbav:"contactRequested" json:"contactRequested"`
@@ -93,6 +94,7 @@ func handleFeedback(w http.ResponseWriter, r *http.Request) {
 	}
 	feedback := feedbackSubmission{
 		ID: "feedback-" + uuid.NewString(), Type: "feedback", UserID: claims.requestOwnerID(),
+		UserName: claims.DisplayName,
 		Category: payload.Category, Message: payload.Message, Contact: payload.Contact,
 		CreatedAt: time.Now().UTC().Format(time.RFC3339),
 	}

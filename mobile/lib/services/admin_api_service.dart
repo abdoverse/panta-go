@@ -5,7 +5,7 @@ import 'api_config.dart';
 
 class AdminFeedbackModel {
   final String id;
-  final String userId;
+  final String userName;
   final String category;
   final String message;
   final bool contactRequested;
@@ -13,7 +13,7 @@ class AdminFeedbackModel {
 
   const AdminFeedbackModel({
     required this.id,
-    required this.userId,
+    required this.userName,
     required this.category,
     required this.message,
     required this.contactRequested,
@@ -23,7 +23,7 @@ class AdminFeedbackModel {
   factory AdminFeedbackModel.fromJson(Map<String, dynamic> json) {
     return AdminFeedbackModel(
       id: json['id']?.toString() ?? '',
-      userId: json['userId']?.toString() ?? '',
+      userName: json['userName']?.toString() ?? '',
       category: json['category']?.toString() ?? 'General',
       message: json['message']?.toString() ?? '',
       contactRequested: json['contactRequested'] == true,
