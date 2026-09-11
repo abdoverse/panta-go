@@ -42,6 +42,7 @@ class AuthService {
   CognitoUserSession? _session;
 
   static const _customJwtStorageKey = 'panta_custom_jwt';
+  static const _customDisplayNamesStorageKey = 'panta_custom_display_names';
   String? _customJwtToken;
   Map<String, dynamic>? _customJwtPayload;
 
@@ -324,6 +325,21 @@ class AuthService {
 
   Future<String?> getCurrentDisplayName({String? fallbackEmail}) async {
     if (_customJwtPayload != null) {
+      final userId = (_customJwtPayload!['userId'] ??
+              _customJwtPayload!['sub'] ??
+              _customJwtPayload!['cognito:username'])
+          ?.toString();
+      if (userId != null && userId.isNotEmpty) {
+        final prefs = await SharedPreferences.getInstance();
+        final names = prefs.getStringList(_customDisplayNamesStorageKey) ?? [];
+        for (final entry in names) {
+          final separator = entry.indexOf('\u0000');
+          if (separator >= 0 && entry.substring(0, separator) == userId) {
+            final savedName = entry.substring(separator + 1).trim();
+            if (savedName.isNotEmpty) return savedName;
+          }
+        }
+      }
       final name = _customJwtPayload!['name']?.toString().trim();
       if (name != null && name.isNotEmpty) {
         return name;
@@ -373,6 +389,17 @@ class AuthService {
 
     if (_customJwtPayload != null) {
       _customJwtPayload!['name'] = normalizedName;
+      final userId = (_customJwtPayload!['userId'] ??
+              _customJwtPayload!['sub'] ??
+              _customJwtPayload!['cognito:username'])
+          ?.toString();
+      if (userId != null && userId.isNotEmpty) {
+        final prefs = await SharedPreferences.getInstance();
+        final names = prefs.getStringList(_customDisplayNamesStorageKey) ?? [];
+        names.removeWhere((entry) => entry.startsWith('$userId\u0000'));
+        names.add('$userId\u0000$normalizedName');
+        await prefs.setStringList(_customDisplayNamesStorageKey, names);
+      }
       return null;
     }
 
