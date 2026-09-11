@@ -134,7 +134,8 @@ class UserRequestCard extends StatelessWidget {
                                 color: const Color(0xFFE8F5E9),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                  color: AppTheme.primaryGreen.withValues(alpha: 0.4),
+                                  color: AppTheme.primaryGreen
+                                      .withValues(alpha: 0.4),
                                 ),
                               ),
                               child: const Row(
@@ -169,7 +170,8 @@ class UserRequestCard extends StatelessWidget {
                                 color: const Color(0xFFE8F5E9),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                  color: AppTheme.primaryGreen.withValues(alpha: 0.4),
+                                  color: AppTheme.primaryGreen
+                                      .withValues(alpha: 0.4),
                                 ),
                               ),
                               child: const Row(
@@ -341,7 +343,7 @@ class UserRequestCard extends StatelessWidget {
                                             color: Colors.green,
                                           ),
                                           SizedBox(width: 8),
-                                          Text('Drop-off Photo Proof'),
+                                          Text(context.l10n.dropoffPhotoProof),
                                         ],
                                       ),
                                       content: Column(
@@ -390,7 +392,7 @@ class UserRequestCard extends StatelessWidget {
                                       actions: [
                                         TextButton(
                                           onPressed: () => Navigator.pop(ctx),
-                                          child: const Text('Close'),
+                                          child: Text(context.l10n.close),
                                         ),
                                       ],
                                     ),
@@ -506,7 +508,8 @@ class UserRequestCard extends StatelessWidget {
                             color: AppTheme.primaryGreen.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                              color: AppTheme.primaryGreen.withValues(alpha: 0.4),
+                              color:
+                                  AppTheme.primaryGreen.withValues(alpha: 0.4),
                               width: 1.5,
                             ),
                           ),
@@ -667,7 +670,7 @@ class UserRequestCard extends StatelessWidget {
                       );
                     },
                     icon: const Icon(Icons.refresh_rounded),
-                    label: const Text('Book again'),
+                    label: Text(context.l10n.bookAgain),
                   ),
                   if (request.status == RequestStatus.pickedUp &&
                       !request.isRated)
@@ -780,7 +783,8 @@ class RequestImage extends StatelessWidget {
     if (url.contains('.console.aws.amazon.com/s3/') ||
         url.contains('console.aws.amazon.com')) {
       final uri = Uri.tryParse(url);
-      final prefix = uri?.queryParameters['prefix'] ?? uri?.queryParameters['key'];
+      final prefix =
+          uri?.queryParameters['prefix'] ?? uri?.queryParameters['key'];
       if (prefix != null && prefix.isNotEmpty) {
         url = '/api/v1/images/$prefix';
       }
@@ -815,9 +819,11 @@ class RequestImage extends StatelessWidget {
                       child: const Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.broken_image_rounded, size: 48, color: Colors.grey),
+                          Icon(Icons.broken_image_rounded,
+                              size: 48, color: Colors.grey),
                           SizedBox(height: 8),
-                          Text('Image not available', style: TextStyle(color: Colors.grey)),
+                          Text('Image not available',
+                              style: TextStyle(color: Colors.grey)),
                         ],
                       ),
                     ),
@@ -848,8 +854,8 @@ class RequestImage extends StatelessWidget {
       return _fallbackImage();
     }
 
-    final hasRemoteSource = resolvedUrl.startsWith('http') ||
-        resolvedUrl.startsWith('data:image/');
+    final hasRemoteSource =
+        resolvedUrl.startsWith('http') || resolvedUrl.startsWith('data:image/');
 
     if (hasRemoteSource) {
       return InkWell(

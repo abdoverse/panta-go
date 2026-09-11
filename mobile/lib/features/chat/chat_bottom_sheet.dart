@@ -321,7 +321,7 @@ class _ChatBottomSheetState extends State<ChatBottomSheet> {
                           color: AppTheme.textPrimary,
                         ),
                         inputTextDecoration: InputDecoration(
-                          hintText: 'Type a message...',
+                          hintText: context.l10n.typeMessage,
                           hintStyle: TextStyle(
                             fontSize: 15,
                             color:

@@ -200,7 +200,7 @@ class _DashboardView extends StatelessWidget {
                   ),
                 ),
                 icon: const Icon(Icons.insights, color: Colors.white),
-                tooltip: 'Pant History & Eco Impact',
+                tooltip: context.l10n.pantHistoryAndImpact,
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
@@ -318,7 +318,7 @@ class _HistoryView extends StatelessWidget {
               ),
             ),
             icon: const Icon(Icons.eco),
-            label: const Text('Impact'),
+            label: Text(context.l10n.impact),
           ),
         ],
       ),

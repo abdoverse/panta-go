@@ -256,6 +256,30 @@ class AppLocalizations {
   String get requestCreated =>
       _isSwedish ? 'Förfrågan skapad!' : 'Request Created!';
   String get postRequest => _isSwedish ? 'Publicera förfrågan' : 'Post Request';
+  String get verifiedPantAmount =>
+      _isSwedish ? 'Verifierad pantmängd (SEK)' : 'Verified Pant Amount (SEK)';
+  String get recyclerShare =>
+      _isSwedish ? '💚 Återvinnarens andel:' : '💚 Recycler Share:';
+  String get helperEarnings =>
+      _isSwedish ? '🚴 Hjälparens ersättning:' : '🚴 Helper Earnings:';
+  String get camera => _isSwedish ? 'Kamera' : 'Camera';
+  String get gallery => _isSwedish ? 'Galleri' : 'Gallery';
+  String get typeMessage =>
+      _isSwedish ? 'Skriv ett meddelande...' : 'Type a message...';
+  String get openMaps => _isSwedish ? 'Öppna kartor' : 'Open Maps';
+  String get atTheDoor => _isSwedish ? 'Jag är vid dörren' : "I'm at Door";
+  String get scanAndComplete =>
+      _isSwedish ? 'Skanna och slutför' : 'Scan & Complete';
+  String get imageNotAvailable =>
+      _isSwedish ? 'Bilden är inte tillgänglig' : 'Image not available';
+  String get dropoffPhotoProof =>
+      _isSwedish ? 'Fotobevis på avlämning' : 'Drop-off Photo Proof';
+  String get close => _isSwedish ? 'Stäng' : 'Close';
+  String get bookAgain => _isSwedish ? 'Boka igen' : 'Book again';
+  String get impact => _isSwedish ? 'Påverkan' : 'Impact';
+  String get pantHistoryAndImpact => _isSwedish
+      ? 'Pantistorik och miljöpåverkan'
+      : 'Pant History & Eco Impact';
   String get confirmQuickRequest =>
       _isSwedish ? 'Bekräfta snabbförfrågan' : 'Confirm quick request';
   String get marketLimitReached =>

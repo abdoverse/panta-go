@@ -8,7 +8,8 @@ import '../../services/eta_service.dart';
 class LiveMapTrackingView extends StatefulWidget {
   final RecyclingRequest request;
   final bool isHelperView;
-  final Function(double lat, double lng, int eta, String milestone)? onLocationSimulated;
+  final Function(double lat, double lng, int eta, String milestone)?
+      onLocationSimulated;
 
   const LiveMapTrackingView({
     super.key,
@@ -155,15 +156,19 @@ class _LiveMapTrackingViewState extends State<LiveMapTrackingView>
                       ),
                       const SizedBox(height: 4),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(6),
-                          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+                          boxShadow: const [
+                            BoxShadow(color: Colors.black12, blurRadius: 4)
+                          ],
                         ),
                         child: const Text(
                           'Pickup',
-                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                              fontSize: 10, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ],
@@ -187,7 +192,8 @@ class _LiveMapTrackingViewState extends State<LiveMapTrackingView>
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppTheme.primaryGreen.withValues(alpha: 0.4),
+                                    color: AppTheme.primaryGreen
+                                        .withValues(alpha: 0.4),
                                     blurRadius: 10,
                                     spreadRadius: 3,
                                   ),
@@ -201,11 +207,15 @@ class _LiveMapTrackingViewState extends State<LiveMapTrackingView>
                             ),
                             const SizedBox(height: 4),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(6),
-                                boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+                                boxShadow: const [
+                                  BoxShadow(
+                                      color: Colors.black12, blurRadius: 4)
+                                ],
                               ),
                               child: const Text(
                                 'Helper',
@@ -227,12 +237,16 @@ class _LiveMapTrackingViewState extends State<LiveMapTrackingView>
                   top: 12,
                   left: 12,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.92),
                       borderRadius: BorderRadius.circular(10),
                       boxShadow: const [
-                        BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+                        BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 4,
+                            offset: Offset(0, 2)),
                       ],
                     ),
                     child: Row(
@@ -242,7 +256,9 @@ class _LiveMapTrackingViewState extends State<LiveMapTrackingView>
                           width: 8,
                           height: 8,
                           decoration: BoxDecoration(
-                            color: etaInfo.isArrivingSoon ? Colors.orange : AppTheme.primaryGreen,
+                            color: etaInfo.isArrivingSoon
+                                ? Colors.orange
+                                : AppTheme.primaryGreen,
                             shape: BoxShape.circle,
                           ),
                         ),
@@ -280,7 +296,8 @@ class _LiveMapTrackingViewState extends State<LiveMapTrackingView>
                     TextButton.icon(
                       onPressed: _openExternalMaps,
                       icon: const Icon(Icons.navigation_outlined, size: 16),
-                      label: const Text('Open Maps', style: TextStyle(fontSize: 12)),
+                      label: Text(context.l10n.openMaps,
+                          style: TextStyle(fontSize: 12)),
                     ),
                   ],
                 ),
@@ -294,21 +311,26 @@ class _LiveMapTrackingViewState extends State<LiveMapTrackingView>
                       isActive: etaInfo.milestone == DeliveryMilestone.onTheWay,
                     ),
                     _MilestoneConnector(
-                      isCompleted: etaInfo.milestone == DeliveryMilestone.arrivingSoon ||
-                          etaInfo.milestone == DeliveryMilestone.arrived,
+                      isCompleted:
+                          etaInfo.milestone == DeliveryMilestone.arrivingSoon ||
+                              etaInfo.milestone == DeliveryMilestone.arrived,
                     ),
                     _MilestoneStep(
                       title: 'Near (<1km)',
-                      isCompleted: etaInfo.milestone == DeliveryMilestone.arrivingSoon ||
-                          etaInfo.milestone == DeliveryMilestone.arrived,
-                      isActive: etaInfo.milestone == DeliveryMilestone.arrivingSoon,
+                      isCompleted:
+                          etaInfo.milestone == DeliveryMilestone.arrivingSoon ||
+                              etaInfo.milestone == DeliveryMilestone.arrived,
+                      isActive:
+                          etaInfo.milestone == DeliveryMilestone.arrivingSoon,
                     ),
                     _MilestoneConnector(
-                      isCompleted: etaInfo.milestone == DeliveryMilestone.arrived,
+                      isCompleted:
+                          etaInfo.milestone == DeliveryMilestone.arrived,
                     ),
                     _MilestoneStep(
                       title: 'Arrived',
-                      isCompleted: etaInfo.milestone == DeliveryMilestone.arrived,
+                      isCompleted:
+                          etaInfo.milestone == DeliveryMilestone.arrived,
                       isActive: etaInfo.milestone == DeliveryMilestone.arrived,
                     ),
                   ],

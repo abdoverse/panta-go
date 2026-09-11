@@ -120,7 +120,8 @@ class HelperJobCard extends StatelessWidget {
                                 color: const Color(0xFFE8F5E9),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: AppTheme.primaryGreen.withValues(alpha: 0.4),
+                                  color: AppTheme.primaryGreen
+                                      .withValues(alpha: 0.4),
                                 ),
                               ),
                               child: const Row(
@@ -392,7 +393,8 @@ class HelperJobCard extends StatelessWidget {
                       Builder(
                         builder: (context) {
                           final hasUnread = provider.hasUnreadChat(job.id);
-                          final unreadCount = provider.getUnreadChatCount(job.id);
+                          final unreadCount =
+                              provider.getUnreadChatCount(job.id);
                           final messages = provider.getChatMessages(job.id);
                           final latestMsg =
                               messages.isNotEmpty ? messages.last : null;
@@ -411,10 +413,12 @@ class HelperJobCard extends StatelessWidget {
                                     vertical: 10,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: AppTheme.primaryGreen.withValues(alpha: 0.1),
+                                    color: AppTheme.primaryGreen
+                                        .withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(14),
                                     border: Border.all(
-                                      color: AppTheme.primaryGreen.withValues(alpha: 0.4),
+                                      color: AppTheme.primaryGreen
+                                          .withValues(alpha: 0.4),
                                       width: 1.5,
                                     ),
                                   ),
@@ -462,14 +466,14 @@ class HelperJobCard extends StatelessWidget {
                                                   ),
                                                   const SizedBox(width: 6),
                                                   Container(
-                                                    padding:
-                                                        const EdgeInsets.symmetric(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
                                                       horizontal: 6,
                                                       vertical: 2,
                                                     ),
                                                     decoration: BoxDecoration(
-                                                      color:
-                                                          Colors.orange.shade700,
+                                                      color: Colors
+                                                          .orange.shade700,
                                                       borderRadius:
                                                           BorderRadius.circular(
                                                               8),
@@ -558,70 +562,73 @@ class HelperJobCard extends StatelessWidget {
                                           ),
                                   ),
                                   const SizedBox(width: 8),
-                          Expanded(
-                            child: job.arrivedAtDoor != null
-                                ? Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 10,
-                                      horizontal: 8,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.green.shade50,
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(
-                                        color: Colors.green.shade400,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        const Icon(
-                                          Icons.check_circle,
-                                          size: 16,
-                                          color: Colors.green,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          'At Door (${job.arrivedAtDoor!.hour.toString().padLeft(2, '0')}:${job.arrivedAtDoor!.minute.toString().padLeft(2, '0')})',
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.green,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  )
-                                : FilledButton.icon(
-                                    onPressed: () async {
-                                      final ok = await context
-                                          .read<PantaProvider>()
-                                          .markArrivedAtDoor(job.id);
-                                      if (context.mounted && ok) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              '🛎️ Ding-Dong! Arrival alert sent to recycler.',
+                                  Expanded(
+                                    child: job.arrivedAtDoor != null
+                                        ? Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 10,
+                                              horizontal: 8,
                                             ),
-                                            backgroundColor: Colors.amber,
+                                            decoration: BoxDecoration(
+                                              color: Colors.green.shade50,
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              border: Border.all(
+                                                color: Colors.green.shade400,
+                                              ),
+                                            ),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                const Icon(
+                                                  Icons.check_circle,
+                                                  size: 16,
+                                                  color: Colors.green,
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  'At Door (${job.arrivedAtDoor!.hour.toString().padLeft(2, '0')}:${job.arrivedAtDoor!.minute.toString().padLeft(2, '0')})',
+                                                  style: const TextStyle(
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.green,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          )
+                                        : FilledButton.icon(
+                                            onPressed: () async {
+                                              final ok = await context
+                                                  .read<PantaProvider>()
+                                                  .markArrivedAtDoor(job.id);
+                                              if (context.mounted && ok) {
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      '🛎️ Ding-Dong! Arrival alert sent to recycler.',
+                                                    ),
+                                                    backgroundColor:
+                                                        Colors.amber,
+                                                  ),
+                                                );
+                                              }
+                                            },
+                                            style: FilledButton.styleFrom(
+                                              backgroundColor:
+                                                  Colors.amber.shade800,
+                                            ),
+                                            icon: const Icon(
+                                              Icons.doorbell_outlined,
+                                              size: 16,
+                                            ),
+                                            label: Text(context.l10n.atTheDoor),
                                           ),
-                                        );
-                                      }
-                                    },
-                                    style: FilledButton.styleFrom(
-                                      backgroundColor: Colors.amber.shade800,
-                                    ),
-                                    icon: const Icon(
-                                      Icons.doorbell_outlined,
-                                      size: 16,
-                                    ),
-                                    label: const Text("I'm at Door"),
                                   ),
-                          ),
-                        ],
-                      ),
+                                ],
+                              ),
                             ],
                           );
                         },
@@ -665,8 +672,7 @@ class HelperJobCard extends StatelessWidget {
                                 if (!cancelled) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content:
-                                          Text(l10n.couldNotCancelPickup),
+                                      content: Text(l10n.couldNotCancelPickup),
                                     ),
                                   );
                                   return;
@@ -741,7 +747,7 @@ class HelperJobCard extends StatelessWidget {
                                 );
                               },
                               icon: const Icon(Icons.receipt_long, size: 18),
-                              label: const Text('Scan & Complete'),
+                              label: Text(context.l10n.scanAndComplete),
                             ),
                           ),
                         ],
@@ -888,7 +894,8 @@ class HelperRequestImage extends StatelessWidget {
     if (url.contains('.console.aws.amazon.com/s3/') ||
         url.contains('console.aws.amazon.com')) {
       final uri = Uri.tryParse(url);
-      final prefix = uri?.queryParameters['prefix'] ?? uri?.queryParameters['key'];
+      final prefix =
+          uri?.queryParameters['prefix'] ?? uri?.queryParameters['key'];
       if (prefix != null && prefix.isNotEmpty) {
         url = '/api/v1/images/$prefix';
       }
@@ -923,9 +930,11 @@ class HelperRequestImage extends StatelessWidget {
                       child: const Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.broken_image_rounded, size: 48, color: Colors.grey),
+                          Icon(Icons.broken_image_rounded,
+                              size: 48, color: Colors.grey),
                           SizedBox(height: 8),
-                          Text('Image not available', style: TextStyle(color: Colors.grey)),
+                          Text(context.l10n.imageNotAvailable,
+                              style: TextStyle(color: Colors.grey)),
                         ],
                       ),
                     ),
@@ -956,8 +965,8 @@ class HelperRequestImage extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    final hasRemoteSource = resolvedUrl.startsWith('http') ||
-        resolvedUrl.startsWith('data:image/');
+    final hasRemoteSource =
+        resolvedUrl.startsWith('http') || resolvedUrl.startsWith('data:image/');
 
     if (hasRemoteSource) {
       return InkWell(
@@ -966,7 +975,8 @@ class HelperRequestImage extends StatelessWidget {
           resolvedUrl,
           fit: BoxFit.cover,
           errorBuilder: (_, __, ___) => const Center(
-            child: Icon(Icons.image_not_supported, size: 40, color: Colors.grey),
+            child:
+                Icon(Icons.image_not_supported, size: 40, color: Colors.grey),
           ),
         ),
       );

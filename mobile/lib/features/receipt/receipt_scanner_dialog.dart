@@ -67,7 +67,7 @@ class ReceiptScannerDialog extends StatefulWidget {
 class _ReceiptScannerDialogState extends State<ReceiptScannerDialog> {
   final _picker = ImagePicker();
   final _amountController = TextEditingController();
-  
+
   bool _isScanning = false;
   XFile? _selectedImage;
   ReceiptOcrResult? _ocrResult;
@@ -119,9 +119,8 @@ class _ReceiptScannerDialogState extends State<ReceiptScannerDialog> {
       setState(() {
         _isScanning = false;
         _ocrResult = result;
-        _amountController.text = result.totalAmount > 0
-            ? result.totalAmount.toStringAsFixed(2)
-            : '';
+        _amountController.text =
+            result.totalAmount > 0 ? result.totalAmount.toStringAsFixed(2) : '';
       });
     } catch (e) {
       setState(() {
@@ -211,326 +210,355 @@ class _ReceiptScannerDialogState extends State<ReceiptScannerDialog> {
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Container(
-                width: 44,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryGreen.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.receipt_long,
-                    color: AppTheme.primaryGreen,
-                    size: 26,
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Scan Pant Receipt',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        widget.requestTitle,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey.shade600,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 18),
-            if (widget.leaveAtDoor) ...[
-              Container(
-                padding: const EdgeInsets.all(12),
-                margin: const EdgeInsets.only(bottom: 14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF8E1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.amber.shade400),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: 16),
+                Row(
                   children: [
-                    const Row(
-                      children: [
-                        Icon(Icons.door_front_door_outlined, color: Colors.orange, size: 18),
-                        SizedBox(width: 6),
-                        Text(
-                          'Contactless Door Pickup',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                            color: Colors.brown,
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (widget.doorInstructions != null && widget.doorInstructions!.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        'Instructions: ${widget.doorInstructions!}',
-                        style: const TextStyle(fontSize: 12, color: Colors.black87),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryGreen.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                    ],
-                    const SizedBox(height: 10),
-                    OutlinedButton.icon(
-                      onPressed: _takeDropoffPhoto,
-                      icon: Icon(
-                        _dropoffPhotoUrl != null ? Icons.check_circle : Icons.camera_alt,
-                        color: _dropoffPhotoUrl != null ? Colors.green : Colors.orange,
-                        size: 18,
-                      ),
-                      label: Text(
-                        _dropoffPhotoUrl != null
-                            ? 'Drop-off Photo Captured ✓'
-                            : 'Take Drop-off Photo Proof',
-                        style: TextStyle(
-                          color: _dropoffPhotoUrl != null ? Colors.green.shade800 : Colors.brown,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      child: const Icon(
+                        Icons.receipt_long,
+                        color: AppTheme.primaryGreen,
+                        size: 26,
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ],
-            if (_errorMessage != null)
-              Container(
-                padding: const EdgeInsets.all(12),
-                margin: const EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(
-                  color: Colors.red.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  _errorMessage!,
-                  style: TextStyle(color: Colors.red.shade800, fontSize: 13),
-                ),
-              ),
-            if (_isScanning)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 36),
-                child: Center(
-                  child: Column(
-                    children: [
-                      CircularProgressIndicator(color: AppTheme.primaryGreen),
-                      SizedBox(height: 14),
-                      Text(
-                        'Reading receipt text with OCR...',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                ),
-              )
-            else if (_ocrResult != null) ...[
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F8F4),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppTheme.primaryGreen.withValues(alpha: 0.3)),
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Verified Store:',
-                          style: TextStyle(fontSize: 13, color: Colors.grey),
-                        ),
-                        Text(
-                          _ocrResult!.storeName ?? 'Pantstation',
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                      ],
-                    ),
-                    if (_ocrResult!.totalContainers > 0) ...[
-                      const SizedBox(height: 6),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Recycled Units:',
-                            style: TextStyle(fontSize: 13, color: Colors.grey),
+                            'Scan Pant Receipt',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           Text(
-                            '${_ocrResult!.totalContainers} items',
-                            style: const TextStyle(fontWeight: FontWeight.w600),
+                            widget.requestTitle,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey.shade600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
-                    ],
-                    const Divider(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                if (widget.leaveAtDoor) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF8E1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.amber.shade400),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Detected Total:',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                        const Row(
+                          children: [
+                            Icon(Icons.door_front_door_outlined,
+                                color: Colors.orange, size: 18),
+                            SizedBox(width: 6),
+                            Text(
+                              'Contactless Door Pickup',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                                color: Colors.brown,
+                              ),
+                            ),
+                          ],
                         ),
-                        Text(
-                          '${_ocrResult!.totalAmount.toStringAsFixed(2)} SEK',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.primaryGreen,
+                        if (widget.doorInstructions != null &&
+                            widget.doorInstructions!.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            'Instructions: ${widget.doorInstructions!}',
+                            style: const TextStyle(
+                                fontSize: 12, color: Colors.black87),
+                          ),
+                        ],
+                        const SizedBox(height: 10),
+                        OutlinedButton.icon(
+                          onPressed: _takeDropoffPhoto,
+                          icon: Icon(
+                            _dropoffPhotoUrl != null
+                                ? Icons.check_circle
+                                : Icons.camera_alt,
+                            color: _dropoffPhotoUrl != null
+                                ? Colors.green
+                                : Colors.orange,
+                            size: 18,
+                          ),
+                          label: Text(
+                            _dropoffPhotoUrl != null
+                                ? 'Drop-off Photo Captured ✓'
+                                : 'Take Drop-off Photo Proof',
+                            style: TextStyle(
+                              color: _dropoffPhotoUrl != null
+                                  ? Colors.green.shade800
+                                  : Colors.brown,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ],
                     ),
+                  ),
+                ],
+                if (_errorMessage != null)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      _errorMessage!,
+                      style:
+                          TextStyle(color: Colors.red.shade800, fontSize: 13),
+                    ),
+                  ),
+                if (_isScanning)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 36),
+                    child: Center(
+                      child: Column(
+                        children: [
+                          CircularProgressIndicator(
+                              color: AppTheme.primaryGreen),
+                          SizedBox(height: 14),
+                          Text(
+                            'Reading receipt text with OCR...',
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else if (_ocrResult != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F8F4),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                          color: AppTheme.primaryGreen.withValues(alpha: 0.3)),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Verified Store:',
+                              style:
+                                  TextStyle(fontSize: 13, color: Colors.grey),
+                            ),
+                            Text(
+                              _ocrResult!.storeName ?? 'Pantstation',
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                        if (_ocrResult!.totalContainers > 0) ...[
+                          const SizedBox(height: 6),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Recycled Units:',
+                                style:
+                                    TextStyle(fontSize: 13, color: Colors.grey),
+                              ),
+                              Text(
+                                '${_ocrResult!.totalContainers} items',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w600),
+                              ),
+                            ],
+                          ),
+                        ],
+                        const Divider(height: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Detected Total:',
+                              style: TextStyle(
+                                  fontSize: 15, fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              '${_ocrResult!.totalAmount.toStringAsFixed(2)} SEK',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.primaryGreen,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                TextFormField(
+                  controller: _amountController,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    labelText: context.l10n.verifiedPantAmount,
+                    hintText: '0.00',
+                    prefixIcon: const Icon(Icons.payments_outlined),
+                    suffixText: 'SEK',
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                Builder(
+                  builder: (context) {
+                    final raw =
+                        _amountController.text.replaceAll(',', '.').trim();
+                    final currentAmount = double.tryParse(raw) ?? 0.0;
+                    if (currentAmount <= 0) return const SizedBox.shrink();
+
+                    final splitPct = widget.splitPercentage;
+                    final recyclerShare = (currentAmount * splitPct) / 100.0;
+                    final helperShare =
+                        (currentAmount * (100.0 - splitPct)) / 100.0;
+
+                    return Container(
+                      margin: const EdgeInsets.only(top: 12),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF9FBE7),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.lime.shade600),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.calculate_outlined,
+                                  size: 18, color: Color(0xFF558B2F)),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Automated Pant Split (${splitPct.toInt()}% / ${(100 - splitPct).toInt()}%)',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                  color: Color(0xFF33691E),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(context.l10n.recyclerShare,
+                                  style: TextStyle(fontSize: 13)),
+                              Text(
+                                '${recyclerShare.toStringAsFixed(2)} SEK',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(context.l10n.helperEarnings,
+                                  style: TextStyle(fontSize: 13)),
+                              Text(
+                                '${helperShare.toStringAsFixed(2)} SEK',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.indigo),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => _pickImage(ImageSource.camera),
+                        icon: const Icon(Icons.camera_alt),
+                        label: Text(context.l10n.camera),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => _pickImage(ImageSource.gallery),
+                        icon: const Icon(Icons.photo_library),
+                        label: Text(context.l10n.gallery),
+                      ),
+                    ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 16),
-            ],
-            TextFormField(
-              controller: _amountController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(
-                labelText: 'Verified Pant Amount (SEK)',
-                hintText: '0.00',
-                prefixIcon: const Icon(Icons.payments_outlined),
-                suffixText: 'SEK',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-            Builder(
-              builder: (context) {
-                final raw = _amountController.text.replaceAll(',', '.').trim();
-                final currentAmount = double.tryParse(raw) ?? 0.0;
-                if (currentAmount <= 0) return const SizedBox.shrink();
-
-                final splitPct = widget.splitPercentage;
-                final recyclerShare = (currentAmount * splitPct) / 100.0;
-                final helperShare = (currentAmount * (100.0 - splitPct)) / 100.0;
-
-                return Container(
-                  margin: const EdgeInsets.only(top: 12),
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF9FBE7),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.lime.shade600),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.calculate_outlined, size: 18, color: Color(0xFF558B2F)),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Automated Pant Split (${splitPct.toInt()}% / ${(100 - splitPct).toInt()}%)',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
-                              color: Color(0xFF33691E),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('💚 Recycler Share:', style: TextStyle(fontSize: 13)),
-                          Text(
-                            '${recyclerShare.toStringAsFixed(2)} SEK',
-                            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('🚴 Helper Earnings:', style: TextStyle(fontSize: 13)),
-                          Text(
-                            '${helperShare.toStringAsFixed(2)} SEK',
-                            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _pickImage(ImageSource.camera),
-                    icon: const Icon(Icons.camera_alt),
-                    label: const Text('Camera'),
-                  ),
+                const SizedBox(height: 8),
+                TextButton.icon(
+                  onPressed: _useDemoReceipt,
+                  icon: const Icon(Icons.receipt, size: 18),
+                  label: const Text('Use Demo Swedish Receipt (Test OCR)'),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _pickImage(ImageSource.gallery),
-                    icon: const Icon(Icons.photo_library),
-                    label: const Text('Gallery'),
+                const SizedBox(height: 14),
+                ElevatedButton(
+                  onPressed: _submit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryGreen,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text(
+                    'Confirm Receipt & Complete Pickup',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            TextButton.icon(
-              onPressed: _useDemoReceipt,
-              icon: const Icon(Icons.receipt, size: 18),
-              label: const Text('Use Demo Swedish Receipt (Test OCR)'),
-            ),
-            const SizedBox(height: 14),
-            ElevatedButton(
-              onPressed: _submit,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryGreen,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: const Text(
-                'Confirm Receipt & Complete Pickup',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
-    ),
-  ),
-);
-}
+    );
+  }
 }
