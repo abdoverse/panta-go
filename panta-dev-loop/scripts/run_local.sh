@@ -137,7 +137,7 @@ start_frontend() {
     local web_build_dir="$FRONTEND_DIR/build/web"
     echo "🔨 Building Flutter web bundle for the local backend..."
     cd "$FRONTEND_DIR"
-    flutter build web --release --dart-define=API_BASE_URL="$API_BASE_URL"
+    flutter build web --release --no-wasm-dry-run --dart-define=API_BASE_URL="$API_BASE_URL"
     cd "$PROJECT_ROOT"
 
     echo "🚀 Starting fast Flutter web server on port $FRONTEND_PORT..."
