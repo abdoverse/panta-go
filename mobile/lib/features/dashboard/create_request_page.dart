@@ -155,582 +155,590 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
         child: ResponsiveContainer(
           maxWidth: 680,
           child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Market Active Request Quota Indicator (plan-74)
-              Container(
-                width: double.infinity,
-                margin: const EdgeInsets.only(bottom: 20),
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: provider.canCreateRequest
-                      ? AppTheme.primaryGreen.withValues(alpha: 0.08)
-                      : Colors.orange.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: provider.canCreateRequest
-                        ? AppTheme.primaryGreen.withValues(alpha: 0.25)
-                        : Colors.orange.withValues(alpha: 0.5),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      provider.canCreateRequest
-                          ? Icons.inventory_2_outlined
-                          : Icons.warning_amber_rounded,
-                      color: provider.canCreateRequest
-                          ? AppTheme.primaryGreen
-                          : Colors.orange[800],
-                      size: 24,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            provider.canCreateRequest
-                                ? 'Active Market Quota: ${provider.activeRequestsCount} of ${provider.maxActiveRequests} used'
-                                : 'Active Market Limit Reached (${provider.activeRequestsCount}/${provider.maxActiveRequests})',
-                            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: provider.canCreateRequest
-                                      ? AppTheme.primaryGreen
-                                      : Colors.orange[900],
-                                ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            provider.canCreateRequest
-                                ? 'You have ${provider.maxActiveRequests - provider.activeRequestsCount} request slots remaining in your market.'
-                                : 'Please wait for an existing pickup to complete before creating a new one.',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Colors.grey[700],
-                                ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (canShowQuickSummary) ...[
-                _QuickRequestSummaryCard(
-                  title: _titleController.text,
-                  location: _locationController.text,
-                  fromDate: _fromDate,
-                  toDate: _toDate,
-                  rewardText: _rewardController.text,
-                  onEditPressed: () {
-                    setState(() {
-                      _isQuickMode = false;
-                    });
-                  },
-                ),
-                const SizedBox(height: 24),
-              ],
-              if (widget.initialRequest != null) ...[
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Market Active Request Quota Indicator (plan-74)
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(16),
+                  margin: const EdgeInsets.only(bottom: 20),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryGreen.withValues(alpha: 0.08),
+                    color: provider.canCreateRequest
+                        ? AppTheme.primaryGreen.withValues(alpha: 0.08)
+                        : Colors.orange.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: provider.canCreateRequest
+                          ? AppTheme.primaryGreen.withValues(alpha: 0.25)
+                          : Colors.orange.withValues(alpha: 0.5),
+                    ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.history_toggle_off,
-                          color: AppTheme.primaryGreen),
+                      Icon(
+                        provider.canCreateRequest
+                            ? Icons.inventory_2_outlined
+                            : Icons.warning_amber_rounded,
+                        color: provider.canCreateRequest
+                            ? AppTheme.primaryGreen
+                            : Colors.orange[800],
+                        size: 24,
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Text(
-                          'Booking again from your request history. Update any details before posting.',
-                          style: Theme.of(context).textTheme.bodyMedium,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              provider.canCreateRequest
+                                  ? 'Active Market Quota: ${provider.activeRequestsCount} of ${provider.maxActiveRequests} used'
+                                  : 'Active Market Limit Reached (${provider.activeRequestsCount}/${provider.maxActiveRequests})',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelLarge
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: provider.canCreateRequest
+                                        ? AppTheme.primaryGreen
+                                        : Colors.orange[900],
+                                  ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              provider.canCreateRequest
+                                  ? 'You have ${provider.maxActiveRequests - provider.activeRequestsCount} request slots remaining in your market.'
+                                  : 'Please wait for an existing pickup to complete before creating a new one.',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: Colors.grey[700],
+                                  ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 24),
-              ],
-              if (!_isQuickMode) ...[
-                Center(
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(24),
-                    onTap: _pickPhoto,
-                    child: DottedBorder(
-                      options: RoundedRectDottedBorderOptions(
-                        radius: const Radius.circular(24),
-                        color: Colors.grey[400]!,
-                        dashPattern: const [8, 4],
-                        strokeWidth: 2,
-                      ),
-                      child: Container(
-                        height: 200,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: AppTheme.surfaceGrey,
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        child: _selectedPhotoBytes == null
-                            ? Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.add_a_photo_outlined,
-                                      size: 48,
-                                      color: AppTheme.primaryGreen
-                                          .withValues(alpha: 0.5)),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    l10n.addPhoto,
-                                    style: TextStyle(
-                                      color: AppTheme.textSecondary,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    l10n.tapToChooseImage,
-                                    style: TextStyle(color: Colors.grey[600]),
-                                  ),
-                                ],
-                              )
-                            : ClipRRect(
-                                borderRadius: BorderRadius.circular(24),
-                                child: Stack(
-                                  fit: StackFit.expand,
-                                  children: [
-                                    Image.memory(
-                                      _selectedPhotoBytes!,
-                                      fit: BoxFit.cover,
-                                    ),
-                                    Positioned(
-                                      right: 12,
-                                      top: 12,
-                                      child: DecoratedBox(
-                                        decoration: BoxDecoration(
-                                          color: Colors.black54,
-                                          borderRadius:
-                                              BorderRadius.circular(999),
-                                        ),
-                                        child: IconButton(
-                                          onPressed: () {
-                                            setState(() {
-                                              _selectedPhotoBytes = null;
-                                              _selectedPhotoMimeType = null;
-                                              _selectedPhotoFileName = null;
-                                            });
-                                          },
-                                          icon: const Icon(Icons.close,
-                                              color: Colors.white),
-                                          tooltip: l10n.removePhoto,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                      ),
-                    ),
+                if (canShowQuickSummary) ...[
+                  _QuickRequestSummaryCard(
+                    title: _titleController.text,
+                    location: _locationController.text,
+                    fromDate: _fromDate,
+                    toDate: _toDate,
+                    rewardText: _rewardController.text,
+                    onEditPressed: () {
+                      setState(() {
+                        _isQuickMode = false;
+                      });
+                    },
                   ),
-                ),
-                const SizedBox(height: 12),
-                Center(
-                  child: OutlinedButton.icon(
-                    onPressed: _pickPhoto,
-                    icon: const Icon(Icons.photo_library_outlined),
-                    label: Text(_selectedPhotoBytes == null
-                        ? l10n.choosePhoto
-                        : l10n.changePhoto),
-                  ),
-                ),
-                const SizedBox(height: 32),
-              ],
-              Text(l10n.whatAreYouGettingRidOf,
-                  style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 12),
-              if (provider.requestTemplates.isNotEmpty) ...[
-                Text(
-                  'Use a saved template',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: provider.requestTemplates.map((template) {
-                    return ActionChip(
-                      label: Text(template.name),
-                      avatar: const Icon(Icons.copy_all_rounded, size: 18),
-                      onPressed: () => _applyTemplate(template),
-                    );
-                  }).toList(growable: false),
-                ),
-                const SizedBox(height: 16),
-              ],
-              TextFormField(
-                controller: _titleController,
-                style: const TextStyle(fontWeight: FontWeight.w600),
-                decoration: InputDecoration(
-                  hintText: l10n.requestTitleHint,
-                  prefixIcon: const Icon(Icons.inventory_2_outlined),
-                ),
-                validator: (v) => v!.isEmpty ? l10n.pleaseEnterTitle : null,
-              ),
-              if (!_isQuickMode) ...[
-                const SizedBox(height: 24),
-                Text(l10n.description,
-                    style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _descriptionController,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    hintText: l10n.descriptionHint,
-                    alignLabelWithHint: true,
-                  ),
-                ),
-              ],
-              const SizedBox(height: 24),
-              Text(l10n.location,
-                  style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 12),
-              if (provider.savedAddresses.isNotEmpty) ...[
-                Text(
-                  _isQuickMode ? 'Recent addresses' : 'Saved addresses',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: provider.savedAddresses.map((address) {
-                    return ActionChip(
-                      label: Text(address.label),
-                      avatar: const Icon(Icons.location_on_outlined, size: 18),
-                      onPressed: () => _applySavedAddress(address),
-                    );
-                  }).toList(growable: false),
-                ),
-                const SizedBox(height: 16),
-              ],
-              TypeAheadField<LocationSuggestion>(
-                controller: _locationController,
-                suggestionsCallback: (pattern) async {
-                  return await LocationService().getSuggestions(pattern);
-                },
-                builder: (context, controller, focusNode) {
-                  return TextFormField(
-                    controller: controller,
-                    focusNode: focusNode,
-                    decoration: InputDecoration(
-                      hintText: l10n.enterPickupAddress,
-                      prefixIcon: const Icon(Icons.location_on_outlined),
-                      suffixIcon: IconButton(
-                        tooltip: 'Use current location',
-                        icon: const Icon(Icons.my_location_rounded),
-                        onPressed: () => _useCurrentLocation(),
-                      ),
-                    ),
-                    validator: (v) =>
-                        v!.isEmpty ? l10n.pleaseEnterLocation : null,
-                  );
-                },
-                itemBuilder: (context, suggestion) {
-                  return ListTile(
-                    leading: const Icon(Icons.location_on_outlined),
-                    title: Text(suggestion.title,
-                        style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text(suggestion.subtitle,
-                        maxLines: 1, overflow: TextOverflow.ellipsis),
-                  );
-                },
-                onSelected: (suggestion) {
-                  setState(() {
-                    _selectedLocation = suggestion;
-                    // Set user-friendly text: "Title, Subtitle" but simplified
-                    // User requested "keep the city name" but "shorter"
-
-                    // Construct a short display text
-                    String displayText = suggestion.title;
-                    if (suggestion.city != null &&
-                        suggestion.city!.isNotEmpty) {
-                      if (!displayText.contains(suggestion.city!)) {
-                        displayText = "$displayText, ${suggestion.city}";
-                      }
-                    } else if (suggestion.subtitle.isNotEmpty) {
-                      // Fallback to subtitle if no specific city field found but avoid very long strings
-                      // Take the first part of subtitle (often city or area)
-                      String firstPart = suggestion.subtitle.split(',')[0];
-                      if (!displayText.contains(firstPart)) {
-                        displayText = "$displayText, $firstPart";
-                      }
-                    }
-
-                    _locationController.text = displayText;
-                  });
-                },
-              ),
-              if (!_isQuickMode) ...[
-                const SizedBox(height: 24),
-                Text(l10n.when, style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _DateSelector(
-                        label: l10n.from,
-                        date: _fromDate,
-                        onTap: () async {
-                          final date = await showDatePicker(
-                            context: context,
-                            firstDate: DateTime.now()
-                                .subtract(const Duration(days: 1)),
-                            lastDate: DateTime(2030),
-                            initialDate: _fromDate,
-                          );
-                          if (date != null && context.mounted) {
-                            final time = await showTimePicker(
-                              context: context,
-                              initialTime: TimeOfDay.fromDateTime(_fromDate),
-                              builder: (BuildContext context, Widget? child) {
-                                return MediaQuery(
-                                  data: MediaQuery.of(context)
-                                      .copyWith(alwaysUse24HourFormat: true),
-                                  child: child!,
-                                );
-                              },
-                            );
-                            final newTime =
-                                time ?? TimeOfDay.fromDateTime(_fromDate);
-                            setState(() => _fromDate = DateTime(
-                                  date.year,
-                                  date.month,
-                                  date.day,
-                                  newTime.hour,
-                                  newTime.minute,
-                                ));
-                          }
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _DateSelector(
-                        label: l10n.to,
-                        date: _toDate,
-                        onTap: () async {
-                          final date = await showDatePicker(
-                            context: context,
-                            firstDate: DateTime.now()
-                                .subtract(const Duration(days: 1)),
-                            lastDate: DateTime(2030),
-                            initialDate: _toDate,
-                          );
-                          if (date != null && context.mounted) {
-                            final time = await showTimePicker(
-                              context: context,
-                              initialTime: TimeOfDay.fromDateTime(_toDate),
-                              builder: (BuildContext context, Widget? child) {
-                                return MediaQuery(
-                                  data: MediaQuery.of(context)
-                                      .copyWith(alwaysUse24HourFormat: true),
-                                  child: child!,
-                                );
-                              },
-                            );
-                            final newTime =
-                                time ?? TimeOfDay.fromDateTime(_toDate);
-                            setState(() => _toDate = DateTime(
-                                  date.year,
-                                  date.month,
-                                  date.day,
-                                  newTime.hour,
-                                  newTime.minute,
-                                ));
-                          }
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Text(l10n.yourPriceReward,
-                    style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _rewardController,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.primaryGreen),
-                  decoration: InputDecoration(
-                    hintText: '0.00',
-                    prefixIcon: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Text(AppConstants.currencySymbol,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 20,
-                                color: AppTheme.primaryGreen))),
-                    suffixText: AppConstants.currencyCode,
-                    fillColor: AppTheme.primaryGreen.withValues(alpha: 0.05),
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none),
-                  ),
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return l10n.pleaseSetPrice;
-                    if (double.tryParse(v) == null) return l10n.invalidNumber;
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  'Pant Refund Split',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'How would you like to split the scanned recycling receipt?',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey[600],
-                      ),
-                ),
-                const SizedBox(height: 10),
-                SegmentedButton<double>(
-                  segments: const [
-                    ButtonSegment(
-                      value: 70.0,
-                      label: Text('70% Me / 30% Helper'),
-                      icon: Icon(Icons.star_outline, size: 16),
-                    ),
-                    ButtonSegment(
-                      value: 50.0,
-                      label: Text('50% / 50%'),
-                    ),
-                    ButtonSegment(
-                      value: 0.0,
-                      label: Text('100% Helper'),
-                      icon: Icon(Icons.volunteer_activism_outlined, size: 16),
-                    ),
-                  ],
-                  selected: {_splitPercentage},
-                  onSelectionChanged: (set) {
-                    setState(() {
-                      _splitPercentage = set.first;
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-                SwitchListTile.adaptive(
-                  contentPadding: EdgeInsets.zero,
-                  value: _leaveAtDoor,
-                  secondary: const Icon(
-                    Icons.door_front_door_outlined,
-                    color: AppTheme.primaryGreen,
-                  ),
-                  title: const Text('Leave at Door (Contactless Pickup)'),
-                  subtitle: const Text(
-                    'Helper will pick up bags outside your door and take a photo confirmation.',
-                  ),
-                  onChanged: (value) {
-                    setState(() {
-                      _leaveAtDoor = value;
-                    });
-                  },
-                ),
-                if (_leaveAtDoor) ...[
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _doorInstructionsController,
-                    decoration: InputDecoration(
-                      labelText: 'Door & Access Instructions',
-                      hintText:
-                          'e.g. Door code 1234, 3rd floor, bag is outside door 12B',
-                      prefixIcon: const Icon(Icons.notes_rounded),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    maxLines: 2,
-                  ),
+                  const SizedBox(height: 24),
                 ],
-                const SizedBox(height: 16),
-                SwitchListTile.adaptive(
-                  contentPadding: EdgeInsets.zero,
-                  value: _saveAsAddress,
-                  title: const Text('Save this address for later'),
-                  subtitle:
-                      const Text('Keep this pickup location one tap away.'),
-                  onChanged: (value) {
-                    setState(() {
-                      _saveAsAddress = value;
-                    });
-                  },
-                ),
-                SwitchListTile.adaptive(
-                  contentPadding: EdgeInsets.zero,
-                  value: _saveAsTemplate,
-                  title: const Text('Save as reusable template'),
-                  subtitle: const Text(
-                    'Reuse the title, notes, and reward next time.',
-                  ),
-                  onChanged: (value) {
-                    setState(() {
-                      _saveAsTemplate = value;
-                    });
-                  },
-                ),
-              ],
-              const SizedBox(height: 40),
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: (provider.isLoading || !provider.canCreateRequest)
-                      ? null
-                      : () async {
-                          await _submitRequest(provider);
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryGreen,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
+                if (widget.initialRequest != null) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryGreen.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    elevation: 0,
-                  ),
-                  child: provider.isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : Text(
-                          !provider.canCreateRequest
-                              ? 'Market limit reached'
-                              : (_isQuickMode
-                                  ? 'Confirm quick request'
-                                  : l10n.postRequest),
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                    child: Row(
+                      children: [
+                        const Icon(Icons.history_toggle_off,
+                            color: AppTheme.primaryGreen),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Booking again from your request history. Update any details before posting.',
+                            style: Theme.of(context).textTheme.bodyMedium,
                           ),
                         ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+                if (!_isQuickMode) ...[
+                  Center(
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(24),
+                      onTap: _pickPhoto,
+                      child: DottedBorder(
+                        options: RoundedRectDottedBorderOptions(
+                          radius: const Radius.circular(24),
+                          color: Colors.grey[400]!,
+                          dashPattern: const [8, 4],
+                          strokeWidth: 2,
+                        ),
+                        child: Container(
+                          height: 200,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: AppTheme.surfaceGrey,
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          child: _selectedPhotoBytes == null
+                              ? Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.add_a_photo_outlined,
+                                        size: 48,
+                                        color: AppTheme.primaryGreen
+                                            .withValues(alpha: 0.5)),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      l10n.addPhoto,
+                                      style: TextStyle(
+                                        color: AppTheme.textSecondary,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      l10n.tapToChooseImage,
+                                      style: TextStyle(color: Colors.grey[600]),
+                                    ),
+                                  ],
+                                )
+                              : ClipRRect(
+                                  borderRadius: BorderRadius.circular(24),
+                                  child: Stack(
+                                    fit: StackFit.expand,
+                                    children: [
+                                      Image.memory(
+                                        _selectedPhotoBytes!,
+                                        fit: BoxFit.cover,
+                                      ),
+                                      Positioned(
+                                        right: 12,
+                                        top: 12,
+                                        child: DecoratedBox(
+                                          decoration: BoxDecoration(
+                                            color: Colors.black54,
+                                            borderRadius:
+                                                BorderRadius.circular(999),
+                                          ),
+                                          child: IconButton(
+                                            onPressed: () {
+                                              setState(() {
+                                                _selectedPhotoBytes = null;
+                                                _selectedPhotoMimeType = null;
+                                                _selectedPhotoFileName = null;
+                                              });
+                                            },
+                                            icon: const Icon(Icons.close,
+                                                color: Colors.white),
+                                            tooltip: l10n.removePhoto,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Center(
+                    child: OutlinedButton.icon(
+                      onPressed: _pickPhoto,
+                      icon: const Icon(Icons.photo_library_outlined),
+                      label: Text(_selectedPhotoBytes == null
+                          ? l10n.choosePhoto
+                          : l10n.changePhoto),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                ],
+                Text(l10n.whatAreYouGettingRidOf,
+                    style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 12),
+                if (provider.requestTemplates.isNotEmpty) ...[
+                  Text(
+                    'Use a saved template',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: provider.requestTemplates.map((template) {
+                      return ActionChip(
+                        label: Text(template.name),
+                        avatar: const Icon(Icons.copy_all_rounded, size: 18),
+                        onPressed: () => _applyTemplate(template),
+                      );
+                    }).toList(growable: false),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                TextFormField(
+                  controller: _titleController,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  decoration: InputDecoration(
+                    hintText: l10n.requestTitleHint,
+                    prefixIcon: const Icon(Icons.inventory_2_outlined),
+                  ),
+                  validator: (v) => v!.isEmpty ? l10n.pleaseEnterTitle : null,
                 ),
-              ),
-              const SizedBox(height: 20),
-            ],
+                if (!_isQuickMode) ...[
+                  const SizedBox(height: 24),
+                  Text(l10n.description,
+                      style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _descriptionController,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      hintText: l10n.descriptionHint,
+                      alignLabelWithHint: true,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 24),
+                Text(l10n.location,
+                    style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 12),
+                if (provider.savedAddresses.isNotEmpty) ...[
+                  Text(
+                    _isQuickMode ? 'Recent addresses' : 'Saved addresses',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: provider.savedAddresses.map((address) {
+                      return ActionChip(
+                        label: Text(address.label),
+                        avatar:
+                            const Icon(Icons.location_on_outlined, size: 18),
+                        onPressed: () => _applySavedAddress(address),
+                      );
+                    }).toList(growable: false),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                TypeAheadField<LocationSuggestion>(
+                  controller: _locationController,
+                  suggestionsCallback: (pattern) async {
+                    return await LocationService().getSuggestions(pattern);
+                  },
+                  builder: (context, controller, focusNode) {
+                    return TextFormField(
+                      controller: controller,
+                      focusNode: focusNode,
+                      decoration: InputDecoration(
+                        hintText: l10n.enterPickupAddress,
+                        prefixIcon: const Icon(Icons.location_on_outlined),
+                        suffixIcon: IconButton(
+                          tooltip: l10n.useCurrentLocation,
+                          icon: const Icon(Icons.my_location_rounded),
+                          onPressed: () => _useCurrentLocation(),
+                        ),
+                      ),
+                      validator: (v) =>
+                          v!.isEmpty ? l10n.pleaseEnterLocation : null,
+                    );
+                  },
+                  itemBuilder: (context, suggestion) {
+                    return ListTile(
+                      leading: const Icon(Icons.location_on_outlined),
+                      title: Text(suggestion.title,
+                          style: const TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: Text(suggestion.subtitle,
+                          maxLines: 1, overflow: TextOverflow.ellipsis),
+                    );
+                  },
+                  onSelected: (suggestion) {
+                    setState(() {
+                      _selectedLocation = suggestion;
+                      // Set user-friendly text: "Title, Subtitle" but simplified
+                      // User requested "keep the city name" but "shorter"
+
+                      // Construct a short display text
+                      String displayText = suggestion.title;
+                      if (suggestion.city != null &&
+                          suggestion.city!.isNotEmpty) {
+                        if (!displayText.contains(suggestion.city!)) {
+                          displayText = "$displayText, ${suggestion.city}";
+                        }
+                      } else if (suggestion.subtitle.isNotEmpty) {
+                        // Fallback to subtitle if no specific city field found but avoid very long strings
+                        // Take the first part of subtitle (often city or area)
+                        String firstPart = suggestion.subtitle.split(',')[0];
+                        if (!displayText.contains(firstPart)) {
+                          displayText = "$displayText, $firstPart";
+                        }
+                      }
+
+                      _locationController.text = displayText;
+                    });
+                  },
+                ),
+                if (!_isQuickMode) ...[
+                  const SizedBox(height: 24),
+                  Text(l10n.when,
+                      style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _DateSelector(
+                          label: l10n.from,
+                          date: _fromDate,
+                          onTap: () async {
+                            final date = await showDatePicker(
+                              context: context,
+                              firstDate: DateTime.now()
+                                  .subtract(const Duration(days: 1)),
+                              lastDate: DateTime(2030),
+                              initialDate: _fromDate,
+                            );
+                            if (date != null && context.mounted) {
+                              final time = await showTimePicker(
+                                context: context,
+                                initialTime: TimeOfDay.fromDateTime(_fromDate),
+                                builder: (BuildContext context, Widget? child) {
+                                  return MediaQuery(
+                                    data: MediaQuery.of(context)
+                                        .copyWith(alwaysUse24HourFormat: true),
+                                    child: child!,
+                                  );
+                                },
+                              );
+                              final newTime =
+                                  time ?? TimeOfDay.fromDateTime(_fromDate);
+                              setState(() => _fromDate = DateTime(
+                                    date.year,
+                                    date.month,
+                                    date.day,
+                                    newTime.hour,
+                                    newTime.minute,
+                                  ));
+                            }
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _DateSelector(
+                          label: l10n.to,
+                          date: _toDate,
+                          onTap: () async {
+                            final date = await showDatePicker(
+                              context: context,
+                              firstDate: DateTime.now()
+                                  .subtract(const Duration(days: 1)),
+                              lastDate: DateTime(2030),
+                              initialDate: _toDate,
+                            );
+                            if (date != null && context.mounted) {
+                              final time = await showTimePicker(
+                                context: context,
+                                initialTime: TimeOfDay.fromDateTime(_toDate),
+                                builder: (BuildContext context, Widget? child) {
+                                  return MediaQuery(
+                                    data: MediaQuery.of(context)
+                                        .copyWith(alwaysUse24HourFormat: true),
+                                    child: child!,
+                                  );
+                                },
+                              );
+                              final newTime =
+                                  time ?? TimeOfDay.fromDateTime(_toDate);
+                              setState(() => _toDate = DateTime(
+                                    date.year,
+                                    date.month,
+                                    date.day,
+                                    newTime.hour,
+                                    newTime.minute,
+                                  ));
+                            }
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Text(l10n.yourPriceReward,
+                      style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _rewardController,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primaryGreen),
+                    decoration: InputDecoration(
+                      hintText: '0.00',
+                      prefixIcon: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Text(AppConstants.currencySymbol,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20,
+                                  color: AppTheme.primaryGreen))),
+                      suffixText: AppConstants.currencyCode,
+                      fillColor: AppTheme.primaryGreen.withValues(alpha: 0.05),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none),
+                    ),
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return l10n.pleaseSetPrice;
+                      if (double.tryParse(v) == null) return l10n.invalidNumber;
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Pant Refund Split',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'How would you like to split the scanned recycling receipt?',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.grey[600],
+                        ),
+                  ),
+                  const SizedBox(height: 10),
+                  SegmentedButton<double>(
+                    segments: const [
+                      ButtonSegment(
+                        value: 70.0,
+                        label: Text('70% Me / 30% Helper'),
+                        icon: Icon(Icons.star_outline, size: 16),
+                      ),
+                      ButtonSegment(
+                        value: 50.0,
+                        label: Text('50% / 50%'),
+                      ),
+                      ButtonSegment(
+                        value: 0.0,
+                        label: Text('100% Helper'),
+                        icon: Icon(Icons.volunteer_activism_outlined, size: 16),
+                      ),
+                    ],
+                    selected: {_splitPercentage},
+                    onSelectionChanged: (set) {
+                      setState(() {
+                        _splitPercentage = set.first;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  SwitchListTile.adaptive(
+                    contentPadding: EdgeInsets.zero,
+                    value: _leaveAtDoor,
+                    secondary: const Icon(
+                      Icons.door_front_door_outlined,
+                      color: AppTheme.primaryGreen,
+                    ),
+                    title: Text(l10n.leaveAtDoor),
+                    subtitle: const Text(
+                      'Helper will pick up bags outside your door and take a photo confirmation.',
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        _leaveAtDoor = value;
+                      });
+                    },
+                  ),
+                  if (_leaveAtDoor) ...[
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _doorInstructionsController,
+                      decoration: InputDecoration(
+                        labelText: 'Door & Access Instructions',
+                        hintText:
+                            'e.g. Door code 1234, 3rd floor, bag is outside door 12B',
+                        prefixIcon: const Icon(Icons.notes_rounded),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      maxLines: 2,
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  SwitchListTile.adaptive(
+                    contentPadding: EdgeInsets.zero,
+                    value: _saveAsAddress,
+                    title: Text(l10n.saveAddressForLater),
+                    subtitle: Text(l10n.keepPickupLocationOneTapAway),
+                    onChanged: (value) {
+                      setState(() {
+                        _saveAsAddress = value;
+                      });
+                    },
+                  ),
+                  SwitchListTile.adaptive(
+                    contentPadding: EdgeInsets.zero,
+                    value: _saveAsTemplate,
+                    title: Text(l10n.saveReusableTemplate),
+                    subtitle: const Text(
+                      'Reuse the title, notes, and reward next time.',
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        _saveAsTemplate = value;
+                      });
+                    },
+                  ),
+                ],
+                const SizedBox(height: 40),
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed:
+                        (provider.isLoading || !provider.canCreateRequest)
+                            ? null
+                            : () async {
+                                await _submitRequest(provider);
+                              },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryGreen,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: provider.isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : Text(
+                            !provider.canCreateRequest
+                                ? 'Market limit reached'
+                                : (_isQuickMode
+                                    ? 'Confirm quick request'
+                                    : l10n.postRequest),
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Future<void> _pickPhoto() async {
     try {
@@ -807,7 +815,8 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString().replaceFirst('Bad state: ', ''))),
+        SnackBar(
+            content: Text(error.toString().replaceFirst('Bad state: ', ''))),
       );
     }
   }

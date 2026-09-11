@@ -68,7 +68,7 @@ class ProfileScreen extends StatelessWidget {
                     TextButton.icon(
                       onPressed: () => _showEditNameDialog(context, provider),
                       icon: const Icon(Icons.edit_outlined, size: 16),
-                      label: const Text('Edit name'),
+                      label: Text(context.l10n.editName),
                     ),
                     const SizedBox(height: 8),
                     Container(
@@ -407,15 +407,22 @@ class ProfileScreen extends StatelessWidget {
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: const Text("Send feedback"),
+          title: Text(context.l10n.sendFeedback),
           content: SingleChildScrollView(
             child: Column(mainAxisSize: MainAxisSize.min, children: [
               DropdownButtonFormField<String>(
                 initialValue: category,
-                decoration: const InputDecoration(labelText: "Category"),
-                items: const ["General", "Bug", "Idea", "Account"]
-                    .map((item) =>
-                        DropdownMenuItem(value: item, child: Text(item)))
+                decoration: InputDecoration(labelText: context.l10n.category),
+                items: ["General", "Bug", "Idea", "Account"]
+                    .map((item) => DropdownMenuItem(
+                        value: item,
+                        child: Text(item == "General"
+                            ? context.l10n.general
+                            : item == "Bug"
+                                ? context.l10n.bug
+                                : item == "Idea"
+                                    ? context.l10n.idea
+                                    : context.l10n.accountCategory)))
                     .toList(),
                 onChanged: (value) =>
                     setState(() => category = value ?? "General"),
@@ -425,11 +432,11 @@ class ProfileScreen extends StatelessWidget {
                   maxLines: 5,
                   maxLength: 4000,
                   decoration:
-                      const InputDecoration(labelText: "Your feedback")),
+                      InputDecoration(labelText: context.l10n.yourFeedback)),
               CheckboxListTile(
                   contentPadding: EdgeInsets.zero,
                   value: contactRequested,
-                  title: const Text("I’m open to being contacted"),
+                  title: Text(context.l10n.openToBeingContacted),
                   onChanged: (value) =>
                       setState(() => contactRequested = value ?? false)),
             ]),
@@ -437,7 +444,7 @@ class ProfileScreen extends StatelessWidget {
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(dialogContext, false),
-                child: const Text("Cancel")),
+                child: Text(context.l10n.cancel)),
             FilledButton(
                 onPressed: () async {
                   final ok = messageController.text.trim().isNotEmpty &&
@@ -447,7 +454,7 @@ class ProfileScreen extends StatelessWidget {
                           contactRequested: contactRequested);
                   if (dialogContext.mounted) Navigator.pop(dialogContext, ok);
                 },
-                child: const Text("Send")),
+                child: Text(context.l10n.send)),
           ],
         ),
       ),
@@ -468,21 +475,21 @@ class ProfileScreen extends StatelessWidget {
     final updatedName = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Edit name'),
+        title: Text(context.l10n.editName),
         content: TextField(
           controller: controller,
           autofocus: true,
           maxLength: 100,
           textCapitalization: TextCapitalization.words,
-          decoration: const InputDecoration(labelText: 'First and last name'),
+          decoration: InputDecoration(labelText: context.l10n.firstAndLastName),
         ),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancel')),
+              child: Text(context.l10n.cancel)),
           FilledButton(
               onPressed: () => Navigator.pop(dialogContext, controller.text),
-              child: const Text('Save')),
+              child: Text(context.l10n.save)),
         ],
       ),
     );

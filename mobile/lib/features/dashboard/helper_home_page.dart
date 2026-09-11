@@ -180,7 +180,7 @@ class _MarketplaceView extends StatelessWidget {
                   ),
                 ),
                 icon: const Icon(Icons.insights, color: Colors.white),
-                tooltip: 'Earnings & Impact',
+                tooltip: l10n.earningsAndImpact,
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
@@ -250,7 +250,7 @@ class _MarketplaceView extends StatelessWidget {
                             TextButton.icon(
                               onPressed: provider.refreshHelperLocation,
                               icon: const Icon(Icons.my_location_rounded),
-                              label: const Text('Enable'),
+                              label: Text(l10n.enable),
                             ),
                         ],
                       ),
@@ -384,7 +384,7 @@ class _HistoryView extends StatelessWidget {
               ),
             ),
             icon: const Icon(Icons.insights),
-            label: const Text('Earnings'),
+            label: Text(l10n.earnings),
           ),
         ],
       ),

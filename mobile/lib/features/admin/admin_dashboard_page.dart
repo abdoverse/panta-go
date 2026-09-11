@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/localization/app_localizations.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 
@@ -279,15 +280,15 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Panta Operations & Market Oversight',
+              context.l10n.operationsAndMarketOversight,
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             Text(
-              'Personal Caps: 20 Recycler / 30 Helper',
+              context.l10n.personalCaps(20, 30),
               style: TextStyle(fontSize: 12, color: Colors.white70),
             ),
           ],
@@ -295,12 +296,12 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh Market Data',
+            tooltip: context.l10n.refreshMarketData,
             onPressed: _isLoading ? null : _loadAdminData,
           ),
           IconButton(
             icon: const Icon(Icons.switch_account_outlined),
-            tooltip: 'Switch to User View',
+            tooltip: context.l10n.switchToUserView,
             onPressed: () async {
               await provider.switchDemoRole();
             },
@@ -354,7 +355,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               )
             : const Icon(Icons.bolt, color: Colors.white),
         label: Text(
-          _isSimulating ? 'Simulating...' : 'Simulate Market Event',
+          _isSimulating
+              ? context.l10n.simulating
+              : context.l10n.simulateMarketEvent,
           style:
               const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),

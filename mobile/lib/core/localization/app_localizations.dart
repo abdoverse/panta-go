@@ -29,16 +29,14 @@ class AppLocalizations {
   String get recyclerRole => _isSwedish ? 'Återvinnare' : 'Recycler';
   String roleLabel(String role) => role == 'Helper' ? helperRole : recyclerRole;
 
-  String get notificationFallbackTitle =>
-      _isSwedish ? 'Notis' : 'Notification';
+  String get notificationFallbackTitle => _isSwedish ? 'Notis' : 'Notification';
   String get viewAction => _isSwedish ? 'VISA' : 'VIEW';
 
   String get appTagline => _isSwedish
       ? 'Boka upphämtningar, hantera förfrågningar och gör återvinningen enkel.'
       : 'Schedule pickups, manage requests, and keep recycling simple.';
   String get logIn => _isSwedish ? 'Logga in' : 'Log in';
-  String get createAccount =>
-      _isSwedish ? 'Skapa konto' : 'Create account';
+  String get createAccount => _isSwedish ? 'Skapa konto' : 'Create account';
   String createRoleAccount(String role) => _isSwedish
       ? 'Skapa ditt konto som ${roleLabel(role).toLowerCase()}'
       : 'Create your ${roleLabel(role)} account';
@@ -59,19 +57,15 @@ class AppLocalizations {
   String get email => 'Email';
   String get pleaseEnterEmail =>
       _isSwedish ? 'Ange din e-postadress' : 'Please enter your email';
-  String get pleaseEnterValidEmail => _isSwedish
-      ? 'Ange en giltig e-postadress'
-      : 'Please enter a valid email';
+  String get pleaseEnterValidEmail =>
+      _isSwedish ? 'Ange en giltig e-postadress' : 'Please enter a valid email';
   String get password => _isSwedish ? 'Lösenord' : 'Password';
-  String get createStrongPassword => _isSwedish
-      ? 'Skapa ett starkt lösenord'
-      : 'Create a strong password';
+  String get createStrongPassword =>
+      _isSwedish ? 'Skapa ett starkt lösenord' : 'Create a strong password';
   String get enterPassword =>
       _isSwedish ? 'Ange ditt lösenord' : 'Enter your password';
-  String get hidePassword =>
-      _isSwedish ? 'Dölj lösenord' : 'Hide password';
-  String get showPassword =>
-      _isSwedish ? 'Visa lösenord' : 'Show password';
+  String get hidePassword => _isSwedish ? 'Dölj lösenord' : 'Hide password';
+  String get showPassword => _isSwedish ? 'Visa lösenord' : 'Show password';
   String get pleaseEnterPassword =>
       _isSwedish ? 'Ange ditt lösenord' : 'Please enter your password';
   String get passwordMinLength => _isSwedish
@@ -100,8 +94,9 @@ class AppLocalizations {
       : 'Built for clean, reliable pickup scheduling across iOS, Android, and web.';
   String loginFailed(String error) =>
       _isSwedish ? 'Inloggningen misslyckades: $error' : 'Login failed: $error';
-  String signUpFailed(String error) =>
-      _isSwedish ? 'Registreringen misslyckades: $error' : 'Sign up failed: $error';
+  String signUpFailed(String error) => _isSwedish
+      ? 'Registreringen misslyckades: $error'
+      : 'Sign up failed: $error';
   String get confirmYourEmail =>
       _isSwedish ? 'Bekräfta din e-post' : 'Confirm your email';
   String get verificationCodeDescription => _isSwedish
@@ -126,9 +121,7 @@ class AppLocalizations {
     if (name == null || name.isEmpty) {
       return _isSwedish ? 'Välkommen tillbaka!' : 'Welcome Back!';
     }
-    return _isSwedish
-        ? 'Välkommen tillbaka, $name!'
-        : 'Welcome Back, $name!';
+    return _isSwedish ? 'Välkommen tillbaka, $name!' : 'Welcome Back, $name!';
   }
 
   String get ongoingRequests =>
@@ -152,9 +145,8 @@ class AppLocalizations {
       ? 'Valfri kommentar (t.ex. Toppenhjälp!)'
       : 'Optional comment (e.g. Great job!)';
   String get submit => _isSwedish ? 'Skicka' : 'Submit';
-  String get thankYouForRating => _isSwedish
-      ? 'Tack för ditt betyg!'
-      : 'Thank you for your rating!';
+  String get thankYouForRating =>
+      _isSwedish ? 'Tack för ditt betyg!' : 'Thank you for your rating!';
 
   String get available => _isSwedish ? 'Tillgängliga' : 'Available';
   String get myJobs => _isSwedish ? 'Mina jobb' : 'My Jobs';
@@ -169,10 +161,8 @@ class AppLocalizations {
   String get noJobsAvailable => _isSwedish
       ? 'Inga jobb tillgängliga just nu.'
       : 'No jobs available right now.';
-  String get myActiveJobs =>
-      _isSwedish ? 'Mina aktiva jobb' : 'My Active Jobs';
-  String get noActiveJobs =>
-      _isSwedish ? 'Inga aktiva jobb' : 'No Active Jobs';
+  String get myActiveJobs => _isSwedish ? 'Mina aktiva jobb' : 'My Active Jobs';
+  String get noActiveJobs => _isSwedish ? 'Inga aktiva jobb' : 'No Active Jobs';
   String get availableTabPrompt => _isSwedish
       ? 'Gå till fliken "Tillgängliga" för att hitta återvinningsförfrågningar i närheten.'
       : 'Go to the \'Available\' tab to find recycling requests nearby.';
@@ -212,8 +202,7 @@ class AppLocalizations {
       : 'Could not complete this pickup.';
   String get markedAsPickedUp =>
       _isSwedish ? 'Markerad som upphämtad!' : 'Marked as Picked Up!';
-  String get markComplete =>
-      _isSwedish ? 'Markera som klar' : 'Mark Complete';
+  String get markComplete => _isSwedish ? 'Markera som klar' : 'Mark Complete';
   String get pickupCompletedTitle =>
       _isSwedish ? 'Upphämtning slutförd!' : 'Pickup completed!';
   String get pickupCompletedMessage => _isSwedish
@@ -225,14 +214,12 @@ class AppLocalizations {
   String hourCount(int count) => _isSwedish
       ? '$count tim${count == 1 ? '' : ''}'
       : '$count hr${count == 1 ? '' : 's'}';
-  String minuteCount(int count) => _isSwedish
-      ? '$count min'
-      : '$count min${count == 1 ? '' : 's'}';
+  String minuteCount(int count) =>
+      _isSwedish ? '$count min' : '$count min${count == 1 ? '' : 's'}';
   String get moments => _isSwedish ? 'ögonblick' : 'moments';
   String overdueLabel(String value) =>
       _isSwedish ? 'FÖRSENAD: $value' : 'OVERDUE: $value';
-  String leftLabel(String value) =>
-      _isSwedish ? '$value KVAR' : '$value LEFT';
+  String leftLabel(String value) => _isSwedish ? '$value KVAR' : '$value LEFT';
 
   String get newPickupRequest =>
       _isSwedish ? 'Ny upphämtningsförfrågan' : 'New Pickup Request';
@@ -240,15 +227,13 @@ class AppLocalizations {
   String get tapToChooseImage =>
       _isSwedish ? 'Tryck för att välja en bild' : 'Tap to choose an image';
   String get removePhoto => _isSwedish ? 'Ta bort bild' : 'Remove photo';
-  String get choosePhoto =>
-      _isSwedish ? 'Välj bild' : 'Choose Photo';
-  String get changePhoto =>
-      _isSwedish ? 'Byt bild' : 'Change Photo';
-  String get whatAreYouGettingRidOf => _isSwedish
-      ? 'Vad vill du bli av med?'
-      : 'What are you getting rid of?';
-  String get requestTitleHint =>
-      _isSwedish ? 't.ex. Gammal soffa, trädgårdsavfall' : 'e.g. Old Sofa, Garden Waste';
+  String get choosePhoto => _isSwedish ? 'Välj bild' : 'Choose Photo';
+  String get changePhoto => _isSwedish ? 'Byt bild' : 'Change Photo';
+  String get whatAreYouGettingRidOf =>
+      _isSwedish ? 'Vad vill du bli av med?' : 'What are you getting rid of?';
+  String get requestTitleHint => _isSwedish
+      ? 't.ex. Gammal soffa, trädgårdsavfall'
+      : 'e.g. Old Sofa, Garden Waste';
   String get pleaseEnterTitle =>
       _isSwedish ? 'Ange en titel' : 'Please enter a title';
   String get description => _isSwedish ? 'Beskrivning' : 'Description';
@@ -267,15 +252,76 @@ class AppLocalizations {
       _isSwedish ? 'Ditt pris (ersättning)' : 'Your Price (Reward)';
   String get pleaseSetPrice =>
       _isSwedish ? 'Ange ett pris' : 'Please set a price';
-  String get invalidNumber =>
-      _isSwedish ? 'Ogiltigt nummer' : 'Invalid number';
+  String get invalidNumber => _isSwedish ? 'Ogiltigt nummer' : 'Invalid number';
   String get requestCreated =>
       _isSwedish ? 'Förfrågan skapad!' : 'Request Created!';
-  String get postRequest =>
-      _isSwedish ? 'Publicera förfrågan' : 'Post Request';
-  String get couldNotPickPhoto =>
-      _isSwedish ? 'Det gick inte att välja bilden.' : 'Could not pick the photo.';
+  String get postRequest => _isSwedish ? 'Publicera förfrågan' : 'Post Request';
+  String get couldNotPickPhoto => _isSwedish
+      ? 'Det gick inte att välja bilden.'
+      : 'Could not pick the photo.';
 
+  String get feedback => _isSwedish ? 'Feedback' : 'Feedback';
+  String get sendFeedback => _isSwedish ? 'Skicka feedback' : 'Send feedback';
+  String get category => _isSwedish ? 'Kategori' : 'Category';
+  String get yourFeedback => _isSwedish ? 'Din feedback' : 'Your feedback';
+  String get openToBeingContacted => _isSwedish
+      ? 'Jag kan tänka mig att bli kontaktad'
+      : 'I’m open to being contacted';
+  String get send => _isSwedish ? 'Skicka' : 'Send';
+  String get thanksForFeedback =>
+      _isSwedish ? 'Tack för din feedback!' : 'Thanks for your feedback!';
+  String get couldNotSendFeedback => _isSwedish
+      ? 'Det gick inte att skicka feedback.'
+      : 'Could not send feedback.';
+  String get general => _isSwedish ? 'Allmänt' : 'General';
+  String get bug => _isSwedish ? 'Bugg' : 'Bug';
+  String get idea => _isSwedish ? 'Idé' : 'Idea';
+  String get accountCategory => _isSwedish ? 'Konto' : 'Account';
+  String get editName => _isSwedish ? 'Redigera namn' : 'Edit name';
+  String get firstAndLastName =>
+      _isSwedish ? 'För- och efternamn' : 'First and last name';
+  String get save => _isSwedish ? 'Spara' : 'Save';
+  String get nameUpdated =>
+      _isSwedish ? 'Namnet uppdaterades.' : 'Name updated.';
+  String get useCurrentLocation =>
+      _isSwedish ? 'Använd aktuell plats' : 'Use current location';
+  String get enable => _isSwedish ? 'Aktivera' : 'Enable';
+  String get earningsAndImpact =>
+      _isSwedish ? 'Intäkter och påverkan' : 'Earnings & Impact';
+  String get earnings => _isSwedish ? 'Intäkter' : 'Earnings';
+  String get savedAddresses =>
+      _isSwedish ? 'Sparade adresser' : 'Saved addresses';
+  String get recentAddresses =>
+      _isSwedish ? 'Senaste adresser' : 'Recent addresses';
+  String get leaveAtDoor => _isSwedish
+      ? 'Lämna vid dörren (kontaktlös upphämtning)'
+      : 'Leave at Door (Contactless Pickup)';
+  String get doorAccessInstructions => _isSwedish
+      ? 'Dörr- och åtkomstinstruktioner'
+      : 'Door & Access Instructions';
+  String get saveAddressForLater =>
+      _isSwedish ? 'Spara adressen för senare' : 'Save this address for later';
+  String get keepPickupLocationOneTapAway => _isSwedish
+      ? 'Ha denna upphämtningsplats nära till hands.'
+      : 'Keep this pickup location one tap away.';
+  String get saveReusableTemplate =>
+      _isSwedish ? 'Spara som återanvändbar mall' : 'Save as reusable template';
+  String get reusableTemplateDescription => _isSwedish
+      ? 'Skapa snabbare förfrågningar med denna mall.'
+      : 'Create requests faster with this template.';
+  String get operationsAndMarketOversight => _isSwedish
+      ? 'Drift och marknadsöversikt'
+      : 'Panta Operations & Market Oversight';
+  String personalCaps(int recycler, int helper) => _isSwedish
+      ? 'Personliga gränser: $recycler återvinnare / $helper hjälpare'
+      : 'Personal Caps: $recycler Recycler / $helper Helper';
+  String get refreshMarketData =>
+      _isSwedish ? 'Uppdatera marknadsdata' : 'Refresh Market Data';
+  String get switchToUserView =>
+      _isSwedish ? 'Byt till användarvy' : 'Switch to User View';
+  String get simulateMarketEvent =>
+      _isSwedish ? 'Simulera marknadshändelse' : 'Simulate Market Event';
+  String get simulating => _isSwedish ? 'Simulerar...' : 'Simulating...';
   String get profileTitle => _isSwedish ? 'Profil' : 'Profile';
   String get helperStats => _isSwedish ? 'Hjälparstatistik' : 'Helper stats';
   String get completedJobs => _isSwedish ? 'Slutförda jobb' : 'Completed jobs';
@@ -290,8 +336,7 @@ class AppLocalizations {
   String get settings => _isSwedish ? 'Inställningar' : 'Settings';
   String get manageAppPreferences =>
       _isSwedish ? 'Hantera appinställningar' : 'Manage app preferences';
-  String get notifications =>
-      _isSwedish ? 'Notiser' : 'Notifications';
+  String get notifications => _isSwedish ? 'Notiser' : 'Notifications';
   String get stayUpdatedOnActivity => _isSwedish
       ? 'Håll dig uppdaterad om aktivitet'
       : 'Stay updated on activity';
@@ -299,14 +344,11 @@ class AppLocalizations {
   String get trackRecyclingContribution => _isSwedish
       ? 'Följ ditt återvinningsbidrag'
       : 'Track your recycling contribution';
-  String get helpSupport =>
-      _isSwedish ? 'Hjälp och support' : 'Help & support';
-  String get getHelpWhenYouNeedIt => _isSwedish
-      ? 'Få hjälp när du behöver det'
-      : 'Get help when you need it';
+  String get helpSupport => _isSwedish ? 'Hjälp och support' : 'Help & support';
+  String get getHelpWhenYouNeedIt =>
+      _isSwedish ? 'Få hjälp när du behöver det' : 'Get help when you need it';
   String get language => _isSwedish ? 'Språk' : 'Language';
-  String get chooseLanguage =>
-      _isSwedish ? 'Välj språk' : 'Choose language';
+  String get chooseLanguage => _isSwedish ? 'Välj språk' : 'Choose language';
   String get appLanguageDescription => _isSwedish
       ? 'Välj språket som används i appen'
       : 'Choose the language used in the app';
@@ -333,8 +375,7 @@ class AppLocalizations {
   String get chooseMapForDirections => _isSwedish
       ? 'Välj karta för vägbeskrivning'
       : 'Choose map for directions';
-  String get chooseMapApp =>
-      _isSwedish ? 'Välj kartapp' : 'Choose map app';
+  String get chooseMapApp => _isSwedish ? 'Välj kartapp' : 'Choose map app';
   String get googleMaps => 'Google Maps';
   String get appleMaps => 'Apple Maps';
   String couldNotOpenMap(String label) => _isSwedish
@@ -347,8 +388,9 @@ class AppLocalizations {
       _isSwedish ? 'Verifiera med BankID' : 'Verify with BankID';
   String get bankIdVerified =>
       _isSwedish ? 'BankID-verifierad' : 'BankID Verified';
-  String get bankIdVerificationTitle =>
-      _isSwedish ? 'BankID Säker Identifiering' : 'BankID Secure Identification';
+  String get bankIdVerificationTitle => _isSwedish
+      ? 'BankID Säker Identifiering'
+      : 'BankID Secure Identification';
   String get bankIdWaiting =>
       _isSwedish ? 'Startar BankID...' : 'Starting BankID...';
   String get bankIdOpenApp => _isSwedish
@@ -374,8 +416,7 @@ class _AppLocalizationsDelegate
   const _AppLocalizationsDelegate();
 
   @override
-  bool isSupported(Locale locale) =>
-      ['sv', 'en'].contains(locale.languageCode);
+  bool isSupported(Locale locale) => ['sv', 'en'].contains(locale.languageCode);
 
   @override
   Future<AppLocalizations> load(Locale locale) async =>
