@@ -1,7 +1,7 @@
+
 import 'package:flutter/material.dart';
 import '../../../core/localization/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
-
 import '../../core/theme/app_theme.dart';
 import '../../models/request_model.dart';
 import '../../services/eta_service.dart';
@@ -33,6 +33,8 @@ class _LiveMapTrackingViewState extends State<LiveMapTrackingView>
   late double _pickupLng;
   late double _helperLat;
   late double _helperLng;
+  late double _initialHelperLat;
+  late double _initialHelperLng;
 
   @override
   void initState() {
@@ -50,6 +52,8 @@ class _LiveMapTrackingViewState extends State<LiveMapTrackingView>
     _pickupLng = widget.request.locationLongitude ?? 18.0686;
     _helperLat = widget.request.helperLatitude ?? (_pickupLat + 0.012);
     _helperLng = widget.request.helperLongitude ?? (_pickupLng + 0.014);
+    _initialHelperLat = _helperLat;
+    _initialHelperLng = _helperLng;
   }
 
   @override
@@ -118,23 +122,56 @@ class _LiveMapTrackingViewState extends State<LiveMapTrackingView>
                 colors: [Color(0xFFE5F4EC), Color(0xFFD3EDE0)],
               ),
             ),
-            child: Stack(
-              children: [
-                // Stylized map grid lines
-                CustomPaint(
-                  size: const Size(double.infinity, 180),
-                  painter: _MapGridPainter(),
-                ),
-                // Route line between Helper and Pickup
-                CustomPaint(
-                  size: const Size(double.infinity, 180),
-                  painter: _RouteLinePainter(),
-                ),
-                // Pickup Pin (Dest)
-                Positioned(
-                  top: 35,
-                  right: 50,
-                  child: Column(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final width = constraints.maxWidth;
+                const height = 180.0;
+                
+                final latDiff = _pickupLat - _initialHelperLat;
+                final lngDiff = _pickupLng - _initialHelperLng;
+                final dist2 = latDiff * latDiff + lngDiff * lngDiff;
+                double progress = 1.0;
+                if (dist2 > 0) {
+                  final curLatDiff = _helperLat - _initialHelperLat;
+                  final curLngDiff = _helperLng - _initialHelperLng;
+                  final dot = curLatDiff * latDiff + curLngDiff * lngDiff;
+                  progress = (dot / dist2).clamp(0.0, 1.0);
+                }
+
+                final path = Path()
+                  ..moveTo(85, height - 55)
+                  ..cubicTo(120, height - 70, 180, 80, width - 70, 55);
+                
+                double pinTop = height - 35.0 - 52.0;
+                double pinLeft = 60.0;
+                
+                final metrics = path.computeMetrics().toList();
+                if (metrics.isNotEmpty) {
+                  final metric = metrics.first;
+                  final tangent = metric.getTangentForOffset(metric.length * progress);
+                  if (tangent != null) {
+                    pinLeft = tangent.position.dx - 17.0;
+                    pinTop = tangent.position.dy - 17.0;
+                  }
+                }
+
+                return Stack(
+                  children: [
+                    // Stylized map grid lines
+                    CustomPaint(
+                      size: Size(width, height),
+                      painter: _MapGridPainter(),
+                    ),
+                    // Route line between Helper and Pickup
+                    CustomPaint(
+                      size: Size(width, height),
+                      painter: _RouteLinePainter(),
+                    ),
+                    // Pickup Pin (Dest)
+                    Positioned(
+                      top: 35,
+                      right: 50,
+                      child: Column(
                     children: [
                       Container(
                         padding: const EdgeInsets.all(8),
@@ -177,8 +214,8 @@ class _LiveMapTrackingViewState extends State<LiveMapTrackingView>
                 ),
                 // Helper Moving Pin
                 Positioned(
-                  bottom: 35,
-                  left: 60,
+                  top: pinTop,
+                  left: pinLeft,
                   child: AnimatedBuilder(
                     animation: _pulseAnimation,
                     builder: (context, child) {
@@ -276,8 +313,10 @@ class _LiveMapTrackingViewState extends State<LiveMapTrackingView>
                   ),
                 ),
               ],
-            ),
-          ),
+            );
+          },
+        ),
+      ),
           // Milestone Stepper & Actions
           Padding(
             padding: const EdgeInsets.all(14),

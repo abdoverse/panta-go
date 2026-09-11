@@ -60,13 +60,23 @@ class UserRequestCard extends StatelessWidget {
               children: [
                 if (index != null)
                   Padding(
-                    padding: const EdgeInsets.only(right: 12.0),
-                    child: Text(
-                      "#${index! + 1}",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[400],
+                    padding: const EdgeInsets.only(right: 16.0),
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryGreen.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          "${index! + 1}",
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primaryGreen,
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -123,78 +133,7 @@ class UserRequestCard extends StatelessWidget {
                               ),
                             ),
                           ),
-                          if (request.creatorBankIdVerified) ...[
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFE8F5E9),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: AppTheme.primaryGreen
-                                      .withValues(alpha: 0.4),
-                                ),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.verified_rounded,
-                                    size: 12,
-                                    color: AppTheme.primaryGreen,
-                                  ),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    'BankID',
-                                    style: TextStyle(
-                                      color: AppTheme.primaryGreen,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                          if (request.helperBankIdVerified) ...[
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFE8F5E9),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: AppTheme.primaryGreen
-                                      .withValues(alpha: 0.4),
-                                ),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.verified_rounded,
-                                    size: 12,
-                                    color: AppTheme.primaryGreen,
-                                  ),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    'Helper BankID',
-                                    style: TextStyle(
-                                      color: AppTheme.primaryGreen,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
+                          // Bank ID chips removed visually per request
                         ],
                       ),
                       const SizedBox(height: 6),
