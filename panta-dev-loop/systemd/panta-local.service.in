@@ -1,0 +1,19 @@
+[Unit]
+Description=Panta local cloud-backed stack
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+Environment=AWS_PROFILE=__AWS_PROFILE__
+Environment=AWS_SDK_LOAD_CONFIG=1
+Environment=PATH=__FLUTTER_BIN__:__HOME_BIN__:/usr/local/bin:/usr/bin:/bin
+WorkingDirectory=__PROJECT_ROOT__
+ExecStart=/bin/bash -lc 'set -e; __PROJECT_ROOT__/panta-dev-loop/scripts/run_local.sh start; while true; do sleep 3600; done'
+ExecStop=__PROJECT_ROOT__/panta-dev-loop/scripts/run_local.sh stop
+Restart=always
+RestartSec=10
+KillMode=mixed
+
+[Install]
+WantedBy=default.target
