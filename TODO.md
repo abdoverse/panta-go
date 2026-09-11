@@ -17,6 +17,7 @@
 15. [x] Remove all "-go" residue from resource names (DynamoDB tables, S3 buckets, ECS service, Secrets Manager, CloudWatch log groups: rename to panta-requests, panta-request-images, etc.)
 
 ## Production Readiness
+1. [ ] Replace local static AWS credentials with short-lived federated credentials or workload identity before sharing/deploying the development setup; rotate and audit `panta-local-dev`.
 1. [ ] Use real BankID certificates and keys
 2. [ ] Set market limits
 3. [ ] Comprehensive GDPR Compliance:
