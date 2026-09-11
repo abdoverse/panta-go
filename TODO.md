@@ -16,6 +16,12 @@
 14. [ ] Implement GDPR-compliant cookie support and consent banner adhering to Swedish legal standards for online businesses
 15. [x] Remove all "-go" residue from resource names (DynamoDB tables, S3 buckets, ECS service, Secrets Manager, CloudWatch log groups: rename to panta-requests, panta-request-images, etc.)
 
+16. [ ] Add admin user suspension/blocking controls for legal or investigation cases:
+    - Block a user from signing in and from creating, accepting, or completing requests
+    - Allow authorized market admins to block/unblock with a reason, case/reference ID, and optional expiry
+    - Preserve active-request handling, notifications, and a durable audit trail of every action
+    - Return a clear, non-sensitive account-restriction message to blocked users
+
 ## Production Readiness
 1. [ ] Replace local static AWS credentials with short-lived federated credentials or workload identity before sharing/deploying the development setup; rotate and audit `panta-local-dev`.
 1. [ ] Use real BankID certificates and keys
