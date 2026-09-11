@@ -38,3 +38,7 @@ To remove it:
 ```bash
 ./panta-dev-loop/scripts/uninstall_local_service.sh
 ```
+
+## Browser GPS on LAN
+
+Browser geolocation is available on `localhost` or HTTPS origins only. When testing from another device, use an HTTPS development origin (for example, a trusted local certificate or a secure tunnel); plain `http://192.168.x.x:3000` cannot receive browser GPS permission by design. Native Android and iOS builds use the platform location permissions declared in the app.

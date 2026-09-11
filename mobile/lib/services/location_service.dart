@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:geolocator/geolocator.dart';
 
 class LocationSuggestion {
   final String displayName;
@@ -29,18 +30,18 @@ class LocationSuggestion {
 
     // Logic to prefer road name/house number if pure name is empty
     if (title.isEmpty) {
-       if (address.containsKey('road')) {
-         title = address['road'];
-         // Address number often makes it more specific (Uber style)
-         if (address.containsKey('house_number')) {
-           title = "${address['house_number']} $title";
-         }
-       }
+      if (address.containsKey('road')) {
+        title = address['road'];
+        // Address number often makes it more specific (Uber style)
+        if (address.containsKey('house_number')) {
+          title = "${address['house_number']} $title";
+        }
+      }
     }
 
     // If still empty, use the first distinct part of the display name
     if (title.isEmpty) {
-       title = rawDisplayName.split(',')[0].trim();
+      title = rawDisplayName.split(',')[0].trim();
     }
 
     // 2. Determine Subtitle (City, State, Country context)
@@ -48,19 +49,22 @@ class LocationSuggestion {
 
     // Neighborhood/Suburb
     if (address['suburb'] != null && address['suburb'] != title) {
-        parts.add(address['suburb']);
+      parts.add(address['suburb']);
     }
 
     // City part
-    String? city = address['city'] ?? address['town'] ?? address['village'] ?? address['hamlet'];
+    String? city = address['city'] ??
+        address['town'] ??
+        address['village'] ??
+        address['hamlet'];
     // Avoid repeating city if it's already in the title (rare but possible) or subtitle
     if (city != null && city != title && !parts.contains(city)) {
-        parts.add(city);
+      parts.add(city);
     }
 
     // State/Region - keep it short if possible?? usually just state name
     if (address['state'] != null && address['state'] != city) {
-        parts.add(address['state']);
+      parts.add(address['state']);
     }
 
     // Join parts.
@@ -87,6 +91,39 @@ class LocationSuggestion {
 
 class LocationService {
   static const String _baseUrl = 'https://nominatim.openstreetmap.org/search';
+  static const String _reverseUrl =
+      'https://nominatim.openstreetmap.org/reverse';
+
+  Future<LocationSuggestion?> getCurrentLocation() async {
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      throw StateError(
+          'Location services are disabled. Enable GPS and try again.');
+    }
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    if (permission == LocationPermission.deniedForever) {
+      throw StateError(
+          'Location permission is blocked. Allow it in browser or device settings.');
+    }
+    if (permission == LocationPermission.denied) {
+      throw StateError('Location permission was denied.');
+    }
+    final position = await Geolocator.getCurrentPosition(
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+    );
+    final response = await http.get(
+      Uri.parse(
+          '$_reverseUrl?lat=${position.latitude}&lon=${position.longitude}&format=json&addressdetails=1'),
+      headers: {'User-Agent': 'Panta_Recycling_App/1.0'},
+    );
+    if (response.statusCode != 200) {
+      throw StateError('Could not turn your location into an address.');
+    }
+    return LocationSuggestion.fromJson(
+        json.decode(response.body) as Map<String, dynamic>);
+  }
 
   Future<List<LocationSuggestion>> getSuggestions(String query) async {
     if (query.length < 3) return [];

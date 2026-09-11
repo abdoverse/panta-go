@@ -36,6 +36,7 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
   final _locationController = TextEditingController();
   LocationSuggestion? _selectedLocation;
   final ImagePicker _imagePicker = ImagePicker();
+  final LocationService _locationService = LocationService();
 
   DateTime _fromDate = DateTime.now();
   DateTime _toDate = DateTime.now().add(const Duration(hours: 2));
@@ -428,6 +429,11 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                     decoration: InputDecoration(
                       hintText: l10n.enterPickupAddress,
                       prefixIcon: const Icon(Icons.location_on_outlined),
+                      suffixIcon: IconButton(
+                        tooltip: 'Use current location',
+                        icon: const Icon(Icons.my_location_rounded),
+                        onPressed: () => _useCurrentLocation(),
+                      ),
                     ),
                     validator: (v) =>
                         v!.isEmpty ? l10n.pleaseEnterLocation : null,
@@ -787,6 +793,22 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
         return 'gif';
       default:
         return 'jpg';
+    }
+  }
+
+  Future<void> _useCurrentLocation() async {
+    try {
+      final suggestion = await _locationService.getCurrentLocation();
+      if (!mounted || suggestion == null) return;
+      setState(() {
+        _selectedLocation = suggestion;
+        _locationController.text = suggestion.displayName;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString().replaceFirst('Bad state: ', ''))),
+      );
     }
   }
 
