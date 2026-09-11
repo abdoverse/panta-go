@@ -109,10 +109,9 @@ class _UserHomePageState extends State<UserHomePage> {
                   context,
                   MaterialPageRoute(
                     builder: (_) => CreateRequestPage(
-                      startInQuickMode:
-                          provider.previousRequests.isNotEmpty ||
-                              provider.savedAddresses.isNotEmpty ||
-                              provider.requestTemplates.isNotEmpty,
+                      startInQuickMode: provider.previousRequests.isNotEmpty ||
+                          provider.savedAddresses.isNotEmpty ||
+                          provider.requestTemplates.isNotEmpty,
                     ),
                   ),
                 );
@@ -169,8 +168,10 @@ class _DashboardView extends StatelessWidget {
             actions: [
               if (provider.userImpactSummary.streak.currentStreakWeeks > 0)
                 Container(
-                  margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  margin:
+                      const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
                     color: Colors.orange.shade700,
                     borderRadius: BorderRadius.circular(12),
@@ -226,7 +227,8 @@ class _DashboardView extends StatelessWidget {
                       right: -20,
                       top: -20,
                       child: Icon(Icons.eco,
-                          size: 150, color: Colors.white.withValues(alpha: 0.1)),
+                          size: 150,
+                          color: Colors.white.withValues(alpha: 0.1)),
                     ),
                   ],
                 ),
@@ -493,4 +495,3 @@ class _EmptyState extends StatelessWidget {
     );
   }
 }
-
