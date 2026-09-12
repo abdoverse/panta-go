@@ -1032,9 +1032,10 @@ class _QuickRequestSummaryCard extends StatelessWidget {
                     ),
               ),
               const Spacer(),
-              TextButton(
+              TextButton.icon(
                 onPressed: onEditPressed,
-                child: const Text(
+                icon: const Icon(Icons.edit_outlined, color: Colors.white, size: 16),
+                label: const Text(
                   'Edit details',
                   style: TextStyle(color: Colors.white),
                 ),
