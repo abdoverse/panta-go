@@ -1035,9 +1035,9 @@ class _QuickRequestSummaryCard extends StatelessWidget {
               TextButton.icon(
                 onPressed: onEditPressed,
                 icon: const Icon(Icons.edit_outlined, color: Colors.white, size: 16),
-                label: const Text(
-                  'Edit details',
-                  style: TextStyle(color: Colors.white),
+                label: Text(
+                  l10n.editDetails,
+                  style: const TextStyle(color: Colors.white),
                 ),
               ),
             ],
@@ -1045,12 +1045,12 @@ class _QuickRequestSummaryCard extends StatelessWidget {
           const SizedBox(height: 12),
           _QuickInfoRow(
             icon: Icons.inventory_2_outlined,
-            label: title.isEmpty ? 'Routine pickup' : title,
+            label: title.isEmpty ? l10n.routinePickup : title,
           ),
           const SizedBox(height: 8),
           _QuickInfoRow(
             icon: Icons.location_on_outlined,
-            label: location.isEmpty ? 'Choose a pickup address' : location,
+            label: location.isEmpty ? l10n.choosePickupAddress : location,
           ),
           const SizedBox(height: 8),
           _QuickInfoRow(

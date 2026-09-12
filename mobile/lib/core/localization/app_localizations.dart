@@ -297,6 +297,23 @@ class AppLocalizations {
   String get impactEquivalentAbsorption => _isSwedish ? 'Motsvarande absorption' : 'Equivalent absorption';
   String get impactPickups => _isSwedish ? 'Upphämtningar' : 'Pickups';
   String get impactCompletedCycles => _isSwedish ? 'Slutförda cykler' : 'Completed cycles';
+  String get editDetails => _isSwedish ? 'Redigera uppgifter' : 'Edit details';
+  String get routinePickup => _isSwedish ? 'Vanlig upphämtning' : 'Routine pickup';
+  String get choosePickupAddress => _isSwedish ? 'Välj en upphämtningsadress' : 'Choose a pickup address';
+  String get open => _isSwedish ? 'Öppna' : 'Open';
+
+  String get scanPantReceipt => _isSwedish ? 'Skanna pantkvitto' : 'Scan Pant Receipt';
+  String get contactlessDoorPickup => _isSwedish ? 'Kontaktlös upphämtning' : 'Contactless Door Pickup';
+  String instructionsStr(String inst) => _isSwedish ? 'Instruktioner: $inst' : 'Instructions: $inst';
+  String get dropoffPhotoCaptured => _isSwedish ? 'Fotobevis taget ✓' : 'Drop-off Photo Captured ✓';
+  String get readingReceiptOcr => _isSwedish ? 'Läser kvittotext med OCR...' : 'Reading receipt text with OCR...';
+  String get verifiedStore => _isSwedish ? 'Verifierad butik:' : 'Verified Store:';
+  String get recycledUnits => _isSwedish ? 'Återvunna enheter:' : 'Recycled Units:';
+  String itemsCount(int count) => _isSwedish ? '$count st' : '$count items';
+  String get detectedTotal => _isSwedish ? 'Upptäckt summa:' : 'Detected Total:';
+  String sekAmount(String amount) => '$amount SEK';
+  String automatedPantSplit(int r, int h) => _isSwedish ? 'Automatisk fördelning ($r% / $h%)' : 'Automated Pant Split ($r% / $h%)';
+  String get confirmReceiptAndComplete => _isSwedish ? 'Bekräfta kvitto & slutför' : 'Confirm Receipt & Complete Pickup';
   String get dropoffPhotoProof =>
       _isSwedish ? 'Fotobevis på avlämning' : 'Drop-off Photo Proof';
   String get close => _isSwedish ? 'Stäng' : 'Close';

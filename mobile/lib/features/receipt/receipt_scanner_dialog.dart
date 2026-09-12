@@ -245,8 +245,8 @@ class _ReceiptScannerDialogState extends State<ReceiptScannerDialog> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Scan Pant Receipt',
+                          Text(
+                            context.l10n.scanPantReceipt,
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -279,13 +279,13 @@ class _ReceiptScannerDialogState extends State<ReceiptScannerDialog> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Row(
+                        Row(
                           children: [
                             Icon(Icons.door_front_door_outlined,
                                 color: Colors.orange, size: 18),
                             SizedBox(width: 6),
                             Text(
-                              'Contactless Door Pickup',
+                              context.l10n.contactlessDoorPickup,
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
@@ -298,7 +298,7 @@ class _ReceiptScannerDialogState extends State<ReceiptScannerDialog> {
                             widget.doorInstructions!.isNotEmpty) ...[
                           const SizedBox(height: 4),
                           Text(
-                            'Instructions: ${widget.doorInstructions!}',
+                            context.l10n.instructionsStr(widget.doorInstructions!),
                             style: const TextStyle(
                                 fontSize: 12, color: Colors.black87),
                           ),
@@ -317,7 +317,7 @@ class _ReceiptScannerDialogState extends State<ReceiptScannerDialog> {
                           ),
                           label: Text(
                             _dropoffPhotoUrl != null
-                                ? 'Drop-off Photo Captured ✓'
+                                ? context.l10n.dropoffPhotoCaptured
                                 : 'Take Drop-off Photo Proof',
                             style: TextStyle(
                               color: _dropoffPhotoUrl != null
@@ -346,7 +346,7 @@ class _ReceiptScannerDialogState extends State<ReceiptScannerDialog> {
                     ),
                   ),
                 if (_isScanning)
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.symmetric(vertical: 36),
                     child: Center(
                       child: Column(
@@ -355,7 +355,7 @@ class _ReceiptScannerDialogState extends State<ReceiptScannerDialog> {
                               color: AppTheme.primaryGreen),
                           SizedBox(height: 14),
                           Text(
-                            'Reading receipt text with OCR...',
+                            context.l10n.readingReceiptOcr,
                             style: TextStyle(color: Colors.grey),
                           ),
                         ],
@@ -376,8 +376,8 @@ class _ReceiptScannerDialogState extends State<ReceiptScannerDialog> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
-                              'Verified Store:',
+                            Text(
+                              context.l10n.verifiedStore,
                               style:
                                   TextStyle(fontSize: 13, color: Colors.grey),
                             ),
@@ -393,13 +393,13 @@ class _ReceiptScannerDialogState extends State<ReceiptScannerDialog> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
-                                'Recycled Units:',
+                              Text(
+                                context.l10n.recycledUnits,
                                 style:
                                     TextStyle(fontSize: 13, color: Colors.grey),
                               ),
                               Text(
-                                '${_ocrResult!.totalContainers} items',
+                                context.l10n.itemsCount(_ocrResult!.totalContainers),
                                 style: const TextStyle(
                                     fontWeight: FontWeight.w600),
                               ),
@@ -410,13 +410,13 @@ class _ReceiptScannerDialogState extends State<ReceiptScannerDialog> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
-                              'Detected Total:',
+                            Text(
+                              context.l10n.detectedTotal,
                               style: TextStyle(
                                   fontSize: 15, fontWeight: FontWeight.bold),
                             ),
                             Text(
-                              '${_ocrResult!.totalAmount.toStringAsFixed(2)} SEK',
+                              context.l10n.sekAmount(_ocrResult!.totalAmount.toStringAsFixed(2)),
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -472,7 +472,7 @@ class _ReceiptScannerDialogState extends State<ReceiptScannerDialog> {
                                   size: 18, color: Color(0xFF558B2F)),
                               const SizedBox(width: 6),
                               Text(
-                                'Automated Pant Split (${splitPct.toInt()}% / ${(100 - splitPct).toInt()}%)',
+                                context.l10n.automatedPantSplit(splitPct.toInt(), (100 - splitPct).toInt()),
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 13,
@@ -488,7 +488,7 @@ class _ReceiptScannerDialogState extends State<ReceiptScannerDialog> {
                               Text(context.l10n.recyclerShare,
                                   style: TextStyle(fontSize: 13)),
                               Text(
-                                '${recyclerShare.toStringAsFixed(2)} SEK',
+                                context.l10n.sekAmount(recyclerShare.toStringAsFixed(2)),
                                 style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     color: Colors.green),
@@ -502,7 +502,7 @@ class _ReceiptScannerDialogState extends State<ReceiptScannerDialog> {
                               Text(context.l10n.helperEarnings,
                                   style: TextStyle(fontSize: 13)),
                               Text(
-                                '${helperShare.toStringAsFixed(2)} SEK',
+                                context.l10n.sekAmount(helperShare.toStringAsFixed(2)),
                                 style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     color: Colors.indigo),
@@ -550,8 +550,8 @@ class _ReceiptScannerDialogState extends State<ReceiptScannerDialog> {
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: const Text(
-                    'Confirm Receipt & Complete Pickup',
+                  child: Text(
+                    context.l10n.confirmReceiptAndComplete,
                     style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                   ),
                 ),

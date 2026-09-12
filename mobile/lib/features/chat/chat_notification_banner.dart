@@ -1,3 +1,4 @@
+import '../../core/localization/app_localizations.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -304,9 +305,9 @@ class _ChatBannerCard extends StatelessWidget {
                   ),
                 ),
                 icon: const Icon(Icons.reply_rounded, size: 16),
-                label: const Text(
-                  'Open',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                label: Text(
+                  context.l10n.open,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                 ),
               ),
               const SizedBox(width: 4),
