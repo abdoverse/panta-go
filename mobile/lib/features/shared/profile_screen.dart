@@ -875,7 +875,7 @@ class _AboutAppTileState extends State<_AboutAppTile> {
           icon: Icons.info_outline_rounded,
           title: 'About Panta',
           subtitle: snapshot.hasData
-              ? "Version ${snapshot.data!.version} (${snapshot.data!.buildNumber})"
+              ? "v${snapshot.data!.version} (Build ${snapshot.data!.buildNumber})"
               : 'Loading version…',
         ),
       ),
