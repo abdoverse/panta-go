@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	svc             *dynamodb.Client
+	svc             DynamoDBAPI
 	s3Client        *s3.Client
 	s3PresignClient *s3.PresignClient
 	tableName       string
