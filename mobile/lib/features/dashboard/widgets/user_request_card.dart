@@ -579,11 +579,7 @@ class UserRequestCard extends StatelessWidget {
                                   Icons.chat_bubble_outline,
                                   size: 16,
                                 ),
-                                label: Text(
-                                  messages.isNotEmpty
-                                      ? 'Chat with Helper (${messages.length})'
-                                      : 'Chat with Helper',
-                                ),
+                                label: const Text('Chat with Helper'),
                               ),
                       ),
                     ],
