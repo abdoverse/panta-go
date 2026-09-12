@@ -212,8 +212,8 @@ func handleCancelRequest(w http.ResponseWriter, r *http.Request) {
 			"creatorId": creatorID,
 			"title": "Canceled",
 			"location": "",
-			"fromDate": time.Now().Format(time.RFC3339),
-			"toDate": time.Now().Format(time.RFC3339),
+			"scheduledFrom": time.Now().Format(time.RFC3339),
+			"scheduledTo": time.Now().Format(time.RFC3339),
 		})
 	}
 }
