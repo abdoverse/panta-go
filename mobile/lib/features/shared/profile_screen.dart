@@ -405,31 +405,38 @@ class ProfileScreen extends StatelessWidget {
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
           title: Text(context.l10n.sendFeedback),
-          content: SingleChildScrollView(
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              DropdownButtonFormField<String>(
-                initialValue: category,
-                decoration: InputDecoration(labelText: context.l10n.category),
-                items: ["General", "Bug", "Idea", "Account"]
-                    .map((item) => DropdownMenuItem(
-                        value: item,
-                        child: Text(item == "General"
-                            ? context.l10n.general
-                            : item == "Bug"
-                                ? context.l10n.bug
-                                : item == "Idea"
-                                    ? context.l10n.idea
-                                    : context.l10n.accountCategory)))
-                    .toList(),
-                onChanged: (value) =>
-                    setState(() => category = value ?? "General"),
-              ),
-              TextField(
-                  controller: messageController,
-                  maxLines: 5,
-                  maxLength: 4000,
-                  decoration:
-                      InputDecoration(labelText: context.l10n.yourFeedback)),
+          content: SizedBox(
+            width: MediaQuery.of(context).size.width * 0.85,
+            child: SingleChildScrollView(
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                DropdownButtonFormField<String>(
+                  initialValue: category,
+                  decoration: InputDecoration(labelText: context.l10n.category),
+                  items: ["General", "Bug", "Idea", "Account"]
+                      .map((item) => DropdownMenuItem(
+                          value: item,
+                          child: Text(item == "General"
+                              ? context.l10n.general
+                              : item == "Bug"
+                                  ? context.l10n.bug
+                                  : item == "Idea"
+                                      ? context.l10n.idea
+                                      : context.l10n.accountCategory)))
+                      .toList(),
+                  onChanged: (value) =>
+                      setState(() => category = value ?? "General"),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                    controller: messageController,
+                    maxLines: 8,
+                    maxLength: 4000,
+                    decoration:
+                        InputDecoration(
+                          labelText: context.l10n.yourFeedback,
+                          alignLabelWithHint: true,
+                          border: const OutlineInputBorder(),
+                        )),
               CheckboxListTile(
                   contentPadding: EdgeInsets.zero,
                   value: contactRequested,
