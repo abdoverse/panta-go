@@ -60,15 +60,23 @@ class ProfileScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    Text(
-                      resolvedName,
-                      style: Theme.of(context).textTheme.headlineSmall,
-                      textAlign: TextAlign.center,
-                    ),
-                    TextButton.icon(
-                      onPressed: () => _showEditNameDialog(context, provider),
-                      icon: const Icon(Icons.edit_outlined, size: 16),
-                      label: Text(context.l10n.editName),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            resolvedName,
+                            style: Theme.of(context).textTheme.headlineSmall,
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => _showEditNameDialog(context, provider),
+                          icon: const Icon(Icons.edit_outlined, size: 20),
+                          color: AppTheme.textSecondary,
+                          tooltip: context.l10n.editName,
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 8),
                     Container(
