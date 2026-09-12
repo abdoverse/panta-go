@@ -377,14 +377,44 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                   ),
                   const SizedBox(height: 16),
                 ],
-                TextFormField(
+                TypeAheadField<String>(
                   controller: _titleController,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                  decoration: InputDecoration(
-                    hintText: l10n.requestTitleHint,
-                    prefixIcon: const Icon(Icons.inventory_2_outlined),
-                  ),
-                  validator: (v) => v!.isEmpty ? l10n.pleaseEnterTitle : null,
+                  suggestionsCallback: (pattern) {
+                    // Market specific list decided by marketing team
+                    final marketingSuggestions = [
+                      '2 bags of PET bottles',
+                      '1 bag of aluminum cans',
+                      'Mixed recycling bags',
+                    ];
+                    if (pattern.isEmpty) {
+                      return marketingSuggestions;
+                    }
+                    return marketingSuggestions
+                        .where((s) => s.toLowerCase().contains(pattern.toLowerCase()))
+                        .toList();
+                  },
+                  builder: (context, controller, focusNode) {
+                    return TextFormField(
+                      controller: controller,
+                      focusNode: focusNode,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                      decoration: InputDecoration(
+                        hintText: l10n.requestTitleHint,
+                        prefixIcon: const Icon(Icons.inventory_2_outlined),
+                      ),
+                      validator: (v) => v!.isEmpty ? l10n.pleaseEnterTitle : null,
+                    );
+                  },
+                  itemBuilder: (context, suggestion) {
+                    return ListTile(
+                      leading: const Icon(Icons.recycling_rounded),
+                      title: Text(suggestion),
+                    );
+                  },
+                  onSelected: (suggestion) {
+                    _titleController.text = suggestion;
+                  },
+                  emptyBuilder: (context) => const SizedBox.shrink(),
                 ),
                 if (!_isQuickMode) ...[
                   const SizedBox(height: 24),
