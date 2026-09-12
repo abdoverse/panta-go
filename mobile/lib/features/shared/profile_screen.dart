@@ -448,7 +448,7 @@ class ProfileScreen extends StatelessWidget {
           ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(dialogContext, false),
+                onPressed: () => Navigator.pop(dialogContext, null),
                 child: Text(context.l10n.cancel)),
             ValueListenableBuilder<TextEditingValue>(
               valueListenable: messageController,
@@ -477,8 +477,8 @@ class ProfileScreen extends StatelessWidget {
     if (context.mounted && submitted != null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(submitted
-              ? "Thanks for your feedback!"
-              : "Could not send feedback.")));
+              ? context.l10n.thanksForFeedback
+              : context.l10n.couldNotSendFeedback)));
     }
   }
 
