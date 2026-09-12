@@ -444,21 +444,31 @@ class ProfileScreen extends StatelessWidget {
                   onChanged: (value) =>
                       setState(() => contactRequested = value ?? false)),
             ]),
+            ),
           ),
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(dialogContext, false),
                 child: Text(context.l10n.cancel)),
-            FilledButton(
-                onPressed: () async {
-                  final ok = messageController.text.trim().isNotEmpty &&
-                      await provider.submitFeedback(
-                          category: category,
-                          message: messageController.text.trim(),
-                          contactRequested: contactRequested);
-                  if (dialogContext.mounted) Navigator.pop(dialogContext, ok);
-                },
-                child: Text(context.l10n.send)),
+            ValueListenableBuilder<TextEditingValue>(
+              valueListenable: messageController,
+              builder: (context, value, child) {
+                final hasText = value.text.trim().isNotEmpty;
+                return FilledButton(
+                    onPressed: hasText
+                        ? () async {
+                            final ok = await provider.submitFeedback(
+                                category: category,
+                                message: value.text.trim(),
+                                contactRequested: contactRequested);
+                            if (dialogContext.mounted) {
+                              Navigator.pop(dialogContext, ok);
+                            }
+                          }
+                        : null,
+                    child: Text(context.l10n.send));
+              },
+            ),
           ],
         ),
       ),
