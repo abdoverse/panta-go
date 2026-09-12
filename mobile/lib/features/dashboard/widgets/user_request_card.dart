@@ -591,6 +591,44 @@ class UserRequestCard extends StatelessWidget {
                 },
               ),
             ],
+            if (request.status == RequestStatus.pending) ...[
+              const SizedBox(height: 16),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Theme.of(context).colorScheme.error,
+                  ),
+                  onPressed: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Pause the pick up?'),
+                        content: const Text('Are you sure you want to pause or cancel this request? It will be removed from the active market.'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: const Text('No, keep it'),
+                          ),
+                          FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Theme.of(context).colorScheme.error,
+                            ),
+                            onPressed: () => Navigator.pop(ctx, true),
+                            child: const Text('Yes, pause it'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirm == true) {
+                      await provider.cancelRequest(request.id);
+                    }
+                  },
+                  icon: const Icon(Icons.pause_circle_outline),
+                  label: const Text('Pause the pick up'),
+                ),
+              ),
+            ],
             const SizedBox(height: 16),
             if (isInteractable)
               Wrap(
