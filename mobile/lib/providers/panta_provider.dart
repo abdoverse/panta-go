@@ -933,7 +933,11 @@ class PantaProvider extends ChangeNotifier {
     final updated =
         await _requestApiService.cancelRequest(token: token, id: id);
     if (updated != null) {
-      _requestState.upsert(updated);
+      if (updated.status == RequestStatus.canceled) {
+        _requestState.remove(id);
+      } else {
+        _requestState.upsert(updated);
+      }
       notifyListeners();
       return true;
     }

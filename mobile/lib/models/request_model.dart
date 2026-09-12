@@ -1,6 +1,6 @@
 import 'chat_message.dart';
 
-enum RequestStatus { pending, accepted, pickedUp }
+enum RequestStatus { pending, accepted, pickedUp, canceled }
 
 class SavedAddress {
   final String label;

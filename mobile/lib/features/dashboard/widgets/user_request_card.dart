@@ -45,6 +45,10 @@ class UserRequestCard extends StatelessWidget {
         statusColor = Colors.green;
         statusText = l10n.pickedUp;
         break;
+      case RequestStatus.canceled:
+        statusColor = Colors.grey;
+        statusText = l10n.cancel;
+        break;
     }
 
     return Card(

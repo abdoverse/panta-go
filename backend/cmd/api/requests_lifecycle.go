@@ -121,66 +121,101 @@ func handleCancelRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !claims.isHelper() {
-		http.Error(w, "Forbidden", http.StatusForbidden)
-		return
-	}
-
 	var payload requestIDPayload
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "Invalid payload"})
 		return
 	}
 
-	helperID := claims.helperID()
-	out, err := svc.UpdateItem(context.TODO(), &dynamodb.UpdateItemInput{
-		TableName: aws.String(tableName),
-		Key: map[string]types.AttributeValue{
-			"id": &types.AttributeValueMemberS{Value: payload.ID},
-		},
-		UpdateExpression:    aws.String("SET #status = :pending, canceledHelperIds = list_append(if_not_exists(canceledHelperIds, :emptyList), :helperList) REMOVE helperId, helperName"),
-		ConditionExpression: aws.String("#status = :accepted AND helperId = :helperId"),
-		ExpressionAttributeNames: map[string]string{
-			"#status": "status",
-		},
-		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":accepted":  &types.AttributeValueMemberS{Value: "accepted"},
-			":pending":   &types.AttributeValueMemberS{Value: "pending"},
-			":helperId":  &types.AttributeValueMemberS{Value: helperID},
-			":emptyList": &types.AttributeValueMemberL{Value: []types.AttributeValue{}},
-			":helperList": &types.AttributeValueMemberL{Value: []types.AttributeValue{
-				&types.AttributeValueMemberS{Value: helperID},
-			}},
-		},
-		ReturnValues: types.ReturnValueAllNew,
-	})
-	if err != nil {
-		log.Printf("Failed to cancel request: %v", err)
-		var cfe *types.ConditionalCheckFailedException
-		if errorIs(err, &cfe) {
-			jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "Request is no longer assigned to you"})
-		} else {
-			jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "Failed to cancel pickup"})
+	if claims.isHelper() {
+		// Helper logic: cancel an accepted request
+		helperID := claims.helperID()
+		out, err := svc.UpdateItem(context.TODO(), &dynamodb.UpdateItemInput{
+			TableName: aws.String(tableName),
+			Key: map[string]types.AttributeValue{
+				"id": &types.AttributeValueMemberS{Value: payload.ID},
+			},
+			UpdateExpression:    aws.String("SET #status = :pending, canceledHelperIds = list_append(if_not_exists(canceledHelperIds, :emptyList), :helperList) REMOVE helperId, helperName"),
+			ConditionExpression: aws.String("#status = :accepted AND helperId = :helperId"),
+			ExpressionAttributeNames: map[string]string{
+				"#status": "status",
+			},
+			ExpressionAttributeValues: map[string]types.AttributeValue{
+				":accepted":  &types.AttributeValueMemberS{Value: "accepted"},
+				":pending":   &types.AttributeValueMemberS{Value: "pending"},
+				":helperId":  &types.AttributeValueMemberS{Value: helperID},
+				":emptyList": &types.AttributeValueMemberL{Value: []types.AttributeValue{}},
+				":helperList": &types.AttributeValueMemberL{Value: []types.AttributeValue{
+					&types.AttributeValueMemberS{Value: helperID},
+				}},
+			},
+			ReturnValues: types.ReturnValueAllNew,
+		})
+		if err != nil {
+			log.Printf("Failed to cancel request: %v", err)
+			var cfe *types.ConditionalCheckFailedException
+			if errorIs(err, &cfe) {
+				jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "Request is no longer assigned to you"})
+			} else {
+				jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "Failed to cancel pickup"})
+			}
+			return
 		}
-		return
-	}
 
-	var updatedReq RecyclingRequest
-	if err := attributevalue.UnmarshalMap(out.Attributes, &updatedReq); err != nil {
-		log.Printf("Failed to parse cancelled request: %v", err)
-		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "Failed to parse request update"})
-		return
-	}
+		var updatedReq RecyclingRequest
+		if err := attributevalue.UnmarshalMap(out.Attributes, &updatedReq); err != nil {
+			log.Printf("Failed to parse cancelled request: %v", err)
+			jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "Failed to parse request update"})
+			return
+		}
 
-	if updatedReq.CreatorDeviceToken != "" {
-		go sendPushNotification(
-			updatedReq.CreatorDeviceToken,
-			"Pickup Cancelled",
-			fmt.Sprintf("%s can no longer complete your pickup. Your request is available for another helper again.", claims.notificationName()),
-		)
+		if updatedReq.CreatorDeviceToken != "" {
+			go sendPushNotification(
+				updatedReq.CreatorDeviceToken,
+				"Pickup Cancelled",
+				fmt.Sprintf("%s can no longer complete your pickup. Your request is available for another helper again.", claims.notificationName()),
+			)
+		}
+		jsonResponse(w, http.StatusOK, updatedReq)
+	} else {
+		// Creator logic: delete a pending request
+		creatorID := claims.requestOwnerID()
+		_, err := svc.DeleteItem(context.TODO(), &dynamodb.DeleteItemInput{
+			TableName: aws.String(tableName),
+			Key: map[string]types.AttributeValue{
+				"id": &types.AttributeValueMemberS{Value: payload.ID},
+			},
+			ConditionExpression: aws.String("creatorId = :creatorId AND #status = :pending"),
+			ExpressionAttributeNames: map[string]string{
+				"#status": "status",
+			},
+			ExpressionAttributeValues: map[string]types.AttributeValue{
+				":creatorId": &types.AttributeValueMemberS{Value: creatorID},
+				":pending":   &types.AttributeValueMemberS{Value: "pending"},
+			},
+		})
+		if err != nil {
+			log.Printf("Failed to delete request: %v", err)
+			var cfe *types.ConditionalCheckFailedException
+			if errorIs(err, &cfe) {
+				jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "Request cannot be canceled because it is already accepted or you don't own it"})
+			} else {
+				jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "Failed to cancel request"})
+			}
+			return
+		}
+		
+		// Return a canceled status so the app knows it was deleted
+		jsonResponse(w, http.StatusOK, map[string]interface{}{
+			"id": payload.ID,
+			"status": "canceled",
+			"creatorId": creatorID,
+			"title": "Canceled",
+			"location": "",
+			"fromDate": time.Now().Format(time.RFC3339),
+			"toDate": time.Now().Format(time.RFC3339),
+		})
 	}
-
-	respondWithUpdatedRequest(w, r, updatedReq, "cancelled")
 }
 
 func handleCompleteRequest(w http.ResponseWriter, r *http.Request) {

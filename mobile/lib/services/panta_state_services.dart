@@ -187,6 +187,10 @@ class PantaRequestState {
     _requests = updated;
   }
 
+  void remove(String id) {
+    _requests = _requests.where((r) => r.id != id).toList();
+  }
+
   void clear() {
     _requests = [];
     isLoading = false;

@@ -534,6 +534,8 @@ class RequestApiService {
         return RequestStatus.accepted;
       case 'pickedUp':
         return RequestStatus.pickedUp;
+      case 'canceled':
+        return RequestStatus.canceled;
       default:
         return RequestStatus.pending;
     }
