@@ -441,14 +441,14 @@ class _LoginPageState extends State<LoginPage> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'Local Testing / 1-Click Demo',
+                                        l10n.localTestingDemo,
                                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                               fontWeight: FontWeight.w700,
                                               color: const Color(0xFF2E7D32),
                                             ),
                                       ),
                                       Text(
-                                        'Bypass Cognito and enter with pre-seeded data:',
+                                        l10n.bypassCognitoInfo,
                                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                               color: AppTheme.textSecondary,
                                             ),

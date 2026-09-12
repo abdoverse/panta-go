@@ -124,7 +124,7 @@ class HelperJobCard extends StatelessWidget {
                                       .withValues(alpha: 0.4),
                                 ),
                               ),
-                              child: const Row(
+                              child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(
@@ -134,7 +134,7 @@ class HelperJobCard extends StatelessWidget {
                                   ),
                                   SizedBox(width: 4),
                                   Text(
-                                    'BankID',
+                                    l10n.bankIdName,
                                     style: TextStyle(
                                       color: AppTheme.primaryGreen,
                                       fontSize: 10,
@@ -364,8 +364,8 @@ class HelperJobCard extends StatelessWidget {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text(
-                                      'Contactless Pickup (Leave at Door)',
+                                    Text(
+                                      l10n.contactlessPickupLeaveAtDoor,
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 13,
@@ -479,7 +479,7 @@ class HelperJobCard extends StatelessWidget {
                                                               8),
                                                     ),
                                                     child: Text(
-                                                      '$unreadCount NEW',
+                                                      l10n.newMessagesCount(unreadCount),
                                                       style: const TextStyle(
                                                         color: Colors.white,
                                                         fontSize: 10,
@@ -538,7 +538,7 @@ class HelperJobCard extends StatelessWidget {
                                               size: 16,
                                             ),
                                             label: Text(
-                                              'Chat ($unreadCount NEW)',
+                                              l10n.chatNew(unreadCount),
                                             ),
                                           )
                                         : OutlinedButton.icon(
@@ -556,8 +556,8 @@ class HelperJobCard extends StatelessWidget {
                                             ),
                                             label: Text(
                                               messages.isNotEmpty
-                                                  ? 'Chat (${messages.length})'
-                                                  : 'Chat',
+                                                  ? l10n.chatCount(messages.length)
+                                                  : l10n.chat,
                                             ),
                                           ),
                                   ),
@@ -588,7 +588,7 @@ class HelperJobCard extends StatelessWidget {
                                                 ),
                                                 const SizedBox(width: 4),
                                                 Text(
-                                                  'At Door (${job.arrivedAtDoor!.hour.toString().padLeft(2, '0')}:${job.arrivedAtDoor!.minute.toString().padLeft(2, '0')})',
+                                                  l10n.atDoorTime(job.arrivedAtDoor!.hour.toString().padLeft(2, '0'), job.arrivedAtDoor!.minute.toString().padLeft(2, '0')),
                                                   style: const TextStyle(
                                                     fontSize: 12,
                                                     fontWeight: FontWeight.bold,
@@ -606,9 +606,9 @@ class HelperJobCard extends StatelessWidget {
                                               if (context.mounted && ok) {
                                                 ScaffoldMessenger.of(context)
                                                     .showSnackBar(
-                                                  const SnackBar(
+                                                  SnackBar(
                                                     content: Text(
-                                                      '🛎️ Ding-Dong! Arrival alert sent to recycler.',
+                                                      l10n.arrivalAlertSent,
                                                     ),
                                                     backgroundColor:
                                                         Colors.amber,
@@ -741,7 +741,7 @@ class HelperJobCard extends StatelessWidget {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                      'Completed! Pant: ${scanResult.amount.toStringAsFixed(2)} SEK. Your payout: ${helperShare.toStringAsFixed(2)} SEK',
+                                      l10n.completedPantAndPayout(scanResult.amount.toStringAsFixed(2), helperShare.toStringAsFixed(2)),
                                     ),
                                   ),
                                 );

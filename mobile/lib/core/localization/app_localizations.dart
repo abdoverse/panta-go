@@ -314,6 +314,12 @@ class AppLocalizations {
   String sekAmount(String amount) => '$amount SEK';
   String automatedPantSplit(int r, int h) => _isSwedish ? 'Automatisk fördelning ($r% / $h%)' : 'Automated Pant Split ($r% / $h%)';
   String get confirmReceiptAndComplete => _isSwedish ? 'Bekräfta kvitto & slutför' : 'Confirm Receipt & Complete Pickup';
+  String get pickupPinLabel => _isSwedish ? 'Hämta' : 'Pickup';
+  String get helperPinLabel => _isSwedish ? 'Hjälpare' : 'Helper';
+  String etaLabel(int min, double km) => _isSwedish ? 'ETA: $min min ($km km)' : 'ETA: $min min ($km km)';
+  String get localTestingDemo => _isSwedish ? 'Lokal testning / 1-klicksdemo' : 'Local Testing / 1-Click Demo';
+  String get bypassCognitoInfo => _isSwedish ? 'Kringgå Cognito och logga in med förinlagd data:' : 'Bypass Cognito and enter with pre-seeded data:';
+
   String get dropoffPhotoProof =>
       _isSwedish ? 'Fotobevis på avlämning' : 'Drop-off Photo Proof';
   String get close => _isSwedish ? 'Stäng' : 'Close';
@@ -490,6 +496,43 @@ class AppLocalizations {
   String get bankIdCouldNotOpen => _isSwedish
       ? 'Kunde inte öppna BankID-appen.'
       : 'Could not open the BankID app.';
+  String get bankIdTestEnv => _isSwedish ? 'TESTMILJÖ (v6.0 API)' : 'TEST ENV (v6.0 API)';
+  String get activeNow => _isSwedish ? 'Aktiv nu' : 'Active now';
+  String requestLimitReached(int active, int max) => _isSwedish ? 'Gränsen för aktiva förfrågningar har nåtts ($active/$max). Vänta på att en befintlig upphämtning slutförs.' : 'Active request limit reached ($active/$max). Please wait for an existing pickup to complete.';
+  String get bookIn30Seconds => _isSwedish ? 'Boka på 30 sekunder' : 'Book in 30 seconds';
+  String get bankIdSecureAuth => _isSwedish ? 'SÄKER IDENTIFIERING' : 'SECURE IDENTIFICATION';
+  String get bankIdEnterCode => _isSwedish ? 'Skriv in din säkerhetskod i BankID...' : 'Enter your security code in BankID...';
+  String get bankIdOpenOnDevice => _isSwedish ? 'Öppna BankID på denna enhet' : 'Open BankID on this device';
+  String get bankIdSimulating => _isSwedish ? 'Simulerar...' : 'Simulating...';
+  String get bankIdSimulateApproval => _isSwedish ? 'Simulera godkännande (Testmiljö)' : 'Simulate Approval (Test Env)';
+  String get bankIdV6Hint => _isSwedish ? 'I BankID v6.0 kan du lämna personnumret tomt och scanna QR-koden direkt med appen.' : 'In BankID v6.0 you can leave the personal number empty and scan the QR code directly with the app.';
+
+  // Helper Job Card Additions
+  String get bankIdName => 'BankID';
+  String get contactlessPickupLeaveAtDoor => _isSwedish ? 'Kontaktlös upphämtning (Lämna vid dörren)' : 'Contactless Pickup (Leave at Door)';
+  String chatNew(int count) => _isSwedish ? 'Chatt ($count NYA)' : 'Chat ($count NEW)';
+  String chatCount(int count) => _isSwedish ? 'Chatt ($count)' : 'Chat ($count)';
+  String get chat => _isSwedish ? 'Chatt' : 'Chat';
+  String newMessagesCount(int count) => _isSwedish ? '$count NYA' : '$count NEW';
+  String atDoorTime(String hour, String minute) => _isSwedish ? 'Vid dörren ($hour:$minute)' : 'At Door ($hour:$minute)';
+  String get arrivalAlertSent => _isSwedish ? '🛎️ Ding-Dong! Ankomstnotis skickad till återvinnaren.' : '🛎️ Ding-Dong! Arrival alert sent to recycler.';
+  String completedPantAndPayout(String amount, String payout) => _isSwedish ? 'Klart! Pant: $amount SEK. Din utbetalning: $payout SEK' : 'Completed! Pant: $amount SEK. Your payout: $payout SEK';
+
+  // Create Request Page Additions
+  String activeMarketQuotaUsed(int used, int max) => _isSwedish ? 'Aktiv marknadskvot: $used av $max använda' : 'Active Market Quota: $used of $max used';
+  String activeMarketLimitReachedStatus(int used, int max) => _isSwedish ? 'Gräns för aktiv marknad nådd ($used/$max)' : 'Active Market Limit Reached ($used/$max)';
+  String requestSlotsRemaining(int remaining) => _isSwedish ? 'Du har $remaining förfrågningsplatser kvar på din marknad.' : 'You have $remaining request slots remaining in your market.';
+  String get waitBeforeCreatingNewRequest => _isSwedish ? 'Vänligen vänta tills en befintlig upphämtning är klar innan du skapar en ny.' : 'Please wait for an existing pickup to complete before creating a new one.';
+  String get bookingFromHistoryNotice => _isSwedish ? 'Bokar igen från din förfrågningshistorik. Uppdatera eventuella detaljer innan publicering.' : 'Booking again from your request history. Update any details before posting.';
+  String get useSavedTemplate => _isSwedish ? 'Använd en sparad mall' : 'Use a saved template';
+  String get suggestion2BagsPetBottles => _isSwedish ? '2 påsar PET-flaskor' : '2 bags of PET bottles';
+  String get suggestion1BagAluminumCans => _isSwedish ? '1 påse aluminiumburkar' : '1 bag of aluminum cans';
+  String get suggestionMixedRecyclingBags => _isSwedish ? 'Blandade pantpåsar' : 'Mixed recycling bags';
+  String get pantRefundSplitTitle => _isSwedish ? 'Fördelning av pantersättning' : 'Pant Refund Split';
+  String get pantRefundSplitSubtitle => _isSwedish ? 'Hur vill du fördela det inskannade pantkvittot?' : 'How would you like to split the scanned recycling receipt?';
+  String get leaveAtDoorDescription => _isSwedish ? 'Hjälparen hämtar påsarna utanför din dörr och tar en bild som bekräftelse.' : 'Helper will pick up bags outside your door and take a photo confirmation.';
+  String get doorInstructionsExample => _isSwedish ? 't.ex. Portkod 1234, 3:e våningen, påsen står utanför dörr 12B' : 'e.g. Door code 1234, 3rd floor, bag is outside door 12B';
+  String get reuseTemplateDescription => _isSwedish ? 'Återanvänd titel, anteckningar och belöning nästa gång.' : 'Reuse the title, notes, and reward next time.';
 }
 
 class _AppLocalizationsDelegate

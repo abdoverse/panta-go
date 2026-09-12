@@ -203,8 +203,8 @@ class _LiveMapTrackingViewState extends State<LiveMapTrackingView>
                             BoxShadow(color: Colors.black12, blurRadius: 4)
                           ],
                         ),
-                        child: const Text(
-                          'Pickup',
+                        child: Text(
+                          context.l10n.pickupPinLabel,
                           style: TextStyle(
                               fontSize: 10, fontWeight: FontWeight.bold),
                         ),
@@ -255,8 +255,8 @@ class _LiveMapTrackingViewState extends State<LiveMapTrackingView>
                                       color: Colors.black12, blurRadius: 4)
                                 ],
                               ),
-                              child: const Text(
-                                'Helper',
+                              child: Text(
+                                context.l10n.helperPinLabel,
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
@@ -302,7 +302,7 @@ class _LiveMapTrackingViewState extends State<LiveMapTrackingView>
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          'ETA: ${etaInfo.etaMinutes} min (${etaInfo.distanceKm} km)',
+                          context.l10n.etaLabel(etaInfo.etaMinutes, etaInfo.distanceKm),
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,

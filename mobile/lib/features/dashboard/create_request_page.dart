@@ -193,8 +193,8 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                           children: [
                             Text(
                               provider.canCreateRequest
-                                  ? 'Active Market Quota: ${provider.activeRequestsCount} of ${provider.maxActiveRequests} used'
-                                  : 'Active Market Limit Reached (${provider.activeRequestsCount}/${provider.maxActiveRequests})',
+                                  ? l10n.activeMarketQuotaUsed(provider.activeRequestsCount, provider.maxActiveRequests)
+                                  : l10n.activeMarketLimitReachedStatus(provider.activeRequestsCount, provider.maxActiveRequests),
                               style: Theme.of(context)
                                   .textTheme
                                   .labelLarge
@@ -208,8 +208,8 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                             const SizedBox(height: 2),
                             Text(
                               provider.canCreateRequest
-                                  ? 'You have ${provider.maxActiveRequests - provider.activeRequestsCount} request slots remaining in your market.'
-                                  : 'Please wait for an existing pickup to complete before creating a new one.',
+                                  ? l10n.requestSlotsRemaining(provider.maxActiveRequests - provider.activeRequestsCount)
+                                  : l10n.waitBeforeCreatingNewRequest,
                               style: Theme.of(context)
                                   .textTheme
                                   .bodySmall
@@ -253,7 +253,7 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            'Booking again from your request history. Update any details before posting.',
+                            l10n.bookingFromHistoryNotice,
                             style: Theme.of(context).textTheme.bodyMedium,
                           ),
                         ),
@@ -360,7 +360,7 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                 const SizedBox(height: 12),
                 if (provider.requestTemplates.isNotEmpty) ...[
                   Text(
-                    'Use a saved template',
+                    l10n.useSavedTemplate,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),
@@ -382,9 +382,9 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                   suggestionsCallback: (pattern) {
                     // Market specific list decided by marketing team
                     final marketingSuggestions = [
-                      '2 bags of PET bottles',
-                      '1 bag of aluminum cans',
-                      'Mixed recycling bags',
+                      l10n.suggestion2BagsPetBottles,
+                      l10n.suggestion1BagAluminumCans,
+                      l10n.suggestionMixedRecyclingBags,
                     ];
                     if (pattern.isEmpty) {
                       return marketingSuggestions;
@@ -436,7 +436,7 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                 const SizedBox(height: 12),
                 if (provider.savedAddresses.isNotEmpty) ...[
                   Text(
-                    _isQuickMode ? 'Recent addresses' : 'Saved addresses',
+                    _isQuickMode ? l10n.recentAddresses : l10n.savedAddresses,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),
@@ -630,14 +630,14 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'Pant Refund Split',
+                    l10n.pantRefundSplitTitle,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'How would you like to split the scanned recycling receipt?',
+                    l10n.pantRefundSplitSubtitle,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Colors.grey[600],
                         ),
@@ -676,8 +676,8 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                       color: AppTheme.primaryGreen,
                     ),
                     title: Text(l10n.leaveAtDoor),
-                    subtitle: const Text(
-                      'Helper will pick up bags outside your door and take a photo confirmation.',
+                    subtitle: Text(
+                      l10n.leaveAtDoorDescription,
                     ),
                     onChanged: (value) {
                       setState(() {
@@ -692,7 +692,7 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                       decoration: InputDecoration(
                         labelText: l10n.doorAccessInstructions,
                         hintText:
-                            'e.g. Door code 1234, 3rd floor, bag is outside door 12B',
+                            l10n.doorInstructionsExample,
                         prefixIcon: const Icon(Icons.notes_rounded),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -717,8 +717,8 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                     contentPadding: EdgeInsets.zero,
                     value: _saveAsTemplate,
                     title: Text(l10n.saveReusableTemplate),
-                    subtitle: const Text(
-                      'Reuse the title, notes, and reward next time.',
+                    subtitle: Text(
+                      l10n.reuseTemplateDescription,
                     ),
                     onChanged: (value) {
                       setState(() {
@@ -945,7 +945,7 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Active request limit reached (${provider.activeRequestsCount}/${provider.maxActiveRequests}). Please wait for an existing pickup to complete.',
+            context.l10n.requestLimitReached(provider.activeRequestsCount, provider.maxActiveRequests),
           ),
           backgroundColor: Colors.orange[800],
         ),
@@ -1025,7 +1025,7 @@ class _QuickRequestSummaryCard extends StatelessWidget {
               const Icon(Icons.flash_on_rounded, color: Colors.white),
               const SizedBox(width: 8),
               Text(
-                'Book in 30 seconds',
+                l10n.bookIn30Seconds,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
