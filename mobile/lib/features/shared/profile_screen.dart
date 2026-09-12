@@ -255,18 +255,7 @@ class ProfileScreen extends StatelessWidget {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 12),
-            Card(
-              child: FutureBuilder<PackageInfo>(
-                future: PackageInfo.fromPlatform(),
-                builder: (context, snapshot) => _ProfileItem(
-                  icon: Icons.info_outline_rounded,
-                  title: 'About Panta',
-                  subtitle: snapshot.hasData
-                      ? "Version ${snapshot.data!.version} (${snapshot.data!.buildNumber})"
-                      : 'Loading version…',
-                ),
-              ),
-            ),
+            const _AboutAppTile(),
             const SizedBox(height: 20),
             Text(
               l10n.account,
@@ -854,6 +843,40 @@ class _BankIdVerificationCard extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AboutAppTile extends StatefulWidget {
+  const _AboutAppTile();
+
+  @override
+  State<_AboutAppTile> createState() => _AboutAppTileState();
+}
+
+class _AboutAppTileState extends State<_AboutAppTile> {
+  late Future<PackageInfo> _packageInfoFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    // Cache the future so it doesn't get recreated on every build
+    _packageInfoFuture = PackageInfo.fromPlatform();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: FutureBuilder<PackageInfo>(
+        future: _packageInfoFuture,
+        builder: (context, snapshot) => _ProfileItem(
+          icon: Icons.info_outline_rounded,
+          title: 'About Panta',
+          subtitle: snapshot.hasData
+              ? "Version ${snapshot.data!.version} (${snapshot.data!.buildNumber})"
+              : 'Loading version…',
         ),
       ),
     );
