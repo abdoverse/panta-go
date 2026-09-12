@@ -298,9 +298,9 @@ class _ChatBottomSheetState extends State<ChatBottomSheet> {
                         sendButtonVisibilityMode:
                             SendButtonVisibilityMode.always,
                       ),
-                      l10n: const ChatL10nEn(
-                        inputPlaceholder: 'Type a message...',
-                        emptyChatPlaceholder: 'No messages yet',
+                      l10n: ChatL10nEn(
+                        inputPlaceholder: context.l10n.typeMessage,
+                        emptyChatPlaceholder: context.l10n.noMessagesYet,
                       ),
                       theme: DefaultChatTheme(
                         primaryColor: AppTheme.primaryGreen,

@@ -267,6 +267,8 @@ class AppLocalizations {
   String get gallery => _isSwedish ? 'Galleri' : 'Gallery';
   String get typeMessage =>
       _isSwedish ? 'Skriv ett meddelande...' : 'Type a message...';
+  String get noMessagesYet =>
+      _isSwedish ? 'Inga meddelanden ännu' : 'No messages yet';
   String get openMaps => _isSwedish ? 'Öppna kartor' : 'Open Maps';
   String get atTheDoor => _isSwedish ? 'Jag är vid dörren' : "I'm at Door";
   String get scanAndComplete =>
@@ -454,7 +456,7 @@ class _AppLocalizationsDelegate
       SynchronousFuture<AppLocalizations>(AppLocalizations(locale));
 
   @override
-  bool shouldReload(_AppLocalizationsDelegate old) => false;
+  bool shouldReload(_AppLocalizationsDelegate old) => true;
 }
 
 extension AppLocalizationsContext on BuildContext {
