@@ -265,8 +265,8 @@ class _BankIdDialogState extends State<BankIdDialog> {
       final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!launched && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('BankID-appen hittades inte på denna enhet.'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).bankIdAppNotFound),
             duration: Duration(seconds: 3),
           ),
         );
@@ -274,8 +274,8 @@ class _BankIdDialogState extends State<BankIdDialog> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Kunde inte öppna BankID-appen.'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).bankIdCouldNotOpen),
             duration: Duration(seconds: 3),
           ),
         );
@@ -528,7 +528,7 @@ class _BankIdDialogState extends State<BankIdDialog> {
                 autofocus: true,
                 decoration: InputDecoration(
                   labelText: l10n.bankIdPersonalNumber,
-                  hintText: 'YYYYMMDDXXXX (valfritt för QR)',
+                  hintText: l10n.bankIdPersonalNumberHint,
                   prefixIcon: const Icon(Icons.badge_outlined),
                 ),
               ),

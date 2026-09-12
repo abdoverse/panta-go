@@ -346,7 +346,7 @@ class _LiveMapTrackingViewState extends State<LiveMapTrackingView>
                 Row(
                   children: [
                     _MilestoneStep(
-                      title: 'On way',
+                      title: context.l10n.milestoneOnWay,
                       isCompleted: true,
                       isActive: etaInfo.milestone == DeliveryMilestone.onTheWay,
                     ),
@@ -356,7 +356,7 @@ class _LiveMapTrackingViewState extends State<LiveMapTrackingView>
                               etaInfo.milestone == DeliveryMilestone.arrived,
                     ),
                     _MilestoneStep(
-                      title: 'Near (<1km)',
+                      title: context.l10n.milestoneNear,
                       isCompleted:
                           etaInfo.milestone == DeliveryMilestone.arrivingSoon ||
                               etaInfo.milestone == DeliveryMilestone.arrived,
@@ -368,7 +368,7 @@ class _LiveMapTrackingViewState extends State<LiveMapTrackingView>
                           etaInfo.milestone == DeliveryMilestone.arrived,
                     ),
                     _MilestoneStep(
-                      title: 'Arrived',
+                      title: context.l10n.milestoneArrived,
                       isCompleted:
                           etaInfo.milestone == DeliveryMilestone.arrived,
                       isActive: etaInfo.milestone == DeliveryMilestone.arrived,
@@ -380,7 +380,7 @@ class _LiveMapTrackingViewState extends State<LiveMapTrackingView>
                 OutlinedButton.icon(
                   onPressed: _stepSimulation,
                   icon: const Icon(Icons.play_arrow, size: 16),
-                  label: const Text('Simulate Helper GPS Movement (Test ETA)'),
+                  label: Text(context.l10n.simulateHelperGps),
                   style: OutlinedButton.styleFrom(
                     visualDensity: VisualDensity.compact,
                     foregroundColor: AppTheme.primaryGreen,

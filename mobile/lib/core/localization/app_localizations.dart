@@ -271,10 +271,32 @@ class AppLocalizations {
       _isSwedish ? 'Inga meddelanden ännu' : 'No messages yet';
   String get openMaps => _isSwedish ? 'Öppna kartor' : 'Open Maps';
   String get atTheDoor => _isSwedish ? 'Jag är vid dörren' : "I'm at Door";
+  String get chatWithHelper => _isSwedish ? 'Chatta med hjälparen' : 'Chat with Helper';
+  String get pausePickupTitle => _isSwedish ? 'Pausa upphämtningen?' : 'Pause the pick up?';
+  String get pausePickupContent => _isSwedish ? 'Är du säker på att du vill pausa eller avbryta den här förfrågan? Den kommer att tas bort från den aktiva marknaden.' : 'Are you sure you want to pause or cancel this request? It will be removed from the active market.';
+  String get pausePickupNo => _isSwedish ? 'Nej, behåll den' : 'No, keep it';
+  String get pausePickupYes => _isSwedish ? 'Ja, pausa den' : 'Yes, pause it';
+  String get pausePickup => _isSwedish ? 'Pausa upphämtningen' : 'Pause the pick up';
   String get scanAndComplete =>
       _isSwedish ? 'Skanna och slutför' : 'Scan & Complete';
   String get imageNotAvailable =>
       _isSwedish ? 'Bilden är inte tillgänglig' : 'Image not available';
+  String get split70_30 => _isSwedish ? '70% Jag / 30% Hjälpare' : '70% Me / 30% Helper';
+  String get split50_50 => '50% / 50%';
+  String get split100Helper => _isSwedish ? '100% Hjälpare' : '100% Helper';
+  String get simulateHelperGps => _isSwedish ? 'Simulera GPS-rörelse (Testa ETA)' : 'Simulate Helper GPS Movement (Test ETA)';
+  String get useDemoReceipt => _isSwedish ? 'Använd svenskt demokvitto (Testa OCR)' : 'Use Demo Swedish Receipt (Test OCR)';
+  String get milestoneOnWay => _isSwedish ? 'På väg' : 'On way';
+  String get milestoneNear => _isSwedish ? 'Nära (<1km)' : 'Near (<1km)';
+  String get milestoneArrived => _isSwedish ? 'Framme' : 'Arrived';
+  String get impactContainers => _isSwedish ? 'Förpackningar' : 'Containers';
+  String get impactCansBottles => _isSwedish ? 'Burkar & flaskor' : 'Cans & bottles';
+  String get impactCo2Saved => _isSwedish ? 'Sparad CO₂' : 'CO₂ Saved';
+  String get impactEmissionsAvoided => _isSwedish ? 'Undvikna utsläpp' : 'Emissions avoided';
+  String get impactTreesPlanted => _isSwedish ? 'Planterade träd' : 'Trees Planted';
+  String get impactEquivalentAbsorption => _isSwedish ? 'Motsvarande absorption' : 'Equivalent absorption';
+  String get impactPickups => _isSwedish ? 'Upphämtningar' : 'Pickups';
+  String get impactCompletedCycles => _isSwedish ? 'Slutförda cykler' : 'Completed cycles';
   String get dropoffPhotoProof =>
       _isSwedish ? 'Fotobevis på avlämning' : 'Drop-off Photo Proof';
   String get close => _isSwedish ? 'Stäng' : 'Close';
@@ -380,6 +402,8 @@ class AppLocalizations {
   String get helpSupport => _isSwedish ? 'Hjälp och support' : 'Help & support';
   String get getHelpWhenYouNeedIt =>
       _isSwedish ? 'Få hjälp när du behöver det' : 'Get help when you need it';
+  String get requestTemplates => _isSwedish ? 'Förfrågningsmallar' : 'Request templates';
+  String get aboutPanta => _isSwedish ? 'Om Panta' : 'About Panta';
   String get language => _isSwedish ? 'Språk' : 'Language';
   String get chooseLanguage => _isSwedish ? 'Välj språk' : 'Choose language';
   String get appLanguageDescription => _isSwedish
@@ -439,9 +463,16 @@ class AppLocalizations {
       _isSwedish ? 'Öppna på denna enhet' : 'Open on this device';
   String get bankIdVerifiedBadge =>
       _isSwedish ? 'Verifierad med BankID' : 'Verified with BankID';
+  String get reseedSampleRequests => _isSwedish ? 'Återskapa exempelförfrågningar' : 'Re-seed Sample Requests';
   String get bankIdTrustSubtitle => _isSwedish
       ? 'Öka tryggheten för återvinnare och hjälpare genom att verifiera din identitet.'
       : 'Increase trust with recyclers and helpers by verifying your identity.';
+  String get bankIdAppNotFound => _isSwedish
+      ? 'BankID-appen hittades inte på denna enhet.'
+      : 'The BankID app was not found on this device.';
+  String get bankIdCouldNotOpen => _isSwedish
+      ? 'Kunde inte öppna BankID-appen.'
+      : 'Could not open the BankID app.';
 }
 
 class _AppLocalizationsDelegate

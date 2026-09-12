@@ -644,19 +644,19 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                   ),
                   const SizedBox(height: 10),
                   SegmentedButton<double>(
-                    segments: const [
+                    segments: [
                       ButtonSegment(
                         value: 70.0,
-                        label: Text('70% Me / 30% Helper'),
+                        label: Text(l10n.split70_30),
                         icon: Icon(Icons.star_outline, size: 16),
                       ),
                       ButtonSegment(
                         value: 50.0,
-                        label: Text('50% / 50%'),
+                        label: Text(l10n.split50_50),
                       ),
                       ButtonSegment(
                         value: 0.0,
-                        label: Text('100% Helper'),
+                        label: Text(l10n.split100Helper),
                         icon: Icon(Icons.volunteer_activism_outlined, size: 16),
                       ),
                     ],
@@ -690,7 +690,7 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                     TextFormField(
                       controller: _doorInstructionsController,
                       decoration: InputDecoration(
-                        labelText: 'Door & Access Instructions',
+                        labelText: l10n.doorAccessInstructions,
                         hintText:
                             'e.g. Door code 1234, 3rd floor, bag is outside door 12B',
                         prefixIcon: const Icon(Icons.notes_rounded),

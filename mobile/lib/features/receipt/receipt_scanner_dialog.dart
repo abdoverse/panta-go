@@ -538,7 +538,7 @@ class _ReceiptScannerDialogState extends State<ReceiptScannerDialog> {
                 TextButton.icon(
                   onPressed: _useDemoReceipt,
                   icon: const Icon(Icons.receipt, size: 18),
-                  label: const Text('Use Demo Swedish Receipt (Test OCR)'),
+                  label: Text(context.l10n.useDemoReceipt),
                 ),
                 const SizedBox(height: 14),
                 ElevatedButton(

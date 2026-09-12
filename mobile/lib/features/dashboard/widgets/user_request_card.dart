@@ -583,7 +583,7 @@ class UserRequestCard extends StatelessWidget {
                                   Icons.chat_bubble_outline,
                                   size: 16,
                                 ),
-                                label: const Text('Chat with Helper'),
+                                label: Text(l10n.chatWithHelper),
                               ),
                       ),
                     ],
@@ -603,19 +603,19 @@ class UserRequestCard extends StatelessWidget {
                     final confirm = await showDialog<bool>(
                       context: context,
                       builder: (ctx) => AlertDialog(
-                        title: const Text('Pause the pick up?'),
-                        content: const Text('Are you sure you want to pause or cancel this request? It will be removed from the active market.'),
+                        title: Text(l10n.pausePickupTitle),
+                        content: Text(l10n.pausePickupContent),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(ctx, false),
-                            child: const Text('No, keep it'),
+                            child: Text(l10n.pausePickupNo),
                           ),
                           FilledButton(
                             style: FilledButton.styleFrom(
                               backgroundColor: Theme.of(context).colorScheme.error,
                             ),
                             onPressed: () => Navigator.pop(ctx, true),
-                            child: const Text('Yes, pause it'),
+                            child: Text(l10n.pausePickupYes),
                           ),
                         ],
                       ),
@@ -625,7 +625,7 @@ class UserRequestCard extends StatelessWidget {
                     }
                   },
                   icon: const Icon(Icons.pause_circle_outline),
-                  label: const Text('Pause the pick up'),
+                  label: Text(l10n.pausePickup),
                 ),
               ),
             ],
@@ -799,7 +799,7 @@ class RequestImage extends StatelessWidget {
                           Icon(Icons.broken_image_rounded,
                               size: 48, color: Colors.grey),
                           SizedBox(height: 8),
-                          Text('Image not available',
+                          Text(context.l10n.imageNotAvailable,
                               style: TextStyle(color: Colors.grey)),
                         ],
                       ),

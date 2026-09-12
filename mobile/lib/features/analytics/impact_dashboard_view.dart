@@ -1,3 +1,4 @@
+import '../../core/localization/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -38,6 +39,7 @@ class _ImpactDashboardViewState extends State<ImpactDashboardView> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final provider = context.watch<PantaProvider>();
     final fallbackSummary = widget.isHelper
         ? provider.helperImpactSummary
@@ -173,9 +175,9 @@ class _ImpactDashboardViewState extends State<ImpactDashboardView> {
                     child: _MetricCard(
                       icon: Icons.recycling_rounded,
                       iconColor: Colors.teal,
-                      title: 'Containers',
+                      title: l10n.impactContainers,
                       value: '${summary.containersRecycled}',
-                      subtitle: 'Cans & bottles',
+                      subtitle: l10n.impactCansBottles,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -183,9 +185,9 @@ class _ImpactDashboardViewState extends State<ImpactDashboardView> {
                     child: _MetricCard(
                       icon: Icons.cloud_outlined,
                       iconColor: Colors.blue,
-                      title: 'CO₂ Saved',
+                      title: l10n.impactCo2Saved,
                       value: '${summary.co2SavedKg} kg',
-                      subtitle: 'Emissions avoided',
+                      subtitle: l10n.impactEmissionsAvoided,
                     ),
                   ),
                 ],
@@ -197,9 +199,9 @@ class _ImpactDashboardViewState extends State<ImpactDashboardView> {
                     child: _MetricCard(
                       icon: Icons.forest_outlined,
                       iconColor: Colors.green,
-                      title: 'Trees Plated',
+                      title: l10n.impactTreesPlanted,
                       value: '${summary.treesEquivalent}',
-                      subtitle: 'Equivalent absorption',
+                      subtitle: l10n.impactEquivalentAbsorption,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -207,9 +209,9 @@ class _ImpactDashboardViewState extends State<ImpactDashboardView> {
                     child: _MetricCard(
                       icon: Icons.task_alt,
                       iconColor: Colors.indigo,
-                      title: 'Pickups',
+                      title: l10n.impactPickups,
                       value: '${summary.totalPickups}',
-                      subtitle: 'Completed cycles',
+                      subtitle: l10n.impactCompletedCycles,
                     ),
                   ),
                 ],

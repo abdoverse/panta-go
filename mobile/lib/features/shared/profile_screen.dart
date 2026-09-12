@@ -217,7 +217,7 @@ class ProfileScreen extends StatelessWidget {
                     children: [
                       _HelperSummaryRow(
                         icon: Icons.location_on_outlined,
-                        title: 'Saved addresses',
+                        title: l10n.savedAddresses,
                         value: '${savedAddresses.length}',
                       ),
                       if (savedAddresses.isNotEmpty) ...[
@@ -236,7 +236,7 @@ class ProfileScreen extends StatelessWidget {
                       const SizedBox(height: 12),
                       _HelperSummaryRow(
                         icon: Icons.copy_all_rounded,
-                        title: 'Request templates',
+                        title: l10n.requestTemplates,
                         value: '${requestTemplates.length}',
                       ),
                       if (requestTemplates.isNotEmpty) ...[
@@ -357,7 +357,7 @@ class ProfileScreen extends StatelessWidget {
                   ListTile(
                     leading: const Icon(Icons.refresh_rounded,
                         color: Color(0xFF235971)),
-                    title: const Text('Re-seed Sample Requests'),
+                    title: Text(context.l10n.reseedSampleRequests),
                     subtitle: const Text(
                         'Populate pending, accepted, and completed requests with chat & photos'),
                     trailing: const Icon(Icons.chevron_right),
@@ -893,12 +893,13 @@ class _AboutAppTileState extends State<_AboutAppTile> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Card(
       child: FutureBuilder<PackageInfo>(
         future: _packageInfoFuture,
         builder: (context, snapshot) => _ProfileItem(
           icon: Icons.info_outline_rounded,
-          title: 'About Panta',
+          title: l10n.aboutPanta,
           subtitle: snapshot.hasData
               ? "v${snapshot.data!.version} (Build ${snapshot.data!.buildNumber})"
               : 'Loading version…',
