@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:intl/intl.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -218,6 +219,7 @@ class PantaProvider extends ChangeNotifier {
   Future<void> setLocale(Locale locale) async {
     if (_locale == locale) return;
     _locale = locale;
+    Intl.defaultLocale = locale.languageCode == 'sv' ? 'sv_SE' : 'en_US';
     notifyListeners();
 
     final prefs = await SharedPreferences.getInstance();
@@ -236,6 +238,7 @@ class PantaProvider extends ChangeNotifier {
     if (_locale == savedLocale) return;
 
     _locale = savedLocale;
+    Intl.defaultLocale = savedLocale.languageCode == 'sv' ? 'sv_SE' : 'en_US';
     notifyListeners();
   }
 
