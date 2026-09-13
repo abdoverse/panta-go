@@ -65,7 +65,7 @@ class UserRequestCard extends StatelessWidget {
               children: [
                 if (index != null)
                   Padding(
-                    padding: const EdgeInsets.only(right: 16.0),
+                    padding: const EdgeInsets.only(right: 12.0),
                     child: IndexBadge(index: index!),
                   ),
                 SizedBox(
