@@ -49,6 +49,7 @@ type RecyclingRequest struct {
 	Rating             float64   `json:"rating,omitempty" dynamodbav:"rating,omitempty"`
 	RatingComment      string    `json:"ratingComment,omitempty" dynamodbav:"ratingComment,omitempty"`
 	CreatorDeviceToken string    `json:"creatorDeviceToken,omitempty" dynamodbav:"creatorDeviceToken,omitempty"`
+	HelperDeviceToken  string    `json:"helperDeviceToken,omitempty" dynamodbav:"helperDeviceToken,omitempty"`
 	ReceiptImageUrl    string     `json:"receiptImageUrl,omitempty" dynamodbav:"receiptImageUrl,omitempty"`
 	ReceiptAmount      float64    `json:"receiptAmount,omitempty" dynamodbav:"receiptAmount,omitempty"`
 	ReceiptScannedAt   *time.Time `json:"receiptScannedAt,omitempty" dynamodbav:"receiptScannedAt,omitempty"`

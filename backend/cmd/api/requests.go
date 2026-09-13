@@ -719,6 +719,25 @@ func handleRegisterDeviceToken(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Also attach device token to any currently active requests assigned to this helper
+	helperReqs, err := listHelperAssignedRequests(r.Context(), claims.helperID())
+	if err == nil {
+		for _, req := range helperReqs {
+			if req.Status == "accepted" || req.Status == "pickedup" {
+				_, _ = svc.UpdateItem(r.Context(), &dynamodb.UpdateItemInput{
+					TableName: aws.String(tableName),
+					Key: map[string]types.AttributeValue{
+						"id": &types.AttributeValueMemberS{Value: req.ID},
+					},
+					UpdateExpression: aws.String("SET helperDeviceToken = :token"),
+					ExpressionAttributeValues: map[string]types.AttributeValue{
+						":token": &types.AttributeValueMemberS{Value: token},
+					},
+				})
+			}
+		}
+	}
+
 	jsonResponse(w, http.StatusOK, map[string]interface{}{
 		"status":      "registered",
 		"deviceToken": token,

@@ -451,6 +451,7 @@ class PantaProvider extends ChangeNotifier {
         await Future.wait([
           fetchRequests(silent: true),
           fetchRequestAssets(silent: true),
+          _syncFcmToken(),
         ]);
       } catch (_) {}
 
@@ -546,6 +547,7 @@ class PantaProvider extends ChangeNotifier {
       await Future.wait([
         fetchRequests(silent: true),
         fetchRequestAssets(silent: true),
+        _syncFcmToken(),
       ]);
     } finally {
       _isRestoringSession = false;
@@ -643,6 +645,7 @@ class PantaProvider extends ChangeNotifier {
     notifyListeners();
     fetchRequests();
     fetchRequestAssets();
+    _syncFcmToken();
     return null;
   }
 
@@ -990,6 +993,22 @@ class PantaProvider extends ChangeNotifier {
       token: token,
       deviceToken: deviceToken,
     );
+  }
+
+  Future<void> _syncFcmToken() async {
+    try {
+      final settings = await FirebaseMessaging.instance.requestPermission();
+      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+        final vapidKey = kIsWeb ? ApiConfig.firebaseWebVapidKey : null;
+        if (kIsWeb && vapidKey == null) return;
+        final fcmToken = await FirebaseMessaging.instance.getToken(vapidKey: vapidKey);
+        if (fcmToken != null) {
+          await syncDeviceToken(fcmToken);
+        }
+      }
+    } catch (e) {
+      debugPrint("Failed to sync FCM token: $e");
+    }
   }
 
   Future<bool> updateHelperLocation(

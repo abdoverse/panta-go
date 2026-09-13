@@ -202,6 +202,9 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 				notifTitle = "Ding-Dong! Helper is at your door 🛎️"
 			}
 			go sendPushNotification(req.CreatorDeviceToken, notifTitle, payload.Text)
+		} else if claims.Role == "recycler" && req.HelperDeviceToken != "" {
+			notifTitle := fmt.Sprintf("Message from %s", senderName)
+			go sendPushNotification(req.HelperDeviceToken, notifTitle, payload.Text)
 		}
 
 		jsonResponse(w, http.StatusCreated, newMsg)
