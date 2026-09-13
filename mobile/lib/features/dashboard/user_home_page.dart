@@ -83,7 +83,7 @@ class _UserHomePageState extends State<UserHomePage> {
       selectedIndex: _currentIndex,
       onDestinationSelected: (i) => setState(() => _currentIndex = i),
       appTitle: 'Panta',
-      roleBadge: 'Recycler',
+      roleBadge: l10n.recyclerRole,
       destinations: [
         AdaptiveNavigationDestination(
           icon: Icons.dashboard_outlined,
@@ -182,7 +182,7 @@ class _DashboardView extends StatelessWidget {
                       const Text('🔥', style: TextStyle(fontSize: 12)),
                       const SizedBox(width: 4),
                       Text(
-                        '${provider.userImpactSummary.streak.currentStreakWeeks}w',
+                        l10n.streakWeeksShort(provider.userImpactSummary.streak.currentStreakWeeks),
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,

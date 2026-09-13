@@ -55,7 +55,7 @@ class AppLocalizations {
       _isSwedish ? 'Ange ditt fullständiga namn' : 'Enter your full name';
   String get pleaseEnterName =>
       _isSwedish ? 'Ange ditt namn' : 'Please enter your name';
-  String get email => 'Email';
+  String get email => _isSwedish ? 'E-post' : 'Email';
   String get pleaseEnterEmail =>
       _isSwedish ? 'Ange din e-postadress' : 'Please enter your email';
   String get pleaseEnterValidEmail =>
@@ -533,6 +533,221 @@ class AppLocalizations {
   String get leaveAtDoorDescription => _isSwedish ? 'Hjälparen hämtar påsarna utanför din dörr och tar en bild som bekräftelse.' : 'Helper will pick up bags outside your door and take a photo confirmation.';
   String get doorInstructionsExample => _isSwedish ? 't.ex. Portkod 1234, 3:e våningen, påsen står utanför dörr 12B' : 'e.g. Door code 1234, 3rd floor, bag is outside door 12B';
   String get reuseTemplateDescription => _isSwedish ? 'Återanvänd titel, anteckningar och belöning nästa gång.' : 'Reuse the title, notes, and reward next time.';
+
+  // BankID & Auth
+  String get bankIdScanQr => _isSwedish ? 'Scanna QR-koden i BankID-appen' : 'Scan the QR code in the BankID app';
+  String get emailExampleHint => _isSwedish ? 'namn@exempel.se' : 'name@example.com';
+  String get adminDashboardSwedenOversight => _isSwedish ? 'Adminpanel (Sverige Marknadsöversikt)' : 'Admin Dashboard (Sweden Market Oversight)';
+  String get annaRecyclerDemo => _isSwedish ? 'Anna (Återvinnare)' : 'Anna (Recycler)';
+  String get erikHelperDemo => _isSwedish ? 'Erik (Hjälpare)' : 'Erik (Helper)';
+
+  // Chat & Navigation
+  String get newBadge => _isSwedish ? 'NY' : 'NEW';
+  String get dismiss => _isSwedish ? 'Avfärda' : 'Dismiss';
+
+  // Receipt Scanner & Verification
+  String get takeDropoffPhotoProof => _isSwedish ? 'Ta bildbevis för avlämning' : 'Take Drop-off Photo Proof';
+  String get pantStation => _isSwedish ? 'Pantstation' : 'Recycling Station';
+
+  // Streak & Dashboard
+  String streakWeeksShort(int weeks) => _isSwedish ? '${weeks}v' : '${weeks}w';
+
+  // User Request Card
+  String verifiedPantValue(String amount) => _isSwedish ? 'Verifierad pant: $amount SEK' : 'Verified Pant: $amount SEK';
+  String yourPayoutAmount(String amount) => _isSwedish ? 'Din utbetalning: $amount SEK' : 'Your Payout: $amount SEK';
+  String get helperConfirmedPickupAtDoor => _isSwedish ? 'Hjälparen bekräftade upphämtning vid dörren:' : 'Helper confirmed pickup at door:';
+  String get photoVerifiedByHelper => _isSwedish ? 'Foto verifierat av hjälparen' : 'Photo Verified by Helper';
+  String get viewPhotoProof => _isSwedish ? 'Visa bildbevis ✓' : 'View Photo Proof ✓';
+  String get helperOutsideYourDoor => _isSwedish ? 'Hjälparen är utanför din dörr!' : 'Helper is outside your door!';
+  String get bagsCanBePickedUpOutsideDoor => _isSwedish ? 'Påsarna kan hämtas direkt utanför din dörr.' : 'Bags can be picked up directly outside your door.';
+  String get pleaseOpenDoorToHandOverBags => _isSwedish ? 'Vänligen öppna dörren eller möt hjälparen för att lämna över pantpåsarna.' : 'Please open your door or meet the helper to hand over pant bags.';
+  String chatWithHelperNew(int count) => _isSwedish ? 'Chatta med hjälpare ($count NYA)' : 'Chat with Helper ($count NEW)';
+  String chatWithHelperCount(int count) => _isSwedish ? 'Chatta med hjälpare ($count)' : 'Chat with Helper ($count)';
+  String unreadCountBadge(int count) => '$count $newBadge';
+
+  // Profile Screen
+  String get pickupShortcuts => _isSwedish ? 'Snabbval för upphämtning' : 'Pickup shortcuts';
+  String get demoTestingTools => _isSwedish ? 'Demo- och lokala testverktyg' : 'Demo & Local Testing Tools';
+  String get switchToRecyclerDemo => _isSwedish ? 'Växla till återvinnare (Anna)' : 'Switch to Recycler (Anna)';
+  String get switchToHelperDemo => _isSwedish ? 'Växla till hjälpare (Erik)' : 'Switch to Helper (Erik)';
+  String get switchRoleSubtitle => _isSwedish ? 'Byt roll med 1 klick för att testa marknadsplatsen' : 'Switch role in 1 click to test marketplace interaction';
+  String get switchedToRecyclerDemo => _isSwedish ? 'Bytte till återvinnare (Anna)' : 'Switched to Recycler (Anna)';
+  String get switchedToHelperDemo => _isSwedish ? 'Bytte till hjälpare (Erik)' : 'Switched to Helper (Erik)';
+  String get reseedSampleSubtitle => _isSwedish ? 'Fyll på väntande, accepterade och slutförda förfrågningar med chatt och foton' : 'Populate pending, accepted, and completed requests with chat & photos';
+  String get sampleRequestsReseeded => _isSwedish ? 'Exempelförfrågningar återställda!' : 'Sample requests re-seeded!';
+  String get failedToSeedRequests => _isSwedish ? 'Kunde inte skapa exempelförfrågningar' : 'Failed to seed requests';
+
+  // Analytics & Impact Dashboard
+  String get myEarningsAndImpact => _isSwedish ? 'Mina intäkter & miljöpåverkan' : 'My Earnings & Impact';
+  String get pantHistoryAndEcoImpact => _isSwedish ? 'Panthistorik & miljöpåverkan' : 'Pant History & Eco Impact';
+  String get totalHelperEarnings => _isSwedish ? 'Hjälparens totala intäkter' : 'Total Helper Earnings';
+  String get totalPantRefund => _isSwedish ? 'Total pantersättning' : 'Total Pant Refund';
+  String amountSek(String amount) => '$amount SEK';
+  String plusAmountSek(String amount) => '+$amount SEK';
+  String co2SavedKg(String amount) => '-$amount kg CO₂';
+  String helperImpactDescription(int containers, int pickups) => _isSwedish ? 'Du hjälpte till att återvinna $containers förpackningar över $pickups slutförda upphämtningar!' : 'You helped recycle $containers containers across $pickups completed pickups!';
+  String recyclerImpactDescription(int containers) => _isSwedish ? 'Du återvann $containers förpackningar och minskade koldioxidutsläppen med Panta Go!' : 'You recycled $containers containers and offset carbon emissions with Panta Go!';
+  String weekStreakTitle(int weeks) => _isSwedish ? '$weeks veckors återvinningssvit!' : '$weeks Week Recycling Streak!';
+  String get startStreakTitle => _isSwedish ? 'Starta din återvinningssvit!' : 'Start your Recycling Streak!';
+  String get keepRecyclingWeeklySubtitle => _isSwedish ? 'Fortsätt panta varje vecka för att hålla lågan vid liv och tjäna utmärkelser.' : 'Keep recycling weekly to maintain your flame & earn streak badges.';
+  String get igniteFlameSubtitle => _isSwedish ? 'Slutför en upphämtning denna vecka för att tända din återvinningslåga!' : 'Complete a pickup this week to ignite your recycling flame!';
+  String get ecoBadgesAndMilestones => _isSwedish ? 'Miljömärken & milstolpar' : 'Eco Badges & Milestones';
+  String badgesUnlockedCount(int unlocked, int total) => _isSwedish ? '$unlocked / $total upplåsta' : '$unlocked / $total Unlocked';
+  String get pickupActivityTitle => _isSwedish ? 'Upphämtningsaktivitet & bidrag' : 'Pickup Activity & Contribution';
+  String get noCompletedPickupsYet => _isSwedish ? 'Inga slutförda upphämtningar än' : 'No completed pickups yet';
+  String get completeFirstPickupSubtitle => _isSwedish ? 'Slutför din första pantupphämtning för att bygga dina mätvärden!' : 'Complete your first recycling pickup to build your impact metrics!';
+  String verifiedDateAndAmount(String dateStr, String amount) => _isSwedish ? '$dateStr • Verifierat: $amount SEK' : '$dateStr • Verified: $amount SEK';
+
+  // Admin Dashboard
+  String get antiSpamProtectionActive => _isSwedish ? 'Spam- och bunkringsskydd aktivt' : 'Anti-Spam & Anti-Hoarding Protection Active';
+  String adminQuotaDescription(int recyclerCap, int helperCap) => _isSwedish ? 'Personlig marknadskvot för återvinnare: $recyclerCap aktiva förfrågningar | Personlig kvot för hjälpare: $helperCap aktiva uppdrag.' : 'Personal recycler market cap: $recyclerCap active requests | Personal helper cap: $helperCap active jobs.';
+  String get statusActive => _isSwedish ? 'AKTIV' : 'ACTIVE';
+  String get swedenMapVisualizationTitle => _isSwedish ? 'Visualisering av karta för Sverige och städer' : 'Sweden Country & City Map Visualization';
+  String monitoredHubsCount(int count) => _isSwedish ? '$count övervakade hubbar' : '$count Monitored Hubs';
+  String get swedenMapDescription => _isSwedish ? 'Interaktiv geografisk karta som representerar aktuell marknadsbelastning och tillgänglighet av hjälpare i Sverige. Tryck på en stad för att granska.' : 'Interactive geographic map representing live market load and helper availability across Sweden. Tap any city node to inspect.';
+  String selectedNodeCity(String name, String status) => _isSwedish ? 'Vald nod: $name ($status)' : 'Selected Node: $name ($status)';
+  String get cityBreakdownTitle => _isSwedish ? 'Stadsuppdelning & kapacitetstrender' : 'City Breakdown & Capacity Trends';
+  String cityCapacityStats(int active, int pending, int helpers, int eta) => _isSwedish ? 'Aktiva: $active | Väntande: $pending | Hjälpare: $helpers | ETA: ~${eta}m' : 'Active: $active | Pending: $pending | Helpers: $helpers | ETA: ~${eta}m';
+  String get userFeedbackTitle => _isSwedish ? 'Användarfeedback' : 'User Feedback';
+  String feedbackSubmissionsCount(int count) => _isSwedish ? '$count inskickade' : '$count submissions';
+  String get feedbackMarketDescription => _isSwedish ? 'Feedback inskickad av användare på din marknad.' : 'Feedback submitted by users in your market.';
+  String get noFeedbackReceivedYet => _isSwedish ? 'Ingen feedback mottagen än.' : 'No feedback received yet.';
+  String get unknownUser => _isSwedish ? 'Okänd användare' : 'Unknown user';
+  String get liveSystemAuditLogs => _isSwedish ? 'Realtids- och granskningsloggar' : 'Live System & Audit Logs';
+  String eventsCount(int count) => _isSwedish ? '$count händelser' : '$count events';
+  String get auditLogDescription => _isSwedish ? 'Realtidslogg över dispatch-åtgärder, utbetalningar och kvotuppföljning.' : 'Real-time audit log of dispatch actions, payout events, and market quota enforcement.';
+  String get noSystemLogsRecordedYet => _isSwedish ? 'Inga systemloggar har registrerats än.' : 'No system logs recorded yet.';
+  String simulatedEventLogged(String action, String details) => _isSwedish ? 'Simulerad händelse loggad [$action]: $details' : 'Simulated Event Logged [$action]: $details';
+  String get simulatedEventTriggeredLocal => _isSwedish ? 'Simulerad händelse utlöst (Lokal fallback)' : 'Simulated Event Triggered (Local fallback)';
+  String simulationError(String error) => _isSwedish ? 'Simuleringsfel: $error' : 'Simulation error: $error';
+  String get adminSimQuotaEnforced => _isSwedish ? 'Personlig kvot tillämpad: 20 max förfrågningar per återvinnare, 30 aktiva jobb per hjälpare' : 'Personal quota enforced: 20 max requests per Recycler, 30 active jobs per Helper';
+  String get adminSimNationalSpamCheck => _isSwedish ? 'Nationell spam-kontroll: Alla konton inom 20/30-gränsen. Överträdelser: 0' : 'National spam check: All accounts within 20/30 limit. Violations: 0';
+  String get adminSimDisbursedRevenue => _isSwedish ? 'Betalade ut 70/30 pantintäkter: 175.00 SEK till Anna Återvinnare, 75.00 SEK till Erik Hjälpare' : 'Disbursed 70/30 pant revenue: 175.00 SEK to Anna Recycler, 75.00 SEK to Erik Helper';
+  String get adminSimPickupAccepted => _isSwedish ? 'Simulerad upphämtning accepterad i Stockholm Vasastan (ETA: 12 min)' : 'Simulated pickup accepted in Stockholm Vasastan (ETA: 12 min)';
+
+  // Feedback & Profile
+  String get feedbackSubtitle => _isSwedish
+      ? 'Berätta för Panta-teamet vad vi kan förbättra'
+      : 'Tell the Panta team what to improve';
+  String get loadingVersion => _isSwedish ? 'Laddar version…' : 'Loading version…';
+  String appVersionBuild(String version, String build) =>
+      _isSwedish ? 'v$version (Bygge $build)' : 'v$version (Build $build)';
+  String get enterValidNameLength => _isSwedish
+      ? 'Ange ett namn mellan 1 och 100 tecken.'
+      : 'Enter a name between 1 and 100 characters.';
+
+  // Admin KPI Cards
+  String get activePickups => _isSwedish ? 'Aktiva upphämtningar' : 'Active Pickups';
+  String kpiActivePickupsSubtitle(int pending, int inTransit) => _isSwedish
+      ? '$pending vänt / $inTransit under transport'
+      : '$pending pend / $inTransit in transit';
+  String get totalPantScanned => _isSwedish ? 'Totalt scannad pant' : 'Total Pant Scanned';
+  String get kpiPantSplitSubtitle => _isSwedish ? '70% Användare / 30% Hjälpare' : '70% User / 30% Helper';
+  String get recyclerLimit => _isSwedish ? 'Gräns för återvinnare' : 'Recycler Limit';
+  String get recyclerLimitSubtitle => _isSwedish ? 'Personlig kvot mot spam' : 'Anti-spam individual quota';
+  String get helperLimit => _isSwedish ? 'Gräns för hjälpare' : 'Helper Limit';
+  String get helperLimitSubtitle => _isSwedish ? 'Kapacitetstak mot bunkring' : 'Anti-hoarding capacity cap';
+
+  // Request & Locations
+  String get recentPickup => _isSwedish ? 'Senaste upphämtning' : 'Recent pickup';
+  String get pantPickup => _isSwedish ? 'Pantupphämtning' : 'Pant Pickup';
+
+  // Eco Badges
+  String badgeTitle(String id, {String? fallback}) {
+    switch (id) {
+      case 'first_step':
+        return _isSwedish ? 'Första steget' : 'First Step';
+      case 'centurion':
+        return _isSwedish ? 'Hundring-återvinnare' : 'Centurion Recycler';
+      case 'carbon_crusher':
+        return _isSwedish ? 'Koldioxidkrossare' : 'Carbon Crusher';
+      case 'streak_master':
+        return _isSwedish ? 'Svitmästare' : 'Streak Master';
+      case 'pant_legend':
+        return _isSwedish ? 'Pantlegend' : 'Pant Legend';
+      case 'eco_champion':
+        return _isSwedish ? 'Eko-mästare' : 'Eco Champion';
+      default:
+        return fallback ?? id;
+    }
+  }
+
+  String badgeDescription(String id, {String? fallback}) {
+    switch (id) {
+      case 'first_step':
+        return _isSwedish
+            ? 'Slutför din första pantupphämtning'
+            : 'Complete your first pant pickup';
+      case 'centurion':
+        return _isSwedish
+            ? 'Återvinn 100+ burkar & flaskor'
+            : 'Recycle 100+ cans & bottles';
+      case 'carbon_crusher':
+        return _isSwedish
+            ? 'Minska minst 10 kg CO₂'
+            : 'Offset at least 10 kg of CO₂';
+      case 'streak_master':
+        return _isSwedish
+            ? 'Behåll en återvinningssvit i 3 veckor'
+            : 'Maintain a 3-week recycling streak';
+      case 'pant_legend':
+        return _isSwedish
+            ? 'Slutför 10+ pantupphämtningar'
+            : 'Complete 10+ recycling pickups';
+      case 'eco_champion':
+        return _isSwedish
+            ? 'Tjäna/få tillbaka över 500 SEK i pant'
+            : 'Earn/refund over 500 SEK in pant';
+      default:
+        return fallback ?? '';
+    }
+  }
+
+  // Live Map Tracking ETA
+  String get etaHelperArrived =>
+      _isSwedish ? 'Hjälparen har anlänt!' : 'Helper has arrived!';
+  String etaArrivingSoon(int minutes) =>
+      _isSwedish ? 'Anländer snart (~$minutes min)' : 'Arriving soon (~$minutes min)';
+  String etaOnTheWay(int minutes, double distanceKm) => _isSwedish
+      ? 'På väg (~$minutes min, $distanceKm km)'
+      : 'On the way (~$minutes min, $distanceKm km)';
+  String get pickupInProgress =>
+      _isSwedish ? 'Upphämtning pågår' : 'Pickup in progress';
+
+  // Receipt Scanner
+  String couldNotProcessReceiptImage(String error) => _isSwedish
+      ? 'Kunde inte bearbeta kvitto-bild: $error'
+      : 'Could not process receipt image: $error';
+  String get pleaseEnterValidPantAmount => _isSwedish
+      ? 'Vänligen ange ett giltigt pantbelopp i SEK.'
+      : 'Please enter a valid SEK pant amount.';
+  String get recyclingStation =>
+      _isSwedish ? 'Pantstation' : 'Recycling Station';
+
+  // BankID Dialog Errors
+  String get bankIdInitFailed => _isSwedish
+      ? 'Kunde inte initiera BankID. Kontrollera anslutningen.'
+      : 'Could not initialize BankID. Please check your connection.';
+  String bankIdGenericError(String error) =>
+      _isSwedish ? 'Fel: $error' : 'Error: $error';
+  String get bankIdStatusCheckFailed => _isSwedish
+      ? 'Kunde inte verifiera BankID-status.'
+      : 'Could not verify BankID status.';
+  String get bankIdCancelled => _isSwedish
+      ? 'BankID-identifieringen avbröts.'
+      : 'BankID authentication was canceled.';
+  String get bankIdFailedOrExpired => _isSwedish
+      ? 'BankID-identifieringen misslyckades eller löpte ut.'
+      : 'BankID authentication failed or expired.';
+  String get bankIdLinkFailed => _isSwedish
+      ? 'Kunde inte koppla BankID till nuvarande konto.'
+      : 'Could not link BankID to current account.';
+  String get bankIdSimulationFailed => _isSwedish
+      ? 'Kunde inte simulera godkännande.'
+      : 'Could not simulate approval.';
+
+  // Chat & Common
+  String get me => _isSwedish ? 'Jag' : 'Me';
 }
 
 class _AppLocalizationsDelegate

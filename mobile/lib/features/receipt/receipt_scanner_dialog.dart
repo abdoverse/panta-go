@@ -126,7 +126,7 @@ class _ReceiptScannerDialogState extends State<ReceiptScannerDialog> {
     } catch (e) {
       setState(() {
         _isScanning = false;
-        _errorMessage = 'Could not process receipt image: $e';
+        _errorMessage = context.l10n.couldNotProcessReceiptImage('$e');
       });
     }
   }
@@ -181,7 +181,7 @@ class _ReceiptScannerDialogState extends State<ReceiptScannerDialog> {
     final raw = _amountController.text.replaceAll(',', '.').trim();
     final amount = double.tryParse(raw);
     if (amount == null || amount < 0) {
-      setState(() => _errorMessage = 'Please enter a valid SEK pant amount.');
+      setState(() => _errorMessage = context.l10n.pleaseEnterValidPantAmount);
       return;
     }
 
@@ -190,7 +190,7 @@ class _ReceiptScannerDialogState extends State<ReceiptScannerDialog> {
         amount: amount,
         imageUrl: _selectedImage?.path,
         totalContainers: _ocrResult?.totalContainers ?? 0,
-        storeName: _ocrResult?.storeName ?? 'Recycling Station',
+        storeName: _ocrResult?.storeName ?? context.l10n.recyclingStation,
         splitPercentage: widget.splitPercentage,
         dropoffPhotoUrl: _dropoffPhotoUrl,
       ),
@@ -318,7 +318,7 @@ class _ReceiptScannerDialogState extends State<ReceiptScannerDialog> {
                           label: Text(
                             _dropoffPhotoUrl != null
                                 ? context.l10n.dropoffPhotoCaptured
-                                : 'Take Drop-off Photo Proof',
+                                : context.l10n.takeDropoffPhotoProof,
                             style: TextStyle(
                               color: _dropoffPhotoUrl != null
                                   ? Colors.green.shade800
@@ -382,7 +382,7 @@ class _ReceiptScannerDialogState extends State<ReceiptScannerDialog> {
                                   TextStyle(fontSize: 13, color: Colors.grey),
                             ),
                             Text(
-                              _ocrResult!.storeName ?? 'Pantstation',
+                              _ocrResult!.storeName ?? context.l10n.pantStation,
                               style:
                                   const TextStyle(fontWeight: FontWeight.w600),
                             ),

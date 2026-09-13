@@ -95,6 +95,20 @@ class _LiveMapTrackingViewState extends State<LiveMapTrackingView>
     }
   }
 
+  String _getLocalizedEtaStatus(BuildContext context, EtaInfo eta) {
+    final l10n = context.l10n;
+    switch (eta.milestone) {
+      case DeliveryMilestone.arrived:
+        return l10n.etaHelperArrived;
+      case DeliveryMilestone.arrivingSoon:
+        return l10n.etaArrivingSoon(eta.etaMinutes);
+      case DeliveryMilestone.onTheWay:
+        return l10n.etaOnTheWay(eta.etaMinutes, eta.distanceKm);
+      default:
+        return l10n.pickupInProgress;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final etaInfo = EtaService.computeEta(
@@ -327,7 +341,7 @@ class _LiveMapTrackingViewState extends State<LiveMapTrackingView>
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      etaInfo.statusText,
+                      _getLocalizedEtaStatus(context, etaInfo),
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,

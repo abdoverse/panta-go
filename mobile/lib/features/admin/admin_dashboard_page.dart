@@ -179,7 +179,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         level: 'INFO',
         category: 'MARKET_LIMIT',
         message:
-            'Personal quota enforced: 20 max requests per Recycler, 30 active jobs per Helper',
+            'Personal quota enforced: 20 max requests per Recycler, 30 active jobs per Helper', // l10n-ignore
         city: 'Sweden (National)',
       ),
       AdminLogModel(
@@ -188,7 +188,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         level: 'METRIC',
         category: 'ANTI_SPAM',
         message:
-            'National spam check: All accounts within 20/30 limit. Violations: 0',
+            'National spam check: All accounts within 20/30 limit. Violations: 0', // l10n-ignore
         city: 'Stockholm',
       ),
       AdminLogModel(
@@ -197,7 +197,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         level: 'SUCCESS',
         category: 'PAYOUT',
         message:
-            'Disbursed 70/30 pant revenue: 175.00 SEK to Anna Recycler, 75.00 SEK to Erik Helper',
+            'Disbursed 70/30 pant revenue: 175.00 SEK to Anna Recycler, 75.00 SEK to Erik Helper', // l10n-ignore
         city: 'Stockholm',
       ),
     ];
@@ -221,7 +221,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                  'Simulated Event Logged [${newLog.category}]: ${newLog.message}'),
+                context.l10n.simulatedEventLogged(newLog.category, newLog.message),
+              ),
               backgroundColor: AppTheme.primaryGreen,
               duration: const Duration(seconds: 4),
             ),
@@ -244,7 +245,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           level: 'INFO',
           category: 'DISPATCH',
           message:
-              'Simulated pickup accepted in Stockholm Vasastan (ETA: 12 min)',
+              'Simulated pickup accepted in Stockholm Vasastan (ETA: 12 min)', // l10n-ignore
           city: 'Stockholm',
         );
         setState(() {
@@ -252,8 +253,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Simulated Event Triggered (Local fallback)'),
+            SnackBar(
+              content: Text(context.l10n.simulatedEventTriggeredLocal),
               backgroundColor: Colors.blueGrey,
             ),
           );
@@ -262,7 +263,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Simulation error: $e')),
+          SnackBar(content: Text(context.l10n.simulationError('$e'))),
         );
       }
     } finally {
@@ -308,7 +309,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           ),
           IconButton(
             icon: const Icon(Icons.logout),
-            tooltip: 'Log Out',
+            tooltip: context.l10n.logOut,
             onPressed: () async {
               await provider.logout();
             },
@@ -382,16 +383,16 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Anti-Spam & Anti-Hoarding Protection Active',
-                  style: TextStyle(
+                Text(
+                  context.l10n.antiSpamProtectionActive,
+                  style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                     color: Color(0xFF1B5E20),
                   ),
                 ),
                 Text(
-                  'Personal recycler market cap: ${_summary.recyclerLimit} active requests | Personal helper cap: ${_summary.helperLimit} active jobs.',
+                  context.l10n.adminQuotaDescription(_summary.recyclerLimit, _summary.helperLimit),
                   style:
                       const TextStyle(fontSize: 12, color: Color(0xFF2E7D32)),
                 ),
@@ -404,9 +405,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               color: AppTheme.primaryGreen,
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Text(
-              'ACTIVE',
-              style: TextStyle(
+            child: Text(
+              context.l10n.statusActive,
+              style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
                 fontSize: 11,
@@ -432,31 +433,33 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           childAspectRatio: aspectRatio,
           children: [
             _buildKpiCard(
-              title: 'Active Pickups',
+              title: context.l10n.activePickups,
               value: '${_summary.activeRequests}',
-              subtitle:
-                  '${_summary.pendingRequests} pend / ${_summary.inProgressRequests} in transit',
+              subtitle: context.l10n.kpiActivePickupsSubtitle(
+                _summary.pendingRequests,
+                _summary.inProgressRequests,
+              ),
               icon: Icons.local_shipping,
               color: Colors.blue.shade700,
             ),
             _buildKpiCard(
-              title: 'Total Pant Scanned',
+              title: context.l10n.totalPantScanned,
               value: '${_summary.totalPantAmount.toStringAsFixed(0)} SEK',
-              subtitle: '70% User / 30% Helper',
+              subtitle: context.l10n.kpiPantSplitSubtitle,
               icon: Icons.recycling,
               color: AppTheme.primaryGreen,
             ),
             _buildKpiCard(
-              title: 'Recycler Limit',
+              title: context.l10n.recyclerLimit,
               value: '${_summary.recyclerLimit} / user',
-              subtitle: 'Anti-spam individual quota',
+              subtitle: context.l10n.recyclerLimitSubtitle,
               icon: Icons.person_outline,
               color: Colors.purple.shade700,
             ),
             _buildKpiCard(
-              title: 'Helper Limit',
+              title: context.l10n.helperLimit,
               value: '${_summary.helperLimit} / helper',
-              subtitle: 'Anti-hoarding capacity cap',
+              subtitle: context.l10n.helperLimitSubtitle,
               icon: Icons.delivery_dining,
               color: Colors.orange.shade800,
             ),
@@ -542,15 +545,15 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Expanded(
+                Expanded(
                   child: Row(
                     children: [
-                      Icon(Icons.map, color: AppTheme.primaryGreen),
-                      SizedBox(width: 8),
+                      const Icon(Icons.map, color: AppTheme.primaryGreen),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Sweden Country & City Map Visualization',
-                          style: TextStyle(
+                          context.l10n.swedenMapVisualizationTitle,
+                          style: const TextStyle(
                               fontSize: 15, fontWeight: FontWeight.bold),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -560,14 +563,14 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  '${_cities.length} Monitored Hubs',
+                  context.l10n.monitoredHubsCount(_cities.length),
                   style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
               ],
             ),
             const SizedBox(height: 8),
             Text(
-              'Interactive geographic map representing live market load and helper availability across Sweden. Tap any city node to inspect.',
+              context.l10n.swedenMapDescription,
               style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
             ),
             const SizedBox(height: 16),
@@ -657,7 +660,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Selected Node: ${city.cityName} (${city.countryCode})',
+                context.l10n.selectedNodeCity(city.cityName, city.countryCode),
                 style:
                     const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
@@ -729,13 +732,13 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
-                Icon(Icons.location_city, color: AppTheme.primaryGreen),
-                SizedBox(width: 8),
+                const Icon(Icons.location_city, color: AppTheme.primaryGreen),
+                const SizedBox(width: 8),
                 Text(
-                  'City Breakdown & Capacity Trends',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  context.l10n.cityBreakdownTitle,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -757,7 +760,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                       fontWeight: FontWeight.bold, fontSize: 14),
                 ),
                 subtitle: Text(
-                  'Active: ${city.activeRequests} | Pending: ${city.pendingRequests} | Helpers: ${city.activeHelpers} | ETA: ~${city.avgEtaMinutes}m',
+                  context.l10n.cityCapacityStats(city.activeRequests, city.pendingRequests, city.activeHelpers, city.avgEtaMinutes),
                   style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
                 trailing: _buildStatusBadge(city.status),
@@ -787,25 +790,25 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Row(children: [
-                  Icon(Icons.feedback_outlined, color: AppTheme.primaryGreen),
-                  SizedBox(width: 8),
-                  Text('User Feedback',
+                Row(children: [
+                  const Icon(Icons.feedback_outlined, color: AppTheme.primaryGreen),
+                  const SizedBox(width: 8),
+                  Text(context.l10n.userFeedbackTitle,
                       style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ]),
-                Text('${_feedback.length} submissions',
-                    style: TextStyle(fontSize: 12, color: Colors.grey)),
+                Text(context.l10n.feedbackSubmissionsCount(_feedback.length),
+                    style: const TextStyle(fontSize: 12, color: Colors.grey)),
               ],
             ),
             const SizedBox(height: 8),
-            Text('Feedback submitted by users in your market.',
+            Text(context.l10n.feedbackMarketDescription,
                 style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
             const SizedBox(height: 12),
             if (_feedback.isEmpty)
-              const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 20),
-                  child: Center(child: Text('No feedback received yet.')))
+              Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  child: Center(child: Text(context.l10n.noFeedbackReceivedYet)))
             else
               ..._feedback.take(20).map(_buildFeedbackItem),
           ],
@@ -839,7 +842,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         Text(feedback.message),
         const SizedBox(height: 6),
         Text(
-            '${_formatFeedbackDate(feedback.createdAt)} • ${feedback.userName.isEmpty ? 'Unknown user' : feedback.userName}',
+            '${_formatFeedbackDate(feedback.createdAt)} • ${feedback.userName.isEmpty ? context.l10n.unknownUser : feedback.userName}',
             style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
       ]),
     );
@@ -857,33 +860,33 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Row(
+                Row(
                   children: [
-                    Icon(Icons.receipt_long, color: AppTheme.primaryGreen),
-                    SizedBox(width: 8),
+                    const Icon(Icons.receipt_long, color: AppTheme.primaryGreen),
+                    const SizedBox(width: 8),
                     Text(
-                      'Live System & Audit Logs',
+                      context.l10n.liveSystemAuditLogs,
                       style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
                 Text(
-                  '${_logs.length} events',
+                  context.l10n.eventsCount(_logs.length),
                   style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
               ],
             ),
             const SizedBox(height: 8),
             Text(
-              'Real-time audit log of dispatch actions, payout events, and market quota enforcement.',
+              context.l10n.auditLogDescription,
               style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
             ),
             const SizedBox(height: 12),
             if (_logs.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 24.0),
-                child: Center(child: Text('No system logs recorded yet.')),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24.0),
+                child: Center(child: Text(context.l10n.noSystemLogsRecordedYet)),
               )
             else
               ListView.separated(

@@ -45,6 +45,7 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
   cider: ^0.2.10
+  analyzer: ^10.0.1
 
 flutter:
   uses-material-design: true

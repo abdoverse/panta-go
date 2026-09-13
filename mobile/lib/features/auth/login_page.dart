@@ -211,7 +211,7 @@ class _LoginPageState extends State<LoginPage> {
                                       ],
                                       decoration: InputDecoration(
                                         labelText: l10n.email,
-                                        hintText: 'name@example.com',
+                                        hintText: l10n.emailExampleHint,
                                         prefixIcon: const Icon(
                                           Icons.email_outlined,
                                         ),
@@ -396,15 +396,15 @@ class _LoginPageState extends State<LoginPage> {
                                             setState(() => _isLoading = false);
                                             if (error != null) {
                                               messenger.showSnackBar(
-                                                SnackBar(content: Text(error)),
+                                                SnackBar(content: Text(context.l10n.loginFailed(error))),
                                               );
                                             }
                                           }
                                         },
                                   icon: const Icon(Icons.admin_panel_settings, size: 18),
-                                  label: const Text(
-                                    'Admin Dashboard (Sweden Market Oversight)',
-                                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                                  label: Text(
+                                    l10n.adminDashboardSwedenOversight,
+                                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                                   ),
                                 ),
                               ),
@@ -485,15 +485,15 @@ class _LoginPageState extends State<LoginPage> {
                                               setState(() => _isLoading = false);
                                               if (error != null) {
                                                 messenger.showSnackBar(
-                                                  SnackBar(content: Text(error)),
+                                                  SnackBar(content: Text(context.l10n.loginFailed(error))),
                                                 );
                                               }
                                             }
                                           },
                                     icon: const Icon(Icons.eco, size: 18),
-                                    label: const Text(
-                                      'Anna (Recycler)',
-                                      style: TextStyle(fontWeight: FontWeight.w600),
+                                    label: Text(
+                                      l10n.annaRecyclerDemo,
+                                      style: const TextStyle(fontWeight: FontWeight.w600),
                                     ),
                                   ),
                                 ),
@@ -522,15 +522,15 @@ class _LoginPageState extends State<LoginPage> {
                                               setState(() => _isLoading = false);
                                               if (error != null) {
                                                 messenger.showSnackBar(
-                                                  SnackBar(content: Text(error)),
+                                                  SnackBar(content: Text(context.l10n.loginFailed(error))),
                                                 );
                                               }
                                             }
                                           },
                                     icon: const Icon(Icons.local_shipping, size: 18),
-                                    label: const Text(
-                                      'Erik (Helper)',
-                                      style: TextStyle(fontWeight: FontWeight.w600),
+                                    label: Text(
+                                      l10n.erikHelperDemo,
+                                      style: const TextStyle(fontWeight: FontWeight.w600),
                                     ),
                                   ),
                                 ),

@@ -176,6 +176,7 @@ class _ChatBannerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Material(
       color: Colors.transparent,
       elevation: 8,
@@ -262,9 +263,9 @@ class _ChatBannerCard extends StatelessWidget {
                             color: const Color(0xFFFFD54F),
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: const Text(
-                            'NEW',
-                            style: TextStyle(
+                          child: Text(
+                            l10n.newBadge,
+                            style: const TextStyle(
                               color: Colors.black87,
                               fontSize: 10,
                               fontWeight: FontWeight.w900,
@@ -317,7 +318,7 @@ class _ChatBannerCard extends StatelessWidget {
                 iconSize: 18,
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-                tooltip: 'Dismiss',
+                tooltip: l10n.dismiss,
               ),
             ],
           ),

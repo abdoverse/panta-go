@@ -15,6 +15,7 @@ import '../../receipt/receipt_scanner_dialog.dart';
 import '../../shared/widgets/location_actions.dart';
 import '../../tracking/live_map_tracking_view.dart';
 import '../../../services/api_config.dart';
+import 'index_badge.dart';
 
 String formatRatingValue(double value) {
   return value == value.roundToDouble()
@@ -91,15 +92,8 @@ class HelperJobCard extends StatelessWidget {
                   children: [
                     if (index != null)
                       Padding(
-                        padding: const EdgeInsets.only(right: 8.0, top: 2.0),
-                        child: Text(
-                          "#${index! + 1}",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey[600],
-                          ),
-                        ),
+                        padding: const EdgeInsets.only(right: 12.0),
+                        child: IndexBadge(index: index!),
                       ),
                     Expanded(
                       child: Column(

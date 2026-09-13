@@ -12,6 +12,7 @@ import '../../shared/widgets/location_actions.dart';
 import '../../tracking/live_map_tracking_view.dart';
 import '../../../services/api_config.dart';
 import '../create_request_page.dart';
+import 'index_badge.dart';
 
 class UserRequestCard extends StatelessWidget {
   final RecyclingRequest request;
@@ -65,24 +66,7 @@ class UserRequestCard extends StatelessWidget {
                 if (index != null)
                   Padding(
                     padding: const EdgeInsets.only(right: 16.0),
-                    child: Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryGreen.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          "${index! + 1}",
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.primaryGreen,
-                          ),
-                        ),
-                      ),
-                    ),
+                    child: IndexBadge(index: index!),
                   ),
                 SizedBox(
                   width: 60,
@@ -189,7 +173,7 @@ class UserRequestCard extends StatelessWidget {
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    'Verified Pant: ${request.receiptAmount!.toStringAsFixed(2)} SEK',
+                                    l10n.verifiedPantValue(request.receiptAmount!.toStringAsFixed(2)),
                                     style: const TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
@@ -221,7 +205,7 @@ class UserRequestCard extends StatelessWidget {
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    'Your Payout: ${(request.recyclerPayout ?? (request.receiptAmount! * request.splitPercentage / 100)).toStringAsFixed(2)} SEK',
+                                    l10n.yourPayoutAmount((request.recyclerPayout ?? (request.receiptAmount! * request.splitPercentage / 100)).toStringAsFixed(2)),
                                     style: const TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
@@ -252,18 +236,18 @@ class UserRequestCard extends StatelessWidget {
                                   color: Colors.amber.shade300,
                                 ),
                               ),
-                              child: const Row(
+                              child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(
+                                  const Icon(
                                     Icons.door_front_door_outlined,
                                     size: 12,
                                     color: Colors.orange,
                                   ),
-                                  SizedBox(width: 4),
+                                  const SizedBox(width: 4),
                                   Text(
-                                    'Leave at Door',
-                                    style: TextStyle(
+                                    l10n.leaveAtDoor,
+                                    style: const TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w600,
                                       color: Colors.brown,
@@ -292,9 +276,9 @@ class UserRequestCard extends StatelessWidget {
                                       content: Column(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          const Text(
-                                            'Helper confirmed pickup at door:',
-                                            style: TextStyle(fontSize: 13),
+                                          Text(
+                                            l10n.helperConfirmedPickupAtDoor,
+                                            style: const TextStyle(fontSize: 13),
                                           ),
                                           const SizedBox(height: 12),
                                           Container(
@@ -307,20 +291,20 @@ class UserRequestCard extends StatelessWidget {
                                                 color: Colors.grey.shade300,
                                               ),
                                             ),
-                                            child: const Center(
+                                            child: Center(
                                               child: Column(
                                                 mainAxisAlignment:
                                                     MainAxisAlignment.center,
                                                 children: [
-                                                  Icon(
+                                                  const Icon(
                                                     Icons.check_circle,
                                                     size: 40,
                                                     color: Colors.green,
                                                   ),
-                                                  SizedBox(height: 8),
+                                                  const SizedBox(height: 8),
                                                   Text(
-                                                    'Photo Verified by Helper',
-                                                    style: TextStyle(
+                                                    l10n.photoVerifiedByHelper,
+                                                    style: const TextStyle(
                                                       fontWeight:
                                                           FontWeight.bold,
                                                       color: Colors.green,
@@ -353,18 +337,18 @@ class UserRequestCard extends StatelessWidget {
                                       color: Colors.green.shade300,
                                     ),
                                   ),
-                                  child: const Row(
+                                  child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(
+                                      const Icon(
                                         Icons.photo_camera,
                                         size: 12,
                                         color: Colors.green,
                                       ),
-                                      SizedBox(width: 4),
+                                      const SizedBox(width: 4),
                                       Text(
-                                        'View Photo Proof ✓',
-                                        style: TextStyle(
+                                        l10n.viewPhotoProof,
+                                        style: const TextStyle(
                                           fontSize: 11,
                                           fontWeight: FontWeight.w600,
                                           color: Colors.green,
@@ -403,9 +387,9 @@ class UserRequestCard extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Helper is outside your door!',
-                              style: TextStyle(
+                            Text(
+                              l10n.helperOutsideYourDoor,
+                              style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
                                 color: Colors.brown,
@@ -413,8 +397,8 @@ class UserRequestCard extends StatelessWidget {
                             ),
                             Text(
                               request.leaveAtDoor
-                                  ? 'Bags can be picked up directly outside your door.'
-                                  : 'Please open your door or meet the helper to hand over pant bags.',
+                                  ? l10n.bagsCanBePickedUpOutsideDoor
+                                  : l10n.pleaseOpenDoorToHandOverBags,
                               style: TextStyle(
                                 fontSize: 11,
                                 color: Colors.brown.shade700,
@@ -508,7 +492,7 @@ class UserRequestCard extends StatelessWidget {
                                                   BorderRadius.circular(8),
                                             ),
                                             child: Text(
-                                              '$unreadCount NEW',
+                                              l10n.unreadCountBadge(unreadCount),
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 10,
@@ -567,7 +551,7 @@ class UserRequestCard extends StatelessWidget {
                                   size: 18,
                                 ),
                                 label: Text(
-                                  'Chat with Helper ($unreadCount NEW)',
+                                  l10n.chatWithHelperNew(unreadCount),
                                 ),
                               )
                             : OutlinedButton.icon(
@@ -583,7 +567,11 @@ class UserRequestCard extends StatelessWidget {
                                   Icons.chat_bubble_outline,
                                   size: 16,
                                 ),
-                                label: Text(l10n.chatWithHelper),
+                                label: Text(
+                                  messages.isNotEmpty
+                                      ? l10n.chatWithHelperCount(messages.length)
+                                      : l10n.chatWithHelper,
+                                ),
                               ),
                       ),
                     ],

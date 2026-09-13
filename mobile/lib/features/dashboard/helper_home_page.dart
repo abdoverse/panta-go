@@ -87,7 +87,7 @@ class _HelperHomePageState extends State<HelperHomePage> {
       selectedIndex: _currentIndex,
       onDestinationSelected: (i) => setState(() => _currentIndex = i),
       appTitle: 'Panta',
-      roleBadge: 'Helper',
+      roleBadge: l10n.helperRole,
       destinations: [
         AdaptiveNavigationDestination(
           icon: Icons.explore_outlined,
@@ -162,7 +162,7 @@ class _MarketplaceView extends StatelessWidget {
                       const Text('🔥', style: TextStyle(fontSize: 12)),
                       const SizedBox(width: 4),
                       Text(
-                        '${provider.helperImpactSummary.streak.currentStreakWeeks}w',
+                        l10n.streakWeeksShort(provider.helperImpactSummary.streak.currentStreakWeeks),
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,

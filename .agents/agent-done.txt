@@ -725,3 +725,18 @@ plan-42 | done | medium | medium | plan-23 | Add neighborhood goals, streaks, an
 plan-70 | done | medium | medium | none | Helper Ratings and Reviews with "Pant" Specifics
   Implemented: handleRateRequest endpoint, Rating+RatingComment fields on RecyclingRequest,
   rating display on request cards and helper profile. Receipt amount visible on completed jobs.
+
+plan-81 | done | medium | small | none | Add under profile "About Panta" to contain actual released app version
+  Implemented: profile_screen.dart (_AboutAppTile) displays app version and build number via PackageInfo.fromPlatform() under localized "About Panta" header.
+
+plan-84 | done | medium | small | none | Display user email address on Profile page
+  Implemented: profile_screen.dart renders user's verified/registered email with email icon and title.
+
+plan-82 | done | medium | medium | none | User feedback section allowing any user to submit feedback to the team
+  Implemented: Feedback submission dialog on profile screen, PantaProvider.submitFeedback, backend /api/v1/feedback endpoint with DynamoDB storage, and /api/v1/admin/feedback on admin dashboard.
+
+plan-83 | done | medium | medium | none | Edit first and last name in Profile with Unicode support for Arabic, Chinese, and special characters
+  Implemented: _showEditNameDialog in profile_screen.dart, AuthService.updateDisplayName supporting Unicode names, Cognito attributes, and local token updates.
+
+plan-79 | done | high | medium | none | Set market limits
+  Implemented: Dynamic per-market quotas in market_config.go (plan-74) with max active requests per recycler/helper, min/max rewards, and quota enforcement in requests.go.

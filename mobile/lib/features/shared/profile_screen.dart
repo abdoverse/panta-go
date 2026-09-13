@@ -139,7 +139,7 @@ class ProfileScreen extends StatelessWidget {
             if (email != null && email.isNotEmpty) ...[
               _ProfileItem(
                 icon: Icons.email_outlined,
-                title: "Email",
+                title: l10n.email,
                 subtitle: email,
               ),
               const SizedBox(height: 12),
@@ -206,7 +206,7 @@ class ProfileScreen extends StatelessWidget {
             ],
             if (!isHelper) ...[
               Text(
-                'Pickup shortcuts',
+                l10n.pickupShortcuts,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 12),
@@ -259,7 +259,7 @@ class ProfileScreen extends StatelessWidget {
               const SizedBox(height: 20),
             ],
             Text(
-              'About Panta',
+              l10n.aboutPanta,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 12),
@@ -301,8 +301,8 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   _ProfileItem(
                     icon: Icons.feedback_outlined,
-                    title: "Feedback",
-                    subtitle: "Tell the Panta team what to improve",
+                    title: l10n.feedback,
+                    subtitle: l10n.feedbackSubtitle,
                     onTap: () => _showFeedbackDialog(context, provider),
                   ),
                   const Divider(height: 1),
@@ -317,7 +317,7 @@ class ProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Text(
-              'Demo & Local Testing Tools',
+              l10n.demoTestingTools,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 12),
@@ -332,11 +332,8 @@ class ProfileScreen extends StatelessWidget {
                   ListTile(
                     leading: const Icon(Icons.swap_horiz_rounded,
                         color: AppTheme.primaryGreen),
-                    title: Text(isHelper
-                        ? 'Switch to Recycler (Anna)'
-                        : 'Switch to Helper (Erik)'),
-                    subtitle: const Text(
-                        'Switch role in 1 click to test marketplace interaction'),
+                    title: Text(isHelper ? l10n.switchToRecyclerDemo : l10n.switchToHelperDemo),
+                    subtitle: Text(l10n.switchRoleSubtitle),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () async {
                       await provider.switchDemoRole();
@@ -344,9 +341,7 @@ class ProfileScreen extends StatelessWidget {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              isHelper
-                                  ? 'Switched to Recycler (Anna)'
-                                  : 'Switched to Helper (Erik)',
+                              isHelper ? l10n.switchedToRecyclerDemo : l10n.switchedToHelperDemo,
                             ),
                           ),
                         );
@@ -358,17 +353,14 @@ class ProfileScreen extends StatelessWidget {
                     leading: const Icon(Icons.refresh_rounded,
                         color: Color(0xFF235971)),
                     title: Text(context.l10n.reseedSampleRequests),
-                    subtitle: const Text(
-                        'Populate pending, accepted, and completed requests with chat & photos'),
+                    subtitle: Text(l10n.reseedSampleSubtitle),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () async {
                       final ok = await provider.seedDemoData();
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(ok
-                                ? 'Sample requests re-seeded!'
-                                : 'Failed to seed requests'),
+                            content: Text(ok ? l10n.sampleRequestsReseeded : l10n.failedToSeedRequests),
                           ),
                         );
                       }
@@ -512,7 +504,7 @@ class ProfileScreen extends StatelessWidget {
     final error = await provider.updateDisplayName(updatedName);
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error ?? 'Name updated.')),
+        SnackBar(content: Text(error != null ? context.l10n.enterValidNameLength : context.l10n.nameUpdated)),
       );
     }
   }
@@ -776,7 +768,9 @@ class _ProfileItem extends StatelessWidget {
             ),
       ),
       subtitle: Text(subtitle),
-      trailing: Icon(Icons.chevron_right_rounded, color: Colors.grey[400]),
+      trailing: onTap != null
+          ? Icon(Icons.chevron_right_rounded, color: Colors.grey[400])
+          : null,
     );
   }
 }
@@ -901,8 +895,11 @@ class _AboutAppTileState extends State<_AboutAppTile> {
           icon: Icons.info_outline_rounded,
           title: l10n.aboutPanta,
           subtitle: snapshot.hasData
-              ? "v${snapshot.data!.version} (Build ${snapshot.data!.buildNumber})"
-              : 'Loading version…',
+              ? l10n.appVersionBuild(
+                  snapshot.data!.version,
+                  snapshot.data!.buildNumber,
+                )
+              : l10n.loadingVersion,
         ),
       ),
     );

@@ -48,7 +48,7 @@ class _ImpactDashboardViewState extends State<ImpactDashboardView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.isHelper ? 'My Earnings & Impact' : 'Pant History & Eco Impact'),
+        title: Text(widget.isHelper ? l10n.myEarningsAndImpact : l10n.pantHistoryAndEcoImpact),
       ),
       body: RefreshIndicator(
         onRefresh: _loadData,
@@ -97,11 +97,11 @@ class _ImpactDashboardViewState extends State<ImpactDashboardView> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              widget.isHelper ? 'Total Helper Earnings' : 'Total Pant Refund',
+                              widget.isHelper ? l10n.totalHelperEarnings : l10n.totalPantRefund,
                               style: const TextStyle(color: Colors.white70, fontSize: 13),
                             ),
                             Text(
-                              '${summary.totalEarnings.toStringAsFixed(2)} SEK',
+                              l10n.amountSek(summary.totalEarnings.toStringAsFixed(2)),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 28,
@@ -114,9 +114,7 @@ class _ImpactDashboardViewState extends State<ImpactDashboardView> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      widget.isHelper
-                          ? 'You helped recycle ${summary.containersRecycled} containers across ${summary.totalPickups} completed pickups!'
-                          : 'You recycled ${summary.containersRecycled} containers and offset carbon emissions with Panta Go!',
+                      widget.isHelper ? l10n.helperImpactDescription(summary.containersRecycled, summary.totalPickups) : l10n.recyclerImpactDescription(summary.containersRecycled),
                       style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.4),
                     ),
                   ],
@@ -142,9 +140,7 @@ class _ImpactDashboardViewState extends State<ImpactDashboardView> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            summary.streak.currentStreakWeeks > 0
-                                ? '${summary.streak.currentStreakWeeks} Week Recycling Streak!'
-                                : 'Start your Recycling Streak!',
+                            summary.streak.currentStreakWeeks > 0 ? l10n.weekStreakTitle(summary.streak.currentStreakWeeks) : l10n.startStreakTitle,
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 15,
@@ -152,9 +148,7 @@ class _ImpactDashboardViewState extends State<ImpactDashboardView> {
                             ),
                           ),
                           Text(
-                            summary.streak.currentStreakWeeks > 0
-                                ? 'Keep recycling weekly to maintain your flame & earn streak badges.'
-                                : 'Complete a pickup this week to ignite your recycling flame!',
+                            summary.streak.currentStreakWeeks > 0 ? l10n.keepRecyclingWeeklySubtitle : l10n.igniteFlameSubtitle,
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.orange.shade800,
@@ -223,13 +217,13 @@ class _ImpactDashboardViewState extends State<ImpactDashboardView> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Eco Badges & Milestones',
+                    l10n.ecoBadgesAndMilestones,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                   ),
                   Text(
-                    '${summary.badges.where((b) => b.isUnlocked).length} / ${summary.badges.length} Unlocked',
+                    l10n.badgesUnlockedCount(summary.badges.where((b) => b.isUnlocked).length, summary.badges.length),
                     style: TextStyle(color: Colors.grey.shade600, fontSize: 12, fontWeight: FontWeight.w600),
                   ),
                 ],
@@ -272,13 +266,13 @@ class _ImpactDashboardViewState extends State<ImpactDashboardView> {
                           ),
                           const Spacer(),
                           Text(
-                            badge.title,
+                            l10n.badgeTitle(badge.id, fallback: badge.title),
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                           Text(
-                            badge.description,
+                            l10n.badgeDescription(badge.id, fallback: badge.description),
                             style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -293,7 +287,7 @@ class _ImpactDashboardViewState extends State<ImpactDashboardView> {
 
               // Activity History Title
               Text(
-                'Pickup Activity & Contribution',
+                l10n.pickupActivityTitle,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -314,12 +308,12 @@ class _ImpactDashboardViewState extends State<ImpactDashboardView> {
                       Icon(Icons.history, size: 40, color: Colors.grey.shade400),
                       const SizedBox(height: 10),
                       Text(
-                        'No completed pickups yet',
+                        l10n.noCompletedPickupsYet,
                         style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey.shade700),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Complete your first recycling pickup to build your impact metrics!',
+                        l10n.completeFirstPickupSubtitle,
                         style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
                         textAlign: TextAlign.center,
                       ),
@@ -357,14 +351,14 @@ class _ImpactDashboardViewState extends State<ImpactDashboardView> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  item.title,
+                                  item.title == 'Pickup' ? l10n.pantPickup : item.title,
                                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  '${item.completedAt.year}-${item.completedAt.month.toString().padLeft(2, '0')}-${item.completedAt.day.toString().padLeft(2, '0')} • Verified: ${item.receiptAmount.toStringAsFixed(2)} SEK',
+                                  l10n.verifiedDateAndAmount("${item.completedAt.year}-${item.completedAt.month.toString().padLeft(2, '0')}-${item.completedAt.day.toString().padLeft(2, '0')}", item.receiptAmount.toStringAsFixed(2)),
                                   style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
                                 ),
                               ],
@@ -374,7 +368,7 @@ class _ImpactDashboardViewState extends State<ImpactDashboardView> {
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Text(
-                                '+${item.earnings.toStringAsFixed(2)} SEK',
+                                l10n.plusAmountSek(item.earnings.toStringAsFixed(2)),
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: Color(0xFF2E7D32),
@@ -383,7 +377,7 @@ class _ImpactDashboardViewState extends State<ImpactDashboardView> {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                '-${item.co2SavedKg} kg CO₂',
+                                l10n.co2SavedKg(item.co2SavedKg.toStringAsFixed(1)),
                                 style: TextStyle(
                                   color: Colors.teal.shade700,
                                   fontSize: 11,

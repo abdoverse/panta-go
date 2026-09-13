@@ -901,7 +901,7 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
           _selectedLocation = LocationSuggestion(
             displayName: latestRequest.location,
             title: latestRequest.location,
-            subtitle: 'Recent pickup',
+            subtitle: context.l10n.recentPickup,
             lat: latestRequest.locationLatitude!,
             lon: latestRequest.locationLongitude!,
           );
@@ -910,7 +910,7 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
     }
 
     if (_titleController.text.trim().isEmpty) {
-      _titleController.text = 'Routine pickup';
+      _titleController.text = context.l10n.routinePickup;
     }
     if (_rewardController.text.trim().isEmpty) {
       _rewardController.text = '0';

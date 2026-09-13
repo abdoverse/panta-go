@@ -53,10 +53,6 @@ class _ChatBottomSheetState extends State<ChatBottomSheet> {
     _provider = context.read<PantaProvider>();
     _provider?.setActiveChatRequestId(widget.request.id);
 
-    final pId = _provider?.currentUserId ?? 'unknown';
-    final pName = _provider?.currentUserDisplayName ?? 'Me';
-    _currentUser = types.User(id: pId, firstName: pName);
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         context.read<PantaProvider>().fetchChatMessages(widget.request.id);
@@ -70,6 +66,14 @@ class _ChatBottomSheetState extends State<ChatBottomSheet> {
         context.read<PantaProvider>().markChatAsRead(widget.request.id);
       }
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final pId = _provider?.currentUserId ?? 'unknown';
+    final pName = _provider?.currentUserDisplayName ?? context.l10n.me;
+    _currentUser = types.User(id: pId, firstName: pName);
   }
 
   @override
@@ -94,10 +98,12 @@ class _ChatBottomSheetState extends State<ChatBottomSheet> {
       final name = widget.request.creatorName;
       return name != null && name.isNotEmpty
           ? name.split(' ').first
-          : 'Recycler';
+          : context.l10n.recyclerRole;
     } else {
       final name = widget.request.helperName;
-      return name != null && name.isNotEmpty ? name.split(' ').first : 'Helper';
+      return name != null && name.isNotEmpty
+          ? name.split(' ').first
+          : context.l10n.helperRole;
     }
   }
 
@@ -178,7 +184,7 @@ class _ChatBottomSheetState extends State<ChatBottomSheet> {
                               ),
                               const SizedBox(width: 5),
                               Text(
-                                'Active now',
+                                context.l10n.activeNow,
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w500,

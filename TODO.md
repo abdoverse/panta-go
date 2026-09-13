@@ -8,24 +8,25 @@
 6. [x] When a helper opens their App,  jobs closer to their geographical location should be prioritized and shown at the top of the list. This will improve user experience by making it easier for helpers to find relevant jobs nearby.
 7. [x] do a cool animation when the helper completes a job. It can be a confetti animation or something similar to celebrate the completion of the task and enhance user satisfaction.
 8. [ ] Fix Emoji Rendering on Flutter Web: Emojis sent in the chatbox currently render as black-and-white symbols or black boxes after being sent. Investigate Flutter Web CanvasKit font fallback issues with the custom 'Inter' Google Font, or find a reliable multi-platform emoji rendering package.
-9. [ ] Enable location access to fully work on phone and laptop
-10. [ ] Add under profile, "About Panta" to contain the actual released version of the app
-11. [ ] Add a feedback section where any user can leave feedback to the team
-12. [ ] Allow users to edit their first and last name in Profile with multi-language support (Arabic, Chinese, and other Unicode special characters)
-13. [ ] Display user's email address on the Profile page
-14. [ ] Implement GDPR-compliant cookie support and consent banner adhering to Swedish legal standards for online businesses
-15. [x] Remove all "-go" residue from resource names (DynamoDB tables, S3 buckets, ECS service, Secrets Manager, CloudWatch log groups: rename to panta-requests, panta-request-images, etc.)
+9. [x] Add under profile, "About Panta" to contain the actual released version of the app
+10. [x] Add a feedback section where any user can leave feedback to the team
+11. [x] Allow users to edit their first and last name in Profile with multi-language support (Arabic, Chinese, and other Unicode special characters)
+12. [x] Display user's email address on the Profile page
+13. [ ] Implement GDPR-compliant cookie support and consent banner adhering to Swedish legal standards for online businesses
+14. [x] Remove all "-go" residue from resource names (DynamoDB tables, S3 buckets, ECS service, Secrets Manager, CloudWatch log groups: rename to panta-requests, panta-request-images, etc.)
 
-16. [ ] Add admin user suspension/blocking controls for legal or investigation cases:
+15. [ ] Add admin user suspension/blocking controls for legal or investigation cases:
     - Block a user from signing in and from creating, accepting, or completing requests
     - Allow authorized market admins to block/unblock with a reason, case/reference ID, and optional expiry
     - Preserve active-request handling, notifications, and a durable audit trail of every action
     - Return a clear, non-sensitive account-restriction message to blocked users
 
+16. [ ] Enable location access to fully work on phone and laptop
+
 ## Production Readiness
 1. [ ] Replace local static AWS credentials with short-lived federated credentials or workload identity before sharing/deploying the development setup; rotate and audit `panta-local-dev`.
 1. [ ] Use real BankID certificates and keys
-2. [ ] Set market limits
+2. [x] Set market limits
 3. [ ] Comprehensive GDPR Compliance:
    - **Right to Erasure / Right to be Forgotten (Article 17)**: Self-serve account deletion and automated purge of all personal data across DynamoDB, S3, Cognito, and system logs
    - **Right of Access & Portability (Articles 15 & 20)**: Self-serve Data Subject Access Request (DSAR) export in machine-readable JSON format

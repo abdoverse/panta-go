@@ -108,7 +108,7 @@ class _BankIdDialogState extends State<BankIdDialog> {
       if (res == null || res.orderRef.isEmpty) {
         setState(() {
           _isInitiating = false;
-          _errorMessage = 'Kunde inte initiera BankID. Kontrollera anslutningen.';
+          _errorMessage = context.l10n.bankIdInitFailed;
         });
         return;
       }
@@ -145,7 +145,7 @@ class _BankIdDialogState extends State<BankIdDialog> {
     } catch (e) {
       setState(() {
         _isInitiating = false;
-        _errorMessage = 'Error: $e';
+        _errorMessage = context.l10n.bankIdGenericError('$e');
       });
     }
   }
@@ -168,7 +168,7 @@ class _BankIdDialogState extends State<BankIdDialog> {
         _qrAnimationTimer?.cancel();
         setState(() {
           _isPolling = false;
-          _errorMessage = 'Kunde inte verifiera BankID-status.';
+          _errorMessage = context.l10n.bankIdStatusCheckFailed;
         });
         return;
       }
@@ -187,8 +187,8 @@ class _BankIdDialogState extends State<BankIdDialog> {
         setState(() {
           _isPolling = false;
           _errorMessage = collectRes.hintCode == 'userCancel'
-              ? 'BankID-identifieringen avbröts.'
-              : 'BankID-identifieringen misslyckades eller löpte ut.';
+              ? context.l10n.bankIdCancelled
+              : context.l10n.bankIdFailedOrExpired;
         });
       }
     });
@@ -221,7 +221,7 @@ class _BankIdDialogState extends State<BankIdDialog> {
       if (!verified && mounted) {
         setState(() {
           _isSuccess = false;
-          _errorMessage = 'Kunde inte koppla BankID till nuvarande konto.';
+          _errorMessage = context.l10n.bankIdLinkFailed;
         });
         return;
       }
@@ -253,7 +253,7 @@ class _BankIdDialogState extends State<BankIdDialog> {
       await _handleSuccess(res);
     } else {
       setState(() {
-        _errorMessage = 'Kunde inte simulera godkännande.';
+        _errorMessage = context.l10n.bankIdSimulationFailed;
       });
     }
   }
@@ -342,7 +342,7 @@ class _BankIdDialogState extends State<BankIdDialog> {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        _mode == 'test' ? 'TESTMILJÖ (v6.0 API)' : 'SÄKER IDENTIFIERING',
+                        _mode == 'test' ? l10n.bankIdTestEnv : l10n.bankIdSecureAuth,
                         style: const TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.w700,
@@ -454,8 +454,8 @@ class _BankIdDialogState extends State<BankIdDialog> {
                         Flexible(
                           child: Text(
                             _hintCode == 'userSign'
-                                ? 'Skriv in din säkerhetskod i BankID...'
-                                : 'Scanna QR-koden i BankID-appen',
+                                ? l10n.bankIdEnterCode
+                                : l10n.bankIdScanQr,
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                   fontWeight: FontWeight.w600,
                                   color: const Color(0xFF1C3F60),
@@ -472,8 +472,8 @@ class _BankIdDialogState extends State<BankIdDialog> {
                       child: OutlinedButton.icon(
                         onPressed: _launchSameDeviceBankId,
                         icon: const Icon(Icons.open_in_new_rounded, size: 16),
-                        label: const Text(
-                          'Öppna BankID på denna enhet',
+                        label: Text(
+                          l10n.bankIdOpenOnDevice,
                           style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                         ),
                         style: OutlinedButton.styleFrom(
@@ -501,7 +501,7 @@ class _BankIdDialogState extends State<BankIdDialog> {
                               )
                             : const Icon(Icons.verified_user_outlined, size: 16),
                         label: Text(
-                          _isSimulating ? 'Simulerar...' : 'Simulera godkännande (Testmiljö)',
+                          _isSimulating ? l10n.bankIdSimulating : l10n.bankIdSimulateApproval,
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.blueGrey[800],
@@ -534,7 +534,7 @@ class _BankIdDialogState extends State<BankIdDialog> {
               ),
               const SizedBox(height: 12),
               Text(
-                'I BankID v6.0 kan du lämna personnumret tomt och scanna QR-koden direkt med appen.',
+                l10n.bankIdV6Hint,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppTheme.textSecondary,
                     ),
