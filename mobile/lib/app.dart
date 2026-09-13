@@ -74,6 +74,7 @@ class _PantaAppState extends State<PantaApp> {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       home: const _AuthGate(),
+      builder: (context, child) => ChatNotificationListener(child: child!),
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
@@ -111,6 +112,6 @@ class _AuthGate extends StatelessWidget {
     } else {
       home = const UserHomePage();
     }
-    return ChatNotificationListener(child: home);
+    return home;
   }
 }

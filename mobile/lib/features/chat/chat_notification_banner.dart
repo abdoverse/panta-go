@@ -277,10 +277,10 @@ class _ChatBannerCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      message.text,
+                      message.text.isNotEmpty ? message.text : '...',
                       style: const TextStyle(
-                        color: Color(0xFFE8F5E9),
-                        fontSize: 13,
+                        color: Colors.white,
+                        fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
                       maxLines: 2,
