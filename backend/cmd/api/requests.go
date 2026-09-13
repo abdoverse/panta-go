@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"sort"
+	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -16,6 +19,64 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/google/uuid"
 )
+
+var (
+	geocacheMutex sync.RWMutex
+	geocache      = make(map[string][2]float64)
+)
+
+func geocodeAddress(location string) (float64, float64, error) {
+	trimmed := strings.TrimSpace(location)
+	if trimmed == "" {
+		return 0, 0, fmt.Errorf("empty location")
+	}
+
+	geocacheMutex.RLock()
+	coords, found := geocache[strings.ToLower(trimmed)]
+	geocacheMutex.RUnlock()
+	if found {
+		return coords[0], coords[1], nil
+	}
+
+	query := url.QueryEscape(trimmed)
+	endpoint := fmt.Sprintf("https://nominatim.openstreetmap.org/search?q=%s&format=json&limit=1", query)
+	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	if err != nil {
+		return 0, 0, err
+	}
+	req.Header.Set("User-Agent", "Panta_Recycling_App/1.0")
+
+	client := &http.Client{Timeout: 3 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return 0, 0, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return 0, 0, fmt.Errorf("geocoding status: %d", resp.StatusCode)
+	}
+
+	var results []struct {
+		Lat string `json:"lat"`
+		Lon string `json:"lon"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&results); err != nil || len(results) == 0 {
+		return 0, 0, fmt.Errorf("no geocoding results")
+	}
+
+	lat, err1 := strconv.ParseFloat(results[0].Lat, 64)
+	lon, err2 := strconv.ParseFloat(results[0].Lon, 64)
+	if err1 != nil || err2 != nil {
+		return 0, 0, fmt.Errorf("parse geocoding coords error")
+	}
+
+	geocacheMutex.Lock()
+	geocache[strings.ToLower(trimmed)] = [2]float64{lat, lon}
+	geocacheMutex.Unlock()
+
+	return lat, lon, nil
+}
 
 const (
 	requestsByCreatorIndexName = "requests-by-creator"
@@ -91,6 +152,25 @@ func handleListRequests(w http.ResponseWriter, r *http.Request) {
 		}
 		if len(requests[i].Messages) > 0 {
 			requests[i].Messages = sanitizeAndDecryptMessages(requests[i].Messages, requests[i].ID)
+		}
+		if (requests[i].LocationLatitude == nil || requests[i].LocationLongitude == nil) && strings.TrimSpace(requests[i].Location) != "" {
+			if lat, lon, err := geocodeAddress(requests[i].Location); err == nil {
+				requests[i].LocationLatitude = &lat
+				requests[i].LocationLongitude = &lon
+				go func(id string, latVal, lonVal float64) {
+					_, _ = svc.UpdateItem(context.Background(), &dynamodb.UpdateItemInput{
+						TableName: aws.String(tableName),
+						Key: map[string]types.AttributeValue{
+							"id": &types.AttributeValueMemberS{Value: id},
+						},
+						UpdateExpression: aws.String("SET locationLatitude = :lat, locationLongitude = :lon"),
+						ExpressionAttributeValues: map[string]types.AttributeValue{
+							":lat": &types.AttributeValueMemberN{Value: strconv.FormatFloat(latVal, 'f', 7, 64)},
+							":lon": &types.AttributeValueMemberN{Value: strconv.FormatFloat(lonVal, 'f', 7, 64)},
+						},
+					})
+				}(requests[i].ID, lat, lon)
+			}
 		}
 	}
 
@@ -347,6 +427,13 @@ func handleCreateRequest(w http.ResponseWriter, r *http.Request) {
 	}
 	req.Status = "pending"
 	req.CreatorBankIdVerified = claims.BankIdVerified
+
+	if (req.LocationLatitude == nil || req.LocationLongitude == nil) && strings.TrimSpace(req.Location) != "" {
+		if lat, lon, err := geocodeAddress(req.Location); err == nil {
+			req.LocationLatitude = &lat
+			req.LocationLongitude = &lon
+		}
+	}
 
 	item, err := attributevalue.MarshalMap(req)
 	if err != nil {

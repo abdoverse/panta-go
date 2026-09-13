@@ -114,16 +114,24 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
         : reward.toStringAsFixed(2);
   }
 
+  bool _isProgrammaticallySettingLocation = false;
+
+  void _setProgrammaticLocation(String text, LocationSuggestion? suggestion) {
+    _isProgrammaticallySettingLocation = true;
+    setState(() {
+      _selectedLocation = suggestion;
+      _locationController.text = text;
+    });
+    _isProgrammaticallySettingLocation = false;
+  }
+
   void _onLocationChanged() {
+    if (_isProgrammaticallySettingLocation) return;
     if (_selectedLocation != null) {
-      // If user types something different than the selected title, invalidate the selection
-      // This happens when user edits the text after selection.
-      // We check safe access just in case
-      if (_locationController.text != _selectedLocation!.title) {
-        // We only clear if strictly different.
-        // Note: setting text in onSelected will trigger this, so we need to be careful.
-        // But in onSelected we set text = title. So they ARE equal.
-        // If user subsequently types, they won't be equal.
+      final current = _locationController.text.trim().toLowerCase();
+      final title = _selectedLocation!.title.trim().toLowerCase();
+      final display = _selectedLocation!.displayName.trim().toLowerCase();
+      if (current != title && current != display && !current.contains(title) && !display.contains(current)) {
         setState(() {
           _selectedLocation = null;
         });
@@ -486,29 +494,24 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                     );
                   },
                   onSelected: (suggestion) {
-                    setState(() {
-                      _selectedLocation = suggestion;
-                      // Set user-friendly text: "Title, Subtitle" but simplified
-                      // User requested "keep the city name" but "shorter"
-
-                      // Construct a short display text
-                      String displayText = suggestion.title;
-                      if (suggestion.city != null &&
-                          suggestion.city!.isNotEmpty) {
-                        if (!displayText.contains(suggestion.city!)) {
-                          displayText = "$displayText, ${suggestion.city}";
-                        }
-                      } else if (suggestion.subtitle.isNotEmpty) {
-                        // Fallback to subtitle if no specific city field found but avoid very long strings
-                        // Take the first part of subtitle (often city or area)
-                        String firstPart = suggestion.subtitle.split(',')[0];
-                        if (!displayText.contains(firstPart)) {
-                          displayText = "$displayText, $firstPart";
-                        }
+                    // Set user-friendly text: "Title, Subtitle" but simplified
+                    // User requested "keep the city name" but "shorter"
+                    String displayText = suggestion.title;
+                    if (suggestion.city != null &&
+                        suggestion.city!.isNotEmpty) {
+                      if (!displayText.contains(suggestion.city!)) {
+                        displayText = "$displayText, ${suggestion.city}";
                       }
+                    } else if (suggestion.subtitle.isNotEmpty) {
+                      // Fallback to subtitle if no specific city field found but avoid very long strings
+                      // Take the first part of subtitle (often city or area)
+                      String firstPart = suggestion.subtitle.split(',')[0];
+                      if (!displayText.contains(firstPart)) {
+                        displayText = "$displayText, $firstPart";
+                      }
+                    }
 
-                      _locationController.text = displayText;
-                    });
+                    _setProgrammaticLocation(displayText, suggestion);
                   },
                 ),
                 if (!_isQuickMode) ...[
@@ -838,10 +841,7 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
     try {
       final suggestion = await _locationService.getCurrentLocation();
       if (!mounted || suggestion == null) return;
-      setState(() {
-        _selectedLocation = suggestion;
-        _locationController.text = suggestion.displayName;
-      });
+      _setProgrammaticLocation(suggestion.displayName, suggestion);
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -852,21 +852,18 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
   }
 
   void _applySavedAddress(SavedAddress address) {
-    setState(() {
-      _locationController.text = address.location;
-      if (address.latitude != null && address.longitude != null) {
-        _selectedLocation = LocationSuggestion(
-          displayName: address.location,
-          title: address.location,
-          subtitle: address.label,
-          city: null,
-          lat: address.latitude!,
-          lon: address.longitude!,
-        );
-      } else {
-        _selectedLocation = null;
-      }
-    });
+    LocationSuggestion? suggestion;
+    if (address.latitude != null && address.longitude != null) {
+      suggestion = LocationSuggestion(
+        displayName: address.location,
+        title: address.location,
+        subtitle: address.label,
+        city: null,
+        lat: address.latitude!,
+        lon: address.longitude!,
+      );
+    }
+    _setProgrammaticLocation(address.location, suggestion);
   }
 
   void _applyTemplate(RequestTemplate template) {
@@ -928,9 +925,9 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
     _splitPercentage = request.splitPercentage;
     _leaveAtDoor = request.leaveAtDoor;
     _doorInstructionsController.text = request.doorInstructions ?? '';
-    _locationController.text = request.location;
+    LocationSuggestion? suggestion;
     if (request.locationLatitude != null && request.locationLongitude != null) {
-      _selectedLocation = LocationSuggestion(
+      suggestion = LocationSuggestion(
         displayName: request.location,
         title: request.location,
         subtitle: '',
@@ -938,6 +935,7 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
         lon: request.locationLongitude!,
       );
     }
+    _setProgrammaticLocation(request.location, suggestion);
   }
 
   Future<void> _submitRequest(PantaProvider provider) async {
@@ -957,13 +955,30 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
       return;
     }
 
+    double? lat = _selectedLocation?.lat;
+    double? lon = _selectedLocation?.lon;
+
+    if ((lat == null || lon == null) &&
+        _locationController.text.trim().isNotEmpty) {
+      try {
+        final suggestions = await _locationService
+            .getSuggestions(_locationController.text.trim());
+        if (suggestions.isNotEmpty) {
+          lat = suggestions.first.lat;
+          lon = suggestions.first.lon;
+        }
+      } catch (e) {
+        debugPrint('Fallback geocoding error: $e');
+      }
+    }
+
     final success = await provider.createRequest(
       _titleController.text,
       _fromDate,
       _toDate,
       _locationController.text,
-      locationLatitude: _selectedLocation?.lat,
-      locationLongitude: _selectedLocation?.lon,
+      locationLatitude: lat,
+      locationLongitude: lon,
       description: _descriptionController.text,
       reward: double.tryParse(_rewardController.text) ?? 0.0,
       imageBytes: _selectedPhotoBytes,

@@ -1,4 +1,5 @@
 # Go
+bin/
 /bin/
 /pkg/
 /src/

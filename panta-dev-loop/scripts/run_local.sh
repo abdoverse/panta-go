@@ -19,6 +19,7 @@ LAN_IP="$(ip route get 1.1.1.1 2>/dev/null | awk '{for (i=1; i<=NF; i++) if ($i 
 LAN_IP="${LAN_IP:-127.0.0.1}"
 API_BASE_URL="http://${LAN_IP}:${BACKEND_PORT}"
 GOOGLE_MAPS_API_KEY="${GOOGLE_MAPS_API_KEY:-}"
+export AWS_PROFILE="${AWS_PROFILE:-panta-local-dev}"
 
 mkdir -p "$LOG_DIR"
 
@@ -116,14 +117,16 @@ start_backend() {
     echo "🚀 Starting Go backend on port $BACKEND_PORT..."
     check_cloud_credentials
     cd "$BACKEND_DIR"
+    mkdir -p bin
+    go build -o bin/api .
     TABLE_NAME=panta-requests \
     IMAGE_BUCKET_NAME=panta-request-images \
     AWS_REGION=eu-north-1 \
     COGNITO_USER_POOL_ID=eu-north-1_Rg7i36e8Q \
     PORT="" \
-    nohup go run . > "$BACKEND_LOG" 2>&1 &
-
+    nohup ./bin/api > "$BACKEND_LOG" 2>&1 &
     local b_pid=$!
+    disown "$b_pid" 2>/dev/null || true
     echo "$b_pid" > "$BACKEND_PID_FILE"
     echo "Backend started with PID $b_pid (logs: $BACKEND_LOG)"
     cd "$PROJECT_ROOT"
@@ -152,8 +155,8 @@ start_frontend() {
         --directory "$web_build_dir" \
         --bind 0.0.0.0 \
         > "$FRONTEND_LOG" 2>&1 &
-
     local f_pid=$!
+    disown "$f_pid" 2>/dev/null || true
     echo "$f_pid" > "$FRONTEND_PID_FILE"
     echo "Flutter web started with PID $f_pid (logs: $FRONTEND_LOG)"
 }

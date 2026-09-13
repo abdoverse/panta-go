@@ -17,6 +17,7 @@ import '../services/api_config.dart';
 import '../services/auth_service.dart';
 import '../services/bankid_service.dart';
 import '../services/chat_api_service.dart';
+import '../services/location_service.dart';
 import '../services/panta_state_services.dart' as panta_state;
 import '../services/request_api_service.dart';
 
@@ -50,6 +51,7 @@ class PantaProvider extends ChangeNotifier {
   final ChatApiService _chatApiService;
   final AnalyticsApiService _analyticsApiService;
   final BankIdService _bankIdService;
+  final LocationService _locationService;
 
   final panta_state.PantaAuthState _authState = panta_state.PantaAuthState();
   final panta_state.PantaRequestState _requestState =
@@ -72,11 +74,13 @@ class PantaProvider extends ChangeNotifier {
     ChatApiService? chatApiService,
     AnalyticsApiService? analyticsApiService,
     BankIdService? bankIdService,
+    LocationService? locationService,
   })  : _authService = authService ?? AuthService(),
         _requestApiService = requestApiService ?? RequestApiService(),
         _chatApiService = chatApiService ?? ChatApiService(),
         _analyticsApiService = analyticsApiService ?? AnalyticsApiService(),
-        _bankIdService = bankIdService ?? BankIdService() {
+        _bankIdService = bankIdService ?? BankIdService(),
+        _locationService = locationService ?? LocationService() {
     _initialize();
   }
 
@@ -363,7 +367,7 @@ class PantaProvider extends ChangeNotifier {
     try {
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        _locationState.clear();
+        await _fallbackHelperLocation();
         return;
       }
 
@@ -374,7 +378,7 @@ class PantaProvider extends ChangeNotifier {
 
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
-        _locationState.clear();
+        await _fallbackHelperLocation();
         return;
       }
 
@@ -389,11 +393,27 @@ class PantaProvider extends ChangeNotifier {
       );
     } catch (e) {
       debugPrint('Error fetching helper location: $e');
-      _locationState.clear();
+      await _fallbackHelperLocation();
     } finally {
       _locationState.isResolving = false;
       notifyListeners();
     }
+  }
+
+  Future<void> _fallbackHelperLocation() async {
+    try {
+      final ipCoords = await _locationService.getIpLocation();
+      if (ipCoords != null) {
+        _locationState.update(
+          latitude: ipCoords.lat,
+          longitude: ipCoords.lon,
+        );
+        return;
+      }
+    } catch (e) {
+      debugPrint('Fallback helper location lookup failed: $e');
+    }
+    _locationState.clear();
   }
 
   // --- Authentication ---

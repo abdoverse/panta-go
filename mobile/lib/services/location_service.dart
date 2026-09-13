@@ -147,4 +147,24 @@ class LocationService {
       return [];
     }
   }
+
+  Future<({double lat, double lon})?> getIpLocation() async {
+    try {
+      final response = await http
+          .get(Uri.parse('http://ip-api.com/json'))
+          .timeout(const Duration(seconds: 3));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body) as Map<String, dynamic>;
+        final lat = (data['lat'] as num?)?.toDouble();
+        final lon = (data['lon'] as num?)?.toDouble();
+        if (lat != null && lon != null) {
+          return (lat: lat, lon: lon);
+        }
+      }
+    } catch (e) {
+      debugPrint('IP location lookup failed: $e');
+    }
+    return null;
+  }
 }
+
