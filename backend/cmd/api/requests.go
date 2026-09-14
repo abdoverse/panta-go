@@ -364,6 +364,18 @@ func handleCreateRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if blocked, blockRec := isUserBlocked(claims.requestOwnerID(), claims.Email); blocked {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"error":           "Account restricted",
+			"code":            "ACCOUNT_RESTRICTED",
+			"message":         fmt.Sprintf("%s Reference: %s", NonSensitiveAccountRestrictionMessage, blockRec.CaseReferenceID),
+			"caseReferenceId": blockRec.CaseReferenceID,
+		})
+		return
+	}
+
 	var req RecyclingRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonResponse(w, http.StatusBadRequest, map[string]string{"error": fmt.Sprintf("Invalid payload: %v", err)})

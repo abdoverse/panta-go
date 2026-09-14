@@ -90,6 +90,19 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	uID := userUUID(name)
 
+	// User Suspension / Blocking Enforcement
+	if blocked, blockRec := isUserBlocked(uID, email); blocked {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"error":           "Account restricted",
+			"code":            "ACCOUNT_RESTRICTED",
+			"message":         fmt.Sprintf("%s Reference: %s", NonSensitiveAccountRestrictionMessage, blockRec.CaseReferenceID),
+			"caseReferenceId": blockRec.CaseReferenceID,
+		})
+		return
+	}
+
 	bankIdVerified := false
 	bankIdPersonalNumber := ""
 	bankIdVerifiedAt := ""

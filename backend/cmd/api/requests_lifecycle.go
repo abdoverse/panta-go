@@ -36,6 +36,18 @@ func handleAcceptRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if blocked, blockRec := isUserBlocked(claims.helperID(), claims.Email); blocked {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"error":           "Account restricted",
+			"code":            "ACCOUNT_RESTRICTED",
+			"message":         fmt.Sprintf("%s Reference: %s", NonSensitiveAccountRestrictionMessage, blockRec.CaseReferenceID),
+			"caseReferenceId": blockRec.CaseReferenceID,
+		})
+		return
+	}
+
 	var payload requestIDPayload
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "Invalid payload"})
@@ -227,6 +239,18 @@ func handleCompleteRequest(w http.ResponseWriter, r *http.Request) {
 	claims, ok := currentClaims(r)
 	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if blocked, blockRec := isUserBlocked(claims.helperID(), claims.Email); blocked {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"error":           "Account restricted",
+			"code":            "ACCOUNT_RESTRICTED",
+			"message":         fmt.Sprintf("%s Reference: %s", NonSensitiveAccountRestrictionMessage, blockRec.CaseReferenceID),
+			"caseReferenceId": blockRec.CaseReferenceID,
+		})
 		return
 	}
 

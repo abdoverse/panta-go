@@ -581,10 +581,33 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _isLoading = false);
 
     if (error != null && mounted) {
+      if (error.startsWith('ACCOUNT_RESTRICTED:')) {
+        final ref = error.substring('ACCOUNT_RESTRICTED:'.length).trim();
+        showDialog<void>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Row(
+              children: [
+                const Icon(Icons.shield_outlined, color: Colors.red),
+                const SizedBox(width: 8),
+                Text(context.l10n.accountRestrictedTitle),
+              ],
+            ),
+            content: Text(context.l10n.accountRestrictedMessage(ref.isEmpty ? 'CASE-SUPPORT' : ref)), // l10n-ignore
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: Text(context.l10n.close),
+              ),
+            ],
+          ),
+        );
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.l10n.loginFailed(error))),
         );
       }
+    }
   }
 
   Future<void> _signUp() async {

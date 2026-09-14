@@ -286,4 +286,137 @@ class AdminApiService {
     }
     return null;
   }
+
+  Future<List<UserBlockModel>> fetchUserBlocks({
+    required String token,
+    String? status,
+  }) async {
+    try {
+      final query = status != null ? '?status=$status' : '';
+      final uri = ApiConfig.apiUri('/api/v1/admin/users/blocks$query');
+      final response = await _client.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        final blocksList = data['blocks'] as List<dynamic>? ?? [];
+        return blocksList
+            .whereType<Map<String, dynamic>>()
+            .map(UserBlockModel.fromJson)
+            .toList();
+      }
+      debugPrint('Admin fetchUserBlocks failed: ${response.statusCode}');
+    } catch (e) {
+      debugPrint('Admin fetchUserBlocks error: $e');
+    }
+    return [];
+  }
+
+  Future<bool> blockUser({
+    required String token,
+    required String userId,
+    required String reason,
+    required String caseReferenceId,
+    String? email,
+    String? expiresAt,
+  }) async {
+    try {
+      final uri = ApiConfig.apiUri('/api/v1/admin/users/block');
+      final response = await _client.post(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode({
+          'userId': userId,
+          'email': email ?? '',
+          'reason': reason,
+          'caseReferenceId': caseReferenceId,
+          if (expiresAt != null && expiresAt.isNotEmpty) 'expiresAt': expiresAt,
+        }),
+      );
+      return response.statusCode >= 200 && response.statusCode < 300;
+    } catch (e) {
+      debugPrint('Admin blockUser error: $e');
+      return false;
+    }
+  }
+
+  Future<bool> unblockUser({
+    required String token,
+    required String userId,
+    required String reason,
+    required String caseReferenceId,
+    String? email,
+  }) async {
+    try {
+      final uri = ApiConfig.apiUri('/api/v1/admin/users/unblock');
+      final response = await _client.post(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode({
+          'userId': userId,
+          'email': email ?? '',
+          'reason': reason,
+          'caseReferenceId': caseReferenceId,
+        }),
+      );
+      return response.statusCode >= 200 && response.statusCode < 300;
+    } catch (e) {
+      debugPrint('Admin unblockUser error: $e');
+      return false;
+    }
+  }
+}
+
+class UserBlockModel {
+  final String userId;
+  final String email;
+  final String status;
+  final String reason;
+  final String caseReferenceId;
+  final String blockedAt;
+  final String blockedBy;
+  final String? expiresAt;
+  final String? unblockedAt;
+  final String? unblockedBy;
+  final String? unblockReason;
+
+  const UserBlockModel({
+    required this.userId,
+    this.email = '',
+    required this.status,
+    required this.reason,
+    required this.caseReferenceId,
+    required this.blockedAt,
+    required this.blockedBy,
+    this.expiresAt,
+    this.unblockedAt,
+    this.unblockedBy,
+    this.unblockReason,
+  });
+
+  factory UserBlockModel.fromJson(Map<String, dynamic> json) {
+    return UserBlockModel(
+      userId: json['userId']?.toString() ?? '',
+      email: json['email']?.toString() ?? '',
+      status: json['status']?.toString() ?? 'BLOCKED',
+      reason: json['reason']?.toString() ?? '',
+      caseReferenceId: json['caseReferenceId']?.toString() ?? '',
+      blockedAt: json['blockedAt']?.toString() ?? '',
+      blockedBy: json['blockedBy']?.toString() ?? '',
+      expiresAt: json['expiresAt']?.toString(),
+      unblockedAt: json['unblockedAt']?.toString(),
+      unblockedBy: json['unblockedBy']?.toString(),
+      unblockReason: json['unblockReason']?.toString(),
+    );
+  }
 }

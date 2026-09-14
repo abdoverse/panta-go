@@ -26,6 +26,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   List<CityTrendModel> _cities = [];
   List<AdminLogModel> _logs = [];
   List<AdminFeedbackModel> _feedback = [];
+  List<UserBlockModel> _userBlocks = [];
   CityTrendModel? _selectedCity;
 
   bool _isLoading = true;
@@ -47,6 +48,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       final overview = await _adminApiService.fetchOverview(token: token);
       final logs = await _adminApiService.fetchLogs(token: token);
       final feedback = await _adminApiService.fetchFeedback(token: token);
+      final blocks = await _adminApiService.fetchUserBlocks(token: token);
 
       if (overview != null) {
         setState(() {
@@ -64,6 +66,12 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       if (feedback.isNotEmpty) {
         setState(() {
           _feedback = feedback;
+        });
+      }
+
+      if (blocks.isNotEmpty) {
+        setState(() {
+          _userBlocks = blocks;
         });
       }
 
@@ -337,6 +345,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                     _buildLogsSection(),
                     const SizedBox(height: 20),
                     _buildFeedbackSection(),
+                    const SizedBox(height: 20),
+                    _buildUserSuspensionsSection(),
                     const SizedBox(height: 80),
                   ],
                 ),
@@ -992,6 +1002,277 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           fontSize: 10,
           fontWeight: FontWeight.bold,
         ),
+      ),
+    );
+  }
+
+  Widget _buildUserSuspensionsSection() {
+    final activeBlocks =
+        _userBlocks.where((b) => b.status == 'BLOCKED').toList(); // l10n-ignore
+
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      const Icon(Icons.shield_outlined,
+                          color: Colors.redAccent),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          context.l10n.userSuspensionsTitle,
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  context.l10n.activeSuspensionsCount(activeBlocks.length),
+                  style:
+                      TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerRight,
+              child: FilledButton.icon(
+                onPressed: _showSuspendUserDialog,
+                icon: const Icon(Icons.block, size: 16),
+                label: Text(context.l10n.suspendUserAction),
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            if (activeBlocks.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Center(
+                  child: Text(
+                    context.l10n.noActiveSuspensions,
+                    style: TextStyle(color: Colors.grey.shade600),
+                  ),
+                ),
+              )
+            else
+              ...activeBlocks.map(_buildUserBlockCard),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUserBlockCard(UserBlockModel block) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.red.shade50,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.red.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  block.email.isNotEmpty ? block.email : block.userId,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+              OutlinedButton(
+                onPressed: () => _showUnblockUserDialog(block),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.black87,
+                  side: BorderSide(color: Colors.grey.shade400),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  minimumSize: const Size(0, 32),
+                ),
+                child: Text(context.l10n.unblockUserAction),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${context.l10n.caseReferenceIdLabel}: ${block.caseReferenceId}',
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            '${context.l10n.suspensionReasonLabel}: ${block.reason}',
+            style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+          ),
+          if (block.expiresAt != null && block.expiresAt!.isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(
+              '${context.l10n.optionalExpiryDateLabel}: ${block.expiresAt}',
+              style: TextStyle(fontSize: 11, color: Colors.red.shade700),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showSuspendUserDialog() async {
+    final userController = TextEditingController();
+    final caseController = TextEditingController();
+    final reasonController = TextEditingController();
+    final expiryController = TextEditingController();
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: Text(dialogCtx.l10n.suspendUserAction),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: userController,
+                decoration: InputDecoration(
+                  labelText: dialogCtx.l10n.userIdOrEmailLabel,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: caseController,
+                decoration: InputDecoration(
+                  labelText: dialogCtx.l10n.caseReferenceIdLabel,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: reasonController,
+                decoration: InputDecoration(
+                  labelText: dialogCtx.l10n.suspensionReasonLabel,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: expiryController,
+                decoration: InputDecoration(
+                  labelText: dialogCtx.l10n.optionalExpiryDateLabel,
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(),
+            child: Text(dialogCtx.l10n.cancel),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
+            onPressed: () async {
+              final user = userController.text.trim();
+              final caseId = caseController.text.trim();
+              final reason = reasonController.text.trim();
+              final expiry = expiryController.text.trim();
+
+              if (user.isEmpty || caseId.isEmpty || reason.isEmpty) return;
+
+              final token = await _authService.getToken() ?? '';
+              final success = await _adminApiService.blockUser(
+                token: token,
+                userId: user,
+                email: user.contains('@') ? user : null,
+                caseReferenceId: caseId,
+                reason: reason,
+                expiresAt: expiry.isNotEmpty ? expiry : null,
+              );
+
+              if (mounted && dialogCtx.mounted) {
+                Navigator.of(dialogCtx).pop();
+                if (success) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(context.l10n.userSuspendedSuccess)),
+                  );
+                  _loadAdminData();
+                }
+              }
+            },
+            child: Text(dialogCtx.l10n.confirm),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showUnblockUserDialog(UserBlockModel block) async {
+    final reasonController = TextEditingController();
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: Text(dialogCtx.l10n.unblockUserAction),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('${dialogCtx.l10n.caseReferenceIdLabel}: ${block.caseReferenceId}'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: reasonController,
+              decoration: InputDecoration(
+                labelText: dialogCtx.l10n.suspensionReasonLabel,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(),
+            child: Text(dialogCtx.l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final reason = reasonController.text.trim();
+              if (reason.isEmpty) return;
+
+              final token = await _authService.getToken() ?? '';
+              final success = await _adminApiService.unblockUser(
+                token: token,
+                userId: block.userId,
+                reason: reason,
+                caseReferenceId: block.caseReferenceId,
+              );
+
+              if (mounted && dialogCtx.mounted) {
+                Navigator.of(dialogCtx).pop();
+                if (success) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(context.l10n.userUnblockedSuccess)),
+                  );
+                  _loadAdminData();
+                }
+              }
+            },
+            child: Text(dialogCtx.l10n.confirm),
+          ),
+        ],
       ),
     );
   }

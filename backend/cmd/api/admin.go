@@ -137,6 +137,9 @@ func registerAdminRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/v1/admin/overview", authMiddleware(handleAdminOverview))
 	mux.HandleFunc("/api/v1/admin/logs", authMiddleware(handleAdminLogs))
 	mux.HandleFunc("/api/v1/admin/logs/simulate", authMiddleware(handleAdminSimulateLog))
+	mux.HandleFunc("/api/v1/admin/users/block", authMiddleware(handleAdminBlockUser))
+	mux.HandleFunc("/api/v1/admin/users/unblock", authMiddleware(handleAdminUnblockUser))
+	mux.HandleFunc("/api/v1/admin/users/blocks", authMiddleware(handleAdminListBlocks))
 }
 
 func handleAdminOverview(w http.ResponseWriter, r *http.Request) {

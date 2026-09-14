@@ -14,6 +14,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added backend legal declaration endpoint (`GET /api/v1/legal/cookies`).
   - Added comprehensive unit and widget tests in `cookie_consent_test.dart` and backend `legal_test.go` with 100% localization guard compliance.
 
+- **Admin User Suspension & Legal Investigation Controls (Item 15)**:
+  - Implemented market admin controls to suspend and reinstate user accounts (`POST /api/v1/admin/users/block`, `POST /api/v1/admin/users/unblock`, `GET /api/v1/admin/users/blocks`).
+  - Enforced sign-in blocking across email/password (`/api/v1/login`) and BankID authentication, as well as blocking creation of new recycling requests and acceptance/completion of jobs.
+  - Returned clear, non-sensitive account restriction messages referencing the case ID to blocked users (`ACCOUNT_RESTRICTED`).
+  - Implemented automatic request reconciliation: cleanly cancels unassigned pending requests, reassigns accepted helper jobs back to the pending pool, and preserves in-progress requests to protect innocent helpers.
+  - Maintained a durable audit trail in `adminLogs` with case reference IDs, admin identities, reasons, and timestamps.
+  - Integrated "User Suspensions & Legal Cases" oversight section and modal dialogs in `AdminDashboardPage` and `AdminApiService`.
+  - Added unit and widget tests in `user_suspension_test.go` and `admin_user_suspension_test.dart` with complete Swedish and English localization.
+
 ---
 
 ## [1.3.0] - 2026-09-06

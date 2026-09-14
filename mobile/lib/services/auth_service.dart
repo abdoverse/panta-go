@@ -117,6 +117,16 @@ class AuthService {
         }
         return 'Server did not return a session token';
       }
+      if (res.statusCode == 403) {
+        try {
+          final data = json.decode(res.body);
+          if (data['code'] == 'ACCOUNT_RESTRICTED' || data['error'] == 'Account restricted') {
+            final caseRef = data['caseReferenceId']?.toString() ?? '';
+            return 'ACCOUNT_RESTRICTED:$caseRef';
+          }
+        } catch (_) {}
+        return 'ACCOUNT_RESTRICTED:';
+      }
       if (username.isNotEmpty) {
         await setMockSessionForTesting(role: role, username: username);
         return null;

@@ -796,6 +796,41 @@ class AppLocalizations {
   String get cookieConsentSaved => _isSwedish
       ? 'Dina cookie-inställningar har sparats'
       : 'Your cookie preferences have been saved';
+
+  // User Suspension & Case Management
+  String get userSuspensionsTitle => _isSwedish
+      ? 'Användaravstängningar & Juridiska ärenden'
+      : 'User Suspensions & Legal Cases';
+  String get suspendUserAction =>
+      _isSwedish ? 'Stäng av användare' : 'Suspend user';
+  String get unblockUserAction =>
+      _isSwedish ? 'Häv avstängning' : 'Lift suspension';
+  String get caseReferenceIdLabel => _isSwedish
+      ? 'Ärendereferens (t.ex. CASE-2026-001)'
+      : 'Case reference ID (e.g. CASE-2026-001)';
+  String get suspensionReasonLabel =>
+      _isSwedish ? 'Skäl för avstängning' : 'Reason for suspension';
+  String get optionalExpiryDateLabel => _isSwedish
+      ? 'Valfritt utgångsdatum (YYYY-MM-DD)'
+      : 'Optional expiry date (YYYY-MM-DD)';
+  String get userIdOrEmailLabel =>
+      _isSwedish ? 'Användar-ID eller E-post' : 'User ID or Email';
+  String activeSuspensionsCount(int count) => _isSwedish
+      ? 'Aktiva avstängningar: $count'
+      : 'Active suspensions: $count';
+  String get noActiveSuspensions => _isSwedish
+      ? 'Inga aktiva användaravstängningar'
+      : 'No active user suspensions';
+  String get userSuspendedSuccess => _isSwedish
+      ? 'Användaren har stängts av och ärendet har loggats'
+      : 'User has been suspended and case logged';
+  String get userUnblockedSuccess =>
+      _isSwedish ? 'Avstängningen har hävts' : 'Suspension has been lifted';
+  String get accountRestrictedTitle =>
+      _isSwedish ? 'Kontot är begränsat' : 'Account Restricted';
+  String accountRestrictedMessage(String ref) => _isSwedish
+      ? 'Ditt konto har begränsats för juridisk eller regelefterlevnadsgranskning. Kontakta Panta Support och ange referens: $ref'
+      : 'Your account is restricted for compliance or legal review. Please contact Panta Support quoting reference: $ref';
 }
 
 class _AppLocalizationsDelegate
