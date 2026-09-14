@@ -17,8 +17,12 @@ class AppLocalizations {
   static AppLocalizations of(BuildContext context) {
     final localizations =
         Localizations.of<AppLocalizations>(context, AppLocalizations);
-    assert(localizations != null, 'AppLocalizations not found in context');
-    return localizations!;
+    if (localizations != null) {
+      return localizations;
+    }
+    final locale =
+        Localizations.maybeLocaleOf(context) ?? const Locale('sv', 'SE');
+    return AppLocalizations(locale);
   }
 
   bool get _isSwedish => locale.languageCode == 'sv';

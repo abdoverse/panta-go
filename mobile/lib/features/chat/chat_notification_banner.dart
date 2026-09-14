@@ -15,10 +15,12 @@ import 'chat_bottom_sheet.dart';
 /// and presents a prominent, animated in-app notification banner at the top of the screen.
 class ChatNotificationListener extends StatefulWidget {
   final Widget child;
+  final GlobalKey<NavigatorState>? navigatorKey;
 
   const ChatNotificationListener({
     super.key,
     required this.child,
+    this.navigatorKey,
   });
 
   @override
@@ -107,9 +109,10 @@ class _ChatNotificationListenerState extends State<ChatNotificationListener>
       }
     }
 
+    final navContext = widget.navigatorKey?.currentContext ?? context;
     if (targetRequest != null) {
       ChatBottomSheet.show(
-        context,
+        navContext,
         request: targetRequest,
         isHelper: provider.isHelper,
       );
@@ -177,14 +180,16 @@ class _ChatBannerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return Material(
-      color: Colors.transparent,
-      elevation: 8,
-      shadowColor: Colors.black45,
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        onTap: onOpen,
+    return Directionality(
+      textDirection: Directionality.maybeOf(context) ?? TextDirection.ltr,
+      child: Material(
+        color: Colors.transparent,
+        elevation: 8,
+        shadowColor: Colors.black45,
         borderRadius: BorderRadius.circular(18),
+        child: InkWell(
+          onTap: onOpen,
+          borderRadius: BorderRadius.circular(18),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
@@ -312,18 +317,22 @@ class _ChatBannerCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 4),
-              IconButton(
-                onPressed: onDismiss,
-                icon: const Icon(Icons.close_rounded, color: Colors.white70),
-                iconSize: 18,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-                tooltip: l10n.dismiss,
+              Semantics(
+                button: true,
+                label: l10n.dismiss,
+                child: IconButton(
+                  onPressed: onDismiss,
+                  icon: const Icon(Icons.close_rounded, color: Colors.white70),
+                  iconSize: 18,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                ),
               ),
             ],
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 }

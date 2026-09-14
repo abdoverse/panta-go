@@ -22,6 +22,8 @@ class PantaApp extends StatefulWidget {
 class _PantaAppState extends State<PantaApp> {
   final GlobalKey<ScaffoldMessengerState> snackbarKey =
       GlobalKey<ScaffoldMessengerState>();
+  final GlobalKey<NavigatorState> rootNavigatorKey =
+      GlobalKey<NavigatorState>();
 
   @override
   void initState() {
@@ -70,12 +72,14 @@ class _PantaAppState extends State<PantaApp> {
     final provider = context.watch<PantaProvider>();
 
     return MaterialApp(
+      navigatorKey: rootNavigatorKey,
       scaffoldMessengerKey: snackbarKey,
       title: 'Panta',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       home: const _AuthGate(),
       builder: (context, child) => ChatNotificationListener(
+        navigatorKey: rootNavigatorKey,
         child: Stack(
           children: [
             if (child != null) child,

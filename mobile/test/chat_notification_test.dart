@@ -434,5 +434,54 @@ void main() {
       expect(helperProvider.lastIncomingChatMessage, isNull,
           reason: 'Banner is suppressed while recipient has that chat actively open');
     });
+
+    testWidgets('ChatNotificationListener renders banner text and buttons without crashing in builder', (tester) async {
+      final provider = PantaProvider();
+      await provider.restoreSession();
+      await provider.loginDirect(role: 'helper', username: 'Erik Helper', seedIfEmpty: false);
+
+      final req = RecyclingRequest(
+        id: 'req-banner-1',
+        creatorId: 'recycler-1',
+        creatorName: 'Anna Recycler',
+        helperId: provider.currentUserId,
+        title: 'Glass bottles',
+        status: RequestStatus.accepted,
+        scheduledFrom: DateTime.now(),
+        scheduledTo: DateTime.now().add(const Duration(hours: 1)),
+        location: 'Kungsgatan 1',
+      );
+      provider.requests.add(req);
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<PantaProvider>.value(
+          value: provider,
+          child: MaterialApp(
+            home: const Scaffold(body: Text('Home Screen')),
+            builder: (context, child) => ChatNotificationListener(
+              child: child!,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final incomingMsg = ChatMessage(
+        id: 'msg-banner-1',
+        requestId: 'req-banner-1',
+        senderId: 'recycler-1',
+        senderRole: 'user',
+        senderName: 'Anna Recycler',
+        text: 'Hej! Jag är hemma nu.',
+        createdAt: DateTime.now(),
+      );
+
+      provider.handleIncomingChatMessage(incomingMsg);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
+
+      expect(find.text('Anna Recycler'), findsOneWidget);
+      expect(find.text('Hej! Jag är hemma nu.'), findsOneWidget);
+    });
   });
 }
