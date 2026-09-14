@@ -1,4 +1,5 @@
 import 'dart:html' as html;
+import 'dart:js' as js;
 import 'package:flutter/services.dart';
 
 void playPlatformDingDongSound() {
@@ -9,38 +10,38 @@ void playPlatformDingDongSound() {
 
   // Synthesize an authentic two-tone "Ding-Dong" chime via Web Audio API
   try {
-    final audioContext = html.AudioContext();
-    final now = audioContext.currentTime ?? 0.0;
+    js.context.callMethod('eval', [r"""
+      (function() {
+        try {
+          var AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (!AudioCtx) return;
+          var ctx = new AudioCtx();
+          var now = ctx.currentTime;
+          
+          var o1 = ctx.createOscillator();
+          var g1 = ctx.createGain();
+          o1.type = 'sine';
+          o1.frequency.setValueAtTime(659.25, now);
+          g1.gain.setValueAtTime(0.35, now);
+          g1.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+          o1.connect(g1);
+          g1.connect(ctx.destination);
+          o1.start(now);
+          o1.stop(now + 0.6);
 
-    // --- "Ding" (E5 note ~ 659.25 Hz) ---
-    final osc1 = audioContext.createOscillator();
-    final gain1 = audioContext.createGain();
-    osc1.type = 'sine';
-    osc1.frequency?.value = 659.25;
-
-    gain1.gain?.setValueAtTime(0.35, now);
-    gain1.gain?.exponentialRampToValueAtTime(0.001, now + 0.55);
-
-    osc1.connect(gain1);
-    gain1.connect(audioContext.destination);
-
-    osc1.start(now);
-    osc1.stop(now + 0.6);
-
-    // --- "Dong" (C5 note ~ 523.25 Hz, slightly lower pitch and longer decay) ---
-    final osc2 = audioContext.createOscillator();
-    final gain2 = audioContext.createGain();
-    osc2.type = 'sine';
-    osc2.frequency?.value = 523.25;
-
-    gain2.gain?.setValueAtTime(0.40, now + 0.28);
-    gain2.gain?.exponentialRampToValueAtTime(0.001, now + 0.95);
-
-    osc2.connect(gain2);
-    gain2.connect(audioContext.destination);
-
-    osc2.start(now + 0.28);
-    osc2.stop(now + 1.0);
+          var o2 = ctx.createOscillator();
+          var g2 = ctx.createGain();
+          o2.type = 'sine';
+          o2.frequency.setValueAtTime(523.25, now + 0.28);
+          g2.gain.setValueAtTime(0.40, now + 0.28);
+          g2.gain.exponentialRampToValueAtTime(0.001, now + 0.95);
+          o2.connect(g2);
+          g2.connect(ctx.destination);
+          o2.start(now + 0.28);
+          o2.stop(now + 1.0);
+        } catch(e) {}
+      })();
+    """]);
   } catch (_) {}
 
   // Display browser notification if permitted (great for background tabs)
