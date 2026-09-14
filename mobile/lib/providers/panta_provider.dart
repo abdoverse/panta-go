@@ -22,6 +22,7 @@ import '../services/cookie_consent_service.dart';
 import '../services/location_service.dart';
 import '../services/panta_state_services.dart' as panta_state;
 import '../services/request_api_service.dart';
+import '../core/utils/sound_helper.dart';
 
 double? calculateHelperReliabilityRating({
   required int completedJobs,
@@ -327,10 +328,32 @@ class PantaProvider extends ChangeNotifier {
   // --- Realtime WebSocket Messaging ---
 
   void handleRealtimeMessage(String rawMessage) {
+    final chunks = rawMessage
+        .split('\n')
+        .map((chunk) => chunk.trim())
+        .where((chunk) => chunk.isNotEmpty);
+
+    for (final chunk in chunks) {
+      _processRealtimeChunk(chunk);
+    }
+  }
+
+  void _processRealtimeChunk(String chunk) {
     try {
-      final decoded = json.decode(rawMessage);
-      if (decoded is Map<String, dynamic> &&
-          decoded['type'] == 'chat-message') {
+      final decoded = json.decode(chunk);
+      if (decoded is! Map<String, dynamic>) {
+        _requestState.handleRealtimeMessage(
+          chunk,
+          fromJson: RequestApiService.parseRecyclingRequest,
+          onRefreshRequested: () => fetchRequests(silent: true),
+        );
+        notifyListeners();
+        return;
+      }
+
+      final type = decoded['type']?.toString();
+
+      if (type == 'chat-message') {
         final messageJson = decoded['message'];
         if (messageJson is Map<String, dynamic>) {
           final newMsg = ChatMessage.fromJson(messageJson);
@@ -338,14 +361,32 @@ class PantaProvider extends ChangeNotifier {
           return;
         }
       }
-      if (decoded is Map<String, dynamic> &&
-          decoded['type'] == 'helper-arrived-at-door') {
+
+      if (type == 'helper-arrived-at-door') {
         final reqId = decoded['requestId']?.toString();
+        final targetUserId = decoded['targetUserId']?.toString();
         final title = decoded['title']?.toString() ??
             'Ding-Dong! Helper is at your door 🛎️';
         final message = decoded['message']?.toString() ??
             'Your helper has arrived for recycling pickup.';
+
+        // The helper who marked arrival should not ring their own doorbell
+        if (_authState.isHelper) {
+          return;
+        }
+
+        // Target user filtering if specified and current user is known
+        if (targetUserId != null &&
+            _authState.currentUserId != null &&
+            targetUserId.trim().toLowerCase() !=
+                _authState.currentUserId!.trim().toLowerCase()) {
+          return;
+        }
+
         if (reqId != null) {
+          // Play audible Ding-Dong doorbell chime!
+          playDingDongSound();
+
           final arrivalMsg = ChatMessage(
             id: 'arrival-$reqId-${DateTime.now().millisecondsSinceEpoch}',
             requestId: reqId,
@@ -357,6 +398,7 @@ class PantaProvider extends ChangeNotifier {
             createdAt: DateTime.now(),
           );
           _appendChatMessage(arrivalMsg);
+
           final idx = _requestState.requests.indexWhere((r) => r.id == reqId);
           if (idx != -1) {
             _requestState.requests[idx] = _requestState.requests[idx].copyWith(
@@ -364,35 +406,61 @@ class PantaProvider extends ChangeNotifier {
               milestone: 'arrived',
               etaMinutes: 0,
             );
+          } else {
+            fetchRequests(silent: true);
           }
           notifyListeners();
           return;
         }
       }
-      if (decoded is Map<String, dynamic> &&
-          decoded['type'] == 'push-notification') {
+
+      if (type == 'push-notification') {
         final reqId = decoded['requestId']?.toString();
+        final targetUserId = decoded['targetUserId']?.toString();
         final title = decoded['title']?.toString() ??
             'Ding-Dong! Helper is at your door 🛎️';
         final body = decoded['body']?.toString() ??
             'Your helper has arrived for recycling pickup.';
+
+        if (_authState.isHelper) {
+          return;
+        }
+
+        if (targetUserId != null &&
+            _authState.currentUserId != null &&
+            targetUserId.trim().toLowerCase() !=
+                _authState.currentUserId!.trim().toLowerCase()) {
+          return;
+        }
+
         if (reqId != null) {
-          final pushMsg = ChatMessage(
-            id: 'push-$reqId-${DateTime.now().millisecondsSinceEpoch}',
-            requestId: reqId,
-            senderId: 'helper',
-            senderRole: 'helper',
-            senderName: title,
-            text: body,
-            isPreset: true,
-            createdAt: DateTime.now(),
+          if (title.contains('Ding-Dong') || body.contains('door')) {
+            playDingDongSound();
+          }
+
+          final existing = _chatByRequestId[reqId] ?? [];
+          final hasArrival = existing.any(
+            (m) => m.id.startsWith('arrival-') || m.text == body,
           );
-          _appendChatMessage(pushMsg);
+          if (!hasArrival) {
+            final pushMsg = ChatMessage(
+              id: 'push-$reqId-${DateTime.now().millisecondsSinceEpoch}',
+              requestId: reqId,
+              senderId: 'helper',
+              senderRole: 'helper',
+              senderName: title,
+              text: body,
+              isPreset: true,
+              createdAt: DateTime.now(),
+            );
+            _appendChatMessage(pushMsg);
+          }
           notifyListeners();
           return;
         }
       }
-      if (decoded is Map<String, dynamic> && decoded['type'] == 'chat-erased') {
+
+      if (type == 'chat-erased') {
         final reqId = decoded['requestId']?.toString();
         if (reqId != null) {
           _chatByRequestId[reqId] = [];
@@ -408,7 +476,7 @@ class PantaProvider extends ChangeNotifier {
     } catch (_) {}
 
     _requestState.handleRealtimeMessage(
-      rawMessage,
+      chunk,
       fromJson: RequestApiService.parseRecyclingRequest,
       onRefreshRequested: () => fetchRequests(silent: true),
     );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -371,19 +372,40 @@ class UserRequestCard extends StatelessWidget {
               if (request.arrivedAtDoor != null) ...[
                 const SizedBox(height: 12),
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: Colors.amber.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.amber.shade400,
-                      width: 1.5,
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.amber.shade100,
+                        Colors.orange.shade50,
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: Colors.amber.shade600,
+                      width: 2.0,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.amber.withValues(alpha: 0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
                   ),
                   child: Row(
                     children: [
-                      const Text('🛎️', style: TextStyle(fontSize: 24)),
-                      const SizedBox(width: 10),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.shade200,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Text('🛎️', style: TextStyle(fontSize: 24)),
+                      ),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -392,25 +414,57 @@ class UserRequestCard extends StatelessWidget {
                               l10n.helperOutsideYourDoor,
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
-                                fontSize: 13,
+                                fontSize: 14,
                                 color: Colors.brown,
                               ),
                             ),
+                            const SizedBox(height: 2),
                             Text(
                               request.leaveAtDoor
                                   ? l10n.bagsCanBePickedUpOutsideDoor
                                   : l10n.pleaseOpenDoorToHandOverBags,
                               style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.brown.shade700,
+                                fontSize: 12,
+                                color: Colors.brown.shade800,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           ],
                         ),
                       ),
+                      const SizedBox(width: 8),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          provider.markChatAsRead(request.id);
+                          ChatBottomSheet.show(
+                            context,
+                            request: request,
+                            isHelper: false,
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.amber.shade800,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 8,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        icon: const Icon(Icons.chat_bubble_outline, size: 14),
+                        label: Text(
+                          context.l10n.open,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
-                ),
+                ).animate().shimmer(duration: 1200.ms),
               ],
               const SizedBox(height: 12),
               LiveMapTrackingView(request: request),

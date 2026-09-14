@@ -9,6 +9,7 @@ import '../../core/theme/app_theme.dart';
 import '../../models/chat_message.dart';
 import '../../models/request_model.dart';
 import '../../providers/panta_provider.dart';
+import '../../core/utils/sound_helper.dart';
 import 'chat_bottom_sheet.dart';
 
 /// A wrapper widget that listens for incoming chat messages in [PantaProvider]
@@ -75,10 +76,15 @@ class _ChatNotificationListenerState extends State<ChatNotificationListener>
       HapticFeedback.vibrate();
     } catch (_) {}
 
+    final isArrival = msg.isArrivalAlert;
+    if (isArrival) {
+      playDingDongSound();
+    }
+
     _animController.forward(from: 0.0);
 
-    // Auto dismiss after 6 seconds
-    _dismissTimer = Timer(const Duration(seconds: 6), () {
+    // Auto dismiss after 10 seconds for arrival alerts (vs 6 seconds for regular chats)
+    _dismissTimer = Timer(Duration(seconds: isArrival ? 10 : 6), () {
       _dismiss();
     });
   }
@@ -128,11 +134,16 @@ class _ChatNotificationListenerState extends State<ChatNotificationListener>
     if (lastMsg != null &&
         lastMsg.id != _lastNotifiedMessageId &&
         !provider.isMessageSentByMe(lastMsg)) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          _triggerNotification(lastMsg);
-        }
-      });
+      final isAlreadyShowingArrival = _activeNotification != null &&
+          _activeNotification!.isArrivalAlert &&
+          _activeNotification!.requestId == lastMsg.requestId;
+      if (!isAlreadyShowingArrival) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _triggerNotification(lastMsg);
+          }
+        });
+      }
     }
 
     return Stack(
@@ -180,6 +191,36 @@ class _ChatBannerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final isArrival = message.isArrivalAlert;
+
+    final gradientColors = isArrival
+        ? const [
+            Color(0xFF8D4F00), // Rich amber bronze
+            Color(0xFFE65100), // Warm vibrant gold-orange
+          ]
+        : const [
+            Color(0xFF0B3A22), // Deep Panta green
+            Color(0xFF1B5E20), // Forest green
+          ];
+
+    final borderColor = isArrival
+        ? const Color(0xFFFFD54F)
+        : const Color(0xFF81C784);
+
+    final shadowColor = isArrival
+        ? Colors.amber.withValues(alpha: 0.5)
+        : AppTheme.primaryGreen.withValues(alpha: 0.35);
+
+    final avatarIcon = isArrival
+        ? Icons.doorbell_rounded
+        : Icons.mark_chat_unread_rounded;
+
+    final badgeText = isArrival ? 'DING-DONG 🛎️' : l10n.newBadge;
+
+    final buttonFgColor = isArrival
+        ? const Color(0xFF8D4F00)
+        : const Color(0xFF0B3A22);
+
     return Directionality(
       textDirection: Directionality.maybeOf(context) ?? TextDirection.ltr,
       child: Material(
@@ -193,47 +234,44 @@ class _ChatBannerCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [
-                Color(0xFF0B3A22), // Deep Panta green
-                Color(0xFF1B5E20), // Forest green
-              ],
+            gradient: LinearGradient(
+              colors: gradientColors,
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
-              color: const Color(0xFF81C784),
-              width: 1.5,
+              color: borderColor,
+              width: isArrival ? 2.0 : 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: AppTheme.primaryGreen.withValues(alpha: 0.35),
-                blurRadius: 16,
-                spreadRadius: 2,
+                color: shadowColor,
+                blurRadius: isArrival ? 20 : 16,
+                spreadRadius: isArrival ? 3 : 2,
                 offset: const Offset(0, 4),
               ),
             ],
           ),
           child: Row(
             children: [
-              // Glowing Chat Avatar
+              // Glowing Avatar (Bell / Chat)
               Container(
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
+                  color: Colors.white.withValues(alpha: 0.18),
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: Colors.white70,
+                    color: Colors.white,
                     width: 1.5,
                   ),
                 ),
-                child: const Center(
+                child: Center(
                   child: Icon(
-                    Icons.mark_chat_unread_rounded,
+                    avatarIcon,
                     color: Colors.white,
-                    size: 24,
+                    size: isArrival ? 26 : 24,
                   ),
                 ),
               ),
@@ -269,7 +307,7 @@ class _ChatBannerCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            l10n.newBadge,
+                            badgeText,
                             style: const TextStyle(
                               color: Colors.black87,
                               fontSize: 10,
@@ -300,7 +338,7 @@ class _ChatBannerCard extends StatelessWidget {
                 onPressed: onOpen,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
-                  foregroundColor: const Color(0xFF0B3A22),
+                  foregroundColor: buttonFgColor,
                   elevation: 2,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
@@ -310,7 +348,10 @@ class _ChatBannerCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                icon: const Icon(Icons.reply_rounded, size: 16),
+                icon: Icon(
+                  isArrival ? Icons.door_front_door_rounded : Icons.reply_rounded,
+                  size: 16,
+                ),
                 label: Text(
                   context.l10n.open,
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),

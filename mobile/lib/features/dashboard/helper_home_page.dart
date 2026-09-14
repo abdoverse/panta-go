@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
@@ -24,11 +25,12 @@ class HelperHomePage extends StatefulWidget {
 class _HelperHomePageState extends State<HelperHomePage> {
   int _currentIndex = 0;
   WebSocketChannel? _channel;
+  Timer? _reconnectTimer;
+  bool _isConnecting = false;
 
   @override
   void initState() {
     super.initState();
-    // Initialize WebSocket connection
     _connectWebSocket();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -36,16 +38,32 @@ class _HelperHomePageState extends State<HelperHomePage> {
     });
   }
 
+  void _scheduleReconnect([int seconds = 3]) {
+    if (!mounted) return;
+    _reconnectTimer?.cancel();
+    _reconnectTimer = Timer(Duration(seconds: seconds), () {
+      if (mounted) {
+        _connectWebSocket();
+      }
+    });
+  }
+
   void _connectWebSocket() async {
+    if (!mounted || _isConnecting) return;
+    _isConnecting = true;
+
     final token = await AuthService().getToken();
     if (token == null) {
       debugPrint('WS Error: No Auth Token available');
+      _isConnecting = false;
+      _scheduleReconnect(2);
       return;
     }
 
     final uri = ApiConfig.webSocketUri(queryParameters: {'token': token});
 
     try {
+      _channel?.sink.close();
       _channel = WebSocketChannel.connect(uri);
 
       _channel!.stream.listen(
@@ -57,18 +75,24 @@ class _HelperHomePageState extends State<HelperHomePage> {
         },
         onError: (error) {
           debugPrint('WS Error: $error');
+          _scheduleReconnect(3);
         },
         onDone: () {
           debugPrint('WS Closed');
+          _scheduleReconnect(3);
         },
       );
     } catch (e) {
       debugPrint('WS Connection Error: $e');
+      _scheduleReconnect(4);
+    } finally {
+      _isConnecting = false;
     }
   }
 
   @override
   void dispose() {
+    _reconnectTimer?.cancel();
     _channel?.sink.close();
     super.dispose();
   }

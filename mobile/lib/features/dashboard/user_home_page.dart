@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/panta_provider.dart';
@@ -25,21 +26,40 @@ class UserHomePage extends StatefulWidget {
 class _UserHomePageState extends State<UserHomePage> {
   int _currentIndex = 0;
   WebSocketChannel? _channel;
+  Timer? _reconnectTimer;
+  bool _isConnecting = false;
 
   @override
   void initState() {
     super.initState();
-    // Initialize WebSocket connection
     _connectWebSocket();
   }
 
+  void _scheduleReconnect([int seconds = 3]) {
+    if (!mounted) return;
+    _reconnectTimer?.cancel();
+    _reconnectTimer = Timer(Duration(seconds: seconds), () {
+      if (mounted) {
+        _connectWebSocket();
+      }
+    });
+  }
+
   void _connectWebSocket() async {
+    if (!mounted || _isConnecting) return;
+    _isConnecting = true;
+
     final token = await AuthService().getToken();
-    if (token == null) return;
+    if (token == null) {
+      _isConnecting = false;
+      _scheduleReconnect(2);
+      return;
+    }
 
     final uri = ApiConfig.webSocketUri(queryParameters: {'token': token});
 
     try {
+      _channel?.sink.close();
       _channel = WebSocketChannel.connect(uri);
 
       _channel!.stream.listen(
@@ -51,19 +71,24 @@ class _UserHomePageState extends State<UserHomePage> {
         },
         onError: (error) {
           debugPrint('WS Error: $error');
-          // Simple reconnect logic could go here
+          _scheduleReconnect(3);
         },
         onDone: () {
           debugPrint('WS Closed');
+          _scheduleReconnect(3);
         },
       );
     } catch (e) {
       debugPrint('WS Connection Error: $e');
+      _scheduleReconnect(4);
+    } finally {
+      _isConnecting = false;
     }
   }
 
   @override
   void dispose() {
+    _reconnectTimer?.cancel();
     _channel?.sink.close();
     super.dispose();
   }

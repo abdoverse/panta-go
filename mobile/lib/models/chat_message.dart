@@ -22,6 +22,15 @@ class ChatMessage {
     this.isRead = false,
   });
 
+  /// Identifies if this message represents a Ding-Dong arrival at door notification
+  bool get isArrivalAlert =>
+      id.startsWith('arrival-') ||
+      senderName.contains('Ding-Dong') ||
+      senderName.toLowerCase().contains('door') ||
+      text.contains('Ding-Dong') ||
+      text.toLowerCase().contains('door') ||
+      text.contains('🛎️');
+
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
     return ChatMessage(
       id: json['id']?.toString() ?? '',
