@@ -34,6 +34,10 @@
     - Provide slight variations/rotation each time so it feels fresh on every visit
     - Support localization (Swedish & English) with personalized user name formatting
 
+19. [ ] Display Native Language Names (Endonyms) in Language Selector:
+    - Display each language option in its own native language in the language picker (e.g., "Svenska" for Swedish, "English" for English) regardless of the currently active language
+    - Ensure users who cannot read the currently selected language can easily locate and select their preferred language
+
 ## Production Readiness
 1. [ ] Replace local static AWS credentials with short-lived federated credentials or workload identity before sharing/deploying the development setup; rotate and audit `panta-local-dev`.
 1. [ ] Use real BankID certificates and keys
