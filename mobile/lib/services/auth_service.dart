@@ -2,9 +2,10 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:amazon_cognito_identity_dart_2/cognito.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import 'api_config.dart';
+import 'session_vault/session_vault.dart';
 
 class SignUpResult {
   final bool success;
@@ -20,14 +21,70 @@ class SignUpResult {
   });
 }
 
+/// Cognito storage adapter backed by [SessionVault].
+///
+/// On Web, this stores credentials in [html.window.sessionStorage] so each
+/// browser tab maintains its own isolated Cognito session. On mobile/desktop,
+/// it stores credentials in [SharedPreferences].
+class CognitoSessionStorage implements CognitoStorage {
+  final SessionVault _vault;
+
+  CognitoSessionStorage([SessionVault? vault])
+      : _vault = vault ?? SessionVault.instance;
+
+  @override
+  Future<dynamic> setItem(String key, value) async {
+    await _vault.setItem(key, value?.toString() ?? '');
+    return value;
+  }
+
+  @override
+  Future<dynamic> getItem(String key) async {
+    return await _vault.getItem(key);
+  }
+
+  @override
+  Future<dynamic> removeItem(String key) async {
+    final existing = await _vault.getItem(key);
+    await _vault.removeItem(key);
+    return existing;
+  }
+
+  @override
+  Future<void> clear() async {
+    await _vault.clear();
+  }
+}
+
 class AuthService {
   static final AuthService _instance = AuthService._internal();
 
-  factory AuthService() {
+  factory AuthService({SessionVault? vault}) {
+    if (vault != null) {
+      _instance._vault = vault;
+    }
     return _instance;
   }
 
-  AuthService._internal();
+  AuthService._internal({SessionVault? vault})
+      : _vault = vault ?? SessionVault.instance;
+
+  SessionVault _vault;
+  SessionVault get vault => _vault;
+  set vault(SessionVault v) {
+    _vault = v;
+    _userPoolInstance = null;
+  }
+
+  @visibleForTesting
+  static void resetForTesting({SessionVault? vault}) {
+    _instance._vault = vault ?? SessionVault.instance;
+    _instance._customJwtToken = null;
+    _instance._customJwtPayload = null;
+    _instance._currentUser = null;
+    _instance._session = null;
+    _instance._userPoolInstance = null;
+  }
 
   CognitoUserPool? _userPoolInstance;
 
@@ -35,6 +92,7 @@ class AuthService {
     return _userPoolInstance ??= CognitoUserPool(
       ApiConfig.userPoolId,
       ApiConfig.clientId,
+      storage: CognitoSessionStorage(_vault),
     );
   }
 
@@ -62,8 +120,7 @@ class AuthService {
     _customJwtToken = token;
     _customJwtPayload = parseJwtPayload(token);
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_customJwtStorageKey, token);
+      await _vault.setItem(_customJwtStorageKey, token);
     } catch (_) {}
   }
 
@@ -156,8 +213,7 @@ class AuthService {
       _customJwtToken = null;
       _customJwtPayload = null;
       try {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.remove(_customJwtStorageKey);
+        await _vault.removeItem(_customJwtStorageKey);
       } catch (_) {}
       return null;
     } on CognitoClientException catch (e) {
@@ -262,8 +318,7 @@ class AuthService {
 
   Future<bool> restoreSession() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final customToken = prefs.getString(_customJwtStorageKey);
+      final customToken = await _vault.getItem(_customJwtStorageKey);
       if (customToken != null && customToken.isNotEmpty) {
         final payload = parseJwtPayload(customToken);
         if (payload != null) {
@@ -341,9 +396,8 @@ class AuthService {
           ?.toString();
       if (userId != null && userId.isNotEmpty) {
         try {
-          final prefs = await SharedPreferences.getInstance();
           final names =
-              prefs.getStringList(_customDisplayNamesStorageKey) ?? [];
+              await _vault.getStringList(_customDisplayNamesStorageKey) ?? [];
           for (final entry in names) {
             final separator = entry.indexOf('\u0000');
             if (separator >= 0 && entry.substring(0, separator) == userId) {
@@ -408,12 +462,11 @@ class AuthService {
           ?.toString();
       if (userId != null && userId.isNotEmpty) {
         try {
-          final prefs = await SharedPreferences.getInstance();
           final names =
-              prefs.getStringList(_customDisplayNamesStorageKey) ?? [];
+              await _vault.getStringList(_customDisplayNamesStorageKey) ?? [];
           names.removeWhere((entry) => entry.startsWith('$userId\u0000'));
           names.add('$userId\u0000$normalizedName');
-          await prefs.setStringList(_customDisplayNamesStorageKey, names);
+          await _vault.setStringList(_customDisplayNamesStorageKey, names);
         } catch (_) {}
       }
       return null;
@@ -495,8 +548,7 @@ class AuthService {
     _customJwtToken = null;
     _customJwtPayload = null;
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_customJwtStorageKey);
+      await _vault.removeItem(_customJwtStorageKey);
     } catch (_) {}
     await _clearLocalSession();
   }
@@ -506,8 +558,7 @@ class AuthService {
     _customJwtToken = null;
     _customJwtPayload = null;
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_customJwtStorageKey);
+      await _vault.removeItem(_customJwtStorageKey);
     } catch (_) {}
 
     final currentUser = _currentUser ?? await _userPool.getCurrentUser();

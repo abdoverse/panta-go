@@ -23,6 +23,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Integrated "User Suspensions & Legal Cases" oversight section and modal dialogs in `AdminDashboardPage` and `AdminApiService`.
   - Added unit and widget tests in `user_suspension_test.go` and `admin_user_suspension_test.dart` with complete Swedish and English localization.
 
+- **Multi-Tab Session Isolation & Security (`SessionVault`)**:
+  - Replaced global `localStorage` / `SharedPreferences` session credential storage on Flutter Web with tab-scoped `window.sessionStorage` via `SessionVault`.
+  - Enables full session independence across different browser tabs of the same origin (e.g. testing Anna Recycler and Erik Helper simultaneously in separate tabs without session collision or overlap).
+  - Automatically cleans up legacy `localStorage` session tokens to prevent cross-tab leakage.
+  - Enhanced web security: session credentials are kept in memory/sessionStorage and automatically discarded when the tab is closed, preventing token persistence risks on shared or public devices.
+  - Added `CognitoSessionStorage` adapter and unit test coverage in `session_vault_test.dart`.
+
 ---
 
 ## [1.3.0] - 2026-09-06
