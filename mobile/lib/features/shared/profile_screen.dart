@@ -286,8 +286,8 @@ class ProfileScreen extends StatelessWidget {
                     icon: Icons.language_rounded,
                     title: l10n.language,
                     subtitle: provider.locale.languageCode == 'sv'
-                        ? l10n.swedish
-                        : l10n.english,
+                        ? l10n.swedishNative
+                        : l10n.englishNative,
                     onTap: () => _showLanguagePicker(context, provider),
                   ),
                   const Divider(height: 1),
@@ -528,7 +528,10 @@ class ProfileScreen extends StatelessWidget {
               ),
               ListTile(
                 leading: const Icon(Icons.language),
-                title: Text(l10n.swedish),
+                title: Text(l10n.swedishNative),
+                trailing: provider.locale.languageCode == 'sv'
+                    ? const Icon(Icons.check, color: AppTheme.primaryGreen)
+                    : null,
                 onTap: () async {
                   await provider.setLocale(const Locale('sv', 'SE'));
                   if (sheetContext.mounted) {
@@ -538,7 +541,10 @@ class ProfileScreen extends StatelessWidget {
               ),
               ListTile(
                 leading: const Icon(Icons.language_outlined),
-                title: Text(l10n.english),
+                title: Text(l10n.englishNative),
+                trailing: provider.locale.languageCode == 'en'
+                    ? const Icon(Icons.check, color: AppTheme.primaryGreen)
+                    : null,
                 onTap: () async {
                   await provider.setLocale(const Locale('en', 'US'));
                   if (sheetContext.mounted) {

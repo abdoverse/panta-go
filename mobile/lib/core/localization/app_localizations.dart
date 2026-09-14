@@ -26,6 +26,8 @@ class AppLocalizations {
 
   String get english => _isSwedish ? 'Engelska' : 'English';
   String get swedish => _isSwedish ? 'Svenska' : 'Swedish';
+  String get englishNative => 'English';
+  String get swedishNative => 'Svenska';
   String get helperRole => _isSwedish ? 'Hjälpare' : 'Helper';
   String get recyclerRole => _isSwedish ? 'Återvinnare' : 'Recycler';
   String roleLabel(String role) => role == 'Helper' ? helperRole : recyclerRole;
