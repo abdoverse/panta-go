@@ -22,6 +22,11 @@
     - Return a clear, non-sensitive account-restriction message to blocked users
 
 16. [ ] Enable location access to fully work on phone and laptop
+17. [x] Simplify Profile page and tailor UI for app vs website:
+    - Move "About Panta" furthest down to the bottom of the profile page
+    - Make app-specific items (e.g. Settings / manage app preferences, notifications) visible only in the app version
+    - Make website-specific items (e.g. Cookie preferences) visible only in the web version
+    - Streamline Account section layout by removing non-functional placeholders
 
 ## Production Readiness
 1. [ ] Replace local static AWS credentials with short-lived federated credentials or workload identity before sharing/deploying the development setup; rotate and audit `panta-local-dev`.

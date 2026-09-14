@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -260,13 +261,6 @@ class ProfileScreen extends StatelessWidget {
               const SizedBox(height: 20),
             ],
             Text(
-              l10n.aboutPanta,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 12),
-            const _AboutAppTile(),
-            const SizedBox(height: 20),
-            Text(
               l10n.account,
               style: Theme.of(context).textTheme.titleMedium,
             ),
@@ -274,12 +268,20 @@ class ProfileScreen extends StatelessWidget {
             Card(
               child: Column(
                 children: [
-                  _ProfileItem(
-                    icon: Icons.settings_outlined,
-                    title: l10n.settings,
-                    subtitle: l10n.manageAppPreferences,
-                  ),
-                  const Divider(height: 1),
+                  if (!kIsWeb) ...[
+                    _ProfileItem(
+                      icon: Icons.settings_outlined,
+                      title: l10n.settings,
+                      subtitle: l10n.manageAppPreferences,
+                    ),
+                    const Divider(height: 1),
+                    _ProfileItem(
+                      icon: Icons.notifications_none_rounded,
+                      title: l10n.notifications,
+                      subtitle: l10n.stayUpdatedOnActivity,
+                    ),
+                    const Divider(height: 1),
+                  ],
                   _ProfileItem(
                     icon: Icons.language_rounded,
                     title: l10n.language,
@@ -290,35 +292,20 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   const Divider(height: 1),
                   _ProfileItem(
-                    icon: Icons.notifications_none_rounded,
-                    title: l10n.notifications,
-                    subtitle: l10n.stayUpdatedOnActivity,
-                  ),
-                  const Divider(height: 1),
-                  _ProfileItem(
-                    icon: Icons.eco_outlined,
-                    title: l10n.impactStats,
-                    subtitle: l10n.trackRecyclingContribution,
-                  ),
-                  _ProfileItem(
                     icon: Icons.feedback_outlined,
                     title: l10n.feedback,
                     subtitle: l10n.feedbackSubtitle,
                     onTap: () => _showFeedbackDialog(context, provider),
                   ),
-                  const Divider(height: 1),
-                  _ProfileItem(
-                    icon: Icons.cookie_outlined,
-                    title: l10n.cookiePreferencesTitle,
-                    subtitle: l10n.cookiePreferencesSubtitle,
-                    onTap: () => showCookiePreferencesDialog(context),
-                  ),
-                  const Divider(height: 1),
-                  _ProfileItem(
-                    icon: Icons.help_outline_rounded,
-                    title: l10n.helpSupport,
-                    subtitle: l10n.getHelpWhenYouNeedIt,
-                  ),
+                  if (kIsWeb) ...[
+                    const Divider(height: 1),
+                    _ProfileItem(
+                      icon: Icons.cookie_outlined,
+                      title: l10n.cookiePreferencesTitle,
+                      subtitle: l10n.cookiePreferencesSubtitle,
+                      onTap: () => showCookiePreferencesDialog(context),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -388,6 +375,13 @@ class ProfileScreen extends StatelessWidget {
                 },
               ),
             ),
+            const SizedBox(height: 20),
+            Text(
+              l10n.aboutPanta,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
+            const _AboutAppTile(),
           ],
         ),
       ),
