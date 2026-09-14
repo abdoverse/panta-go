@@ -28,7 +28,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Enables full session independence across different browser tabs of the same origin (e.g. testing Anna Recycler and Erik Helper simultaneously in separate tabs without session collision or overlap).
   - Automatically cleans up legacy `localStorage` session tokens to prevent cross-tab leakage.
   - Enhanced web security: session credentials are kept in memory/sessionStorage and automatically discarded when the tab is closed, preventing token persistence risks on shared or public devices.
-  - Added `CognitoSessionStorage` adapter and unit test coverage in `session_vault_test.dart`.
+- **Context-Aware Distance Sorting Indicator (Item 20)**:
+  - Restricted the "Distance-aware sorting is enabled for this pickup" label in `HelperJobCard` exclusively to available jobs (`isAcceptable && !isCompleted`).
+  - Removed the distance-aware sorting indicator from the completed Pickup History view and active assigned jobs where proximity sorting is not relevant.
+
+- **Visual 5-Star Rating Display in Pickup History (Item 21)**:
+  - Created reusable `FiveStarRatingDisplay` widget rendering 5 visual star icons (filled, half, outline) matching the rating moment.
+  - Enhanced completed pickup history cards in both `HelperJobCard` and `UserRequestCard` with visual 5-star displays, score badges (e.g. `4 / 5`), and formatted user feedback quotes.
+  - Added full unit and widget test coverage in `pickup_history_rating_and_sorting_test.dart`.
 
 ---
 

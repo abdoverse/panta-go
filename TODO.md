@@ -38,11 +38,11 @@
     - Display each language option in its own native language in the language picker (e.g., "Svenska" for Swedish, "English" for English) regardless of the currently active language
     - Ensure users who cannot read the currently selected language can easily locate and select their preferred language
 
-20. [ ] Restrict Distance-Aware Sorting Indicator to Relevant Contexts:
+20. [x] Restrict Distance-Aware Sorting Indicator to Relevant Contexts:
     - Remove the "Distance-aware sorting is enabled for this pickup" label from the Pickup History view (`isCompleted == true`)
     - Only display distance-aware sorting indicators when relevant (e.g., browsing available jobs prioritized by helper proximity)
 
-21. [ ] Visual 5-Star Rating Display in Pickup History:
+21. [x] Visual 5-Star Rating Display in Pickup History:
     - Display ratings in Pickup History with visual 5-star icons (e.g. 4 filled stars out of 5) similar to the rating moment, rather than just a single star icon and text
     - Enhance visual clarity of helper rating and feedback display on completed jobs
 

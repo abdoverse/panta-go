@@ -12,6 +12,7 @@ import '../../../models/request_model.dart';
 import '../../../providers/panta_provider.dart';
 import '../../chat/chat_bottom_sheet.dart';
 import '../../receipt/receipt_scanner_dialog.dart';
+import '../../shared/widgets/five_star_rating_display.dart';
 import '../../shared/widgets/location_actions.dart';
 import '../../tracking/live_map_tracking_view.dart';
 import '../../../services/api_config.dart';
@@ -176,7 +177,9 @@ class HelperJobCard extends StatelessWidget {
                   address: job.location,
                   showDirections: true,
                 ),
-                if (job.locationLatitude != null &&
+                if (isAcceptable &&
+                    !isCompleted &&
+                    job.locationLatitude != null &&
                     job.locationLongitude != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 8.0),
@@ -240,54 +243,9 @@ class HelperJobCard extends StatelessWidget {
                       if (job.isRated)
                         Padding(
                           padding: const EdgeInsets.only(top: 12.0),
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.amber.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: Colors.amber.withValues(alpha: 0.3),
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.star,
-                                      size: 16,
-                                      color: Colors.amber,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      l10n.ratedValue(
-                                        job.rating == null
-                                            ? l10n.naLabel
-                                            : formatRatingValue(job.rating!),
-                                      ),
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.amber,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                if (job.ratingComment != null &&
-                                    job.ratingComment!.isNotEmpty)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 4.0),
-                                    child: Text(
-                                      "\"${job.ratingComment}\"",
-                                      style: TextStyle(
-                                        fontStyle: FontStyle.italic,
-                                        color: Colors.grey[700],
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
+                          child: FiveStarRatingDisplay(
+                            rating: job.rating,
+                            comment: job.ratingComment,
                           ),
                         ),
                     ],

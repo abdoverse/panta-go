@@ -8,6 +8,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../models/request_model.dart';
 import '../../../providers/panta_provider.dart';
 import '../../chat/chat_bottom_sheet.dart';
+import '../../shared/widgets/five_star_rating_display.dart';
 import '../../shared/widgets/location_actions.dart';
 import '../../tracking/live_map_tracking_view.dart';
 import '../../../services/api_config.dart';
@@ -615,6 +616,13 @@ class UserRequestCard extends StatelessWidget {
                   icon: const Icon(Icons.pause_circle_outline),
                   label: Text(l10n.pausePickup),
                 ),
+              ),
+            ],
+            if (request.status == RequestStatus.pickedUp && request.isRated) ...[
+              const SizedBox(height: 12),
+              FiveStarRatingDisplay(
+                rating: request.rating,
+                comment: request.ratingComment,
               ),
             ],
             const SizedBox(height: 16),
