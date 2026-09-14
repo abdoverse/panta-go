@@ -27,7 +27,43 @@ void main() {
       final deserialized = ChatMessage.fromJson(json);
       expect(deserialized.id, 'msg-123');
       expect(deserialized.text, 'Door code is 1234, 2nd floor');
+      expect(deserialized.messageType, ChatMessageType.text);
+      expect(deserialized.isArrivalAlert, isFalse);
       expect(deserialized.isPreset, true);
+    });
+
+    test('ChatMessage strongly-typed arrivalAlert factory and serialization', () {
+      final arrival = ChatMessage.arrivalAlert(
+        id: 'msg-arr-99',
+        requestId: 'req-1',
+        senderId: 'helper-1',
+        senderRole: 'helper',
+        senderName: 'Ding-Dong! Helper is at your door 🛎️',
+        text: 'Erik has arrived outside your door.',
+      );
+
+      expect(arrival.messageType, ChatMessageType.arrivalAlert);
+      expect(arrival.isArrivalAlert, isTrue);
+
+      final json = arrival.toJson();
+      expect(json['messageType'], 'arrival_alert');
+
+      final restored = ChatMessage.fromJson(json);
+      expect(restored.messageType, ChatMessageType.arrivalAlert);
+      expect(restored.isArrivalAlert, isTrue);
+
+      // Normal message with word "door" in text is NOT an arrival alert
+      final normalWithDoor = ChatMessage(
+        id: 'msg-normal',
+        requestId: 'req-1',
+        senderId: 'user-1',
+        senderRole: 'user',
+        senderName: 'Anna',
+        text: 'The door code is 1234',
+        createdAt: DateTime.now(),
+      );
+      expect(normalWithDoor.messageType, ChatMessageType.text);
+      expect(normalWithDoor.isArrivalAlert, isFalse);
     });
 
     test('presets contain expected quick communication chips', () {

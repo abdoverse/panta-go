@@ -476,27 +476,18 @@ func handleArrivedAtDoor(w http.ResponseWriter, r *http.Request) {
 		)
 	}
 
-	// Real-time push notification broadcast over WebSocket for in-app alert banner
-	pushMsg := map[string]interface{}{
-		"type":         "push-notification",
-		"requestId":    updatedReq.ID,
-		"targetUserId": updatedReq.CreatorID,
-		"title":        "Ding-Dong! Helper is at your door 🛎️",
-		"body":         fmt.Sprintf("%s has arrived outside your door for your recycling pickup.", claims.notificationName()),
-	}
-	rawPush, _ := json.Marshal(pushMsg)
-	hub.broadcast <- rawPush
 
 	// Persist and broadcast arrival chat message to chat history
 	arrivalChatMsg := ChatMessage{
-		ID:         fmt.Sprintf("msg-door-%d", time.Now().UnixNano()),
-		RequestID:  updatedReq.ID,
-		SenderID:   claims.helperID(),
-		SenderRole: "helper",
-		SenderName: claims.notificationName(),
-		Text:       "🛎️ Ding-Dong! I am at your door!",
-		IsPreset:   true,
-		CreatedAt:  nowStr,
+		ID:          fmt.Sprintf("msg-door-%d", time.Now().UnixNano()),
+		RequestID:   updatedReq.ID,
+		SenderID:    claims.helperID(),
+		SenderRole:  "helper",
+		SenderName:  claims.notificationName(),
+		Text:        "🛎️ Ding-Dong! I am at your door!",
+		MessageType: MessageTypeArrivalAlert,
+		IsPreset:    true,
+		CreatedAt:   nowStr,
 	}
 	encArrivalChat := arrivalChatMsg
 	if encText, err := encryptChatMessageText(arrivalChatMsg.Text, arrivalChatMsg.RequestID); err == nil {

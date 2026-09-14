@@ -147,14 +147,15 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 		}
 
 		newMsg := ChatMessage{
-			ID:         fmt.Sprintf("msg-%d", time.Now().UnixNano()),
-			RequestID:  payload.RequestID,
-			SenderID:   senderID,
-			SenderRole: claims.Role,
-			SenderName: senderName,
-			Text:       payload.Text,
-			IsPreset:   payload.IsPreset,
-			CreatedAt:  time.Now().UTC().Format(time.RFC3339),
+			ID:          fmt.Sprintf("msg-%d", time.Now().UnixNano()),
+			RequestID:   payload.RequestID,
+			SenderID:    senderID,
+			SenderRole:  claims.Role,
+			SenderName:  senderName,
+			Text:        payload.Text,
+			MessageType: MessageTypeText,
+			IsPreset:    payload.IsPreset,
+			CreatedAt:   time.Now().UTC().Format(time.RFC3339),
 		}
 
 		encryptedMsg := newMsg

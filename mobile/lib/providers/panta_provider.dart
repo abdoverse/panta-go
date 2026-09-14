@@ -384,20 +384,23 @@ class PantaProvider extends ChangeNotifier {
         }
 
         if (reqId != null) {
-          // Play audible Ding-Dong doorbell chime!
-          playDingDongSound();
+          final existing = getChatMessages(reqId);
+          final hasArrival = existing.any((m) => m.isArrivalAlert);
 
-          final arrivalMsg = ChatMessage(
-            id: 'arrival-$reqId-${DateTime.now().millisecondsSinceEpoch}',
-            requestId: reqId,
-            senderId: 'helper',
-            senderRole: 'helper',
-            senderName: title,
-            text: message,
-            isPreset: true,
-            createdAt: DateTime.now(),
-          );
-          _appendChatMessage(arrivalMsg);
+          if (!hasArrival) {
+            playDingDongSound();
+
+            final arrivalMsg = ChatMessage.arrivalAlert(
+              id: 'msg-arrival-$reqId',
+              requestId: reqId,
+              senderId: 'helper',
+              senderRole: 'helper',
+              senderName: title,
+              text: message,
+              createdAt: DateTime.now(),
+            );
+            _appendChatMessage(arrivalMsg);
+          }
 
           final idx = _requestState.requests.indexWhere((r) => r.id == reqId);
           if (idx != -1) {
@@ -434,23 +437,18 @@ class PantaProvider extends ChangeNotifier {
         }
 
         if (reqId != null) {
-          if (title.contains('Ding-Dong') || body.contains('door')) {
-            playDingDongSound();
-          }
-
-          final existing = _chatByRequestId[reqId] ?? [];
-          final hasArrival = existing.any(
-            (m) => m.id.startsWith('arrival-') || m.text == body,
-          );
+          final existing = getChatMessages(reqId);
+          final hasArrival = existing.any((m) => m.isArrivalAlert);
           if (!hasArrival) {
-            final pushMsg = ChatMessage(
-              id: 'push-$reqId-${DateTime.now().millisecondsSinceEpoch}',
+            playDingDongSound();
+
+            final pushMsg = ChatMessage.arrivalAlert(
+              id: 'msg-arrival-$reqId',
               requestId: reqId,
               senderId: 'helper',
               senderRole: 'helper',
               senderName: title,
               text: body,
-              isPreset: true,
               createdAt: DateTime.now(),
             );
             _appendChatMessage(pushMsg);
@@ -1223,12 +1221,24 @@ class PantaProvider extends ChangeNotifier {
     if (list != null) {
       final currentMessages = getChatMessages(requestId);
       final serverMessageIds = list.map((message) => message.id).toSet();
-      final mergedMessages = [
+      final rawMerged = [
         ...list,
         ...currentMessages.where(
           (message) => serverMessageIds.add(message.id),
         ),
       ]..sort((first, second) => first.createdAt.compareTo(second.createdAt));
+
+      final seenIds = <String>{};
+      var hasArrivalAlert = false;
+      final mergedMessages = <ChatMessage>[];
+      for (final m in rawMerged) {
+        if (!seenIds.add(m.id)) continue;
+        if (m.isArrivalAlert) {
+          if (hasArrivalAlert) continue;
+          hasArrivalAlert = true;
+        }
+        mergedMessages.add(m);
+      }
 
       _chatByRequestId[requestId] = mergedMessages;
       final index = _requestState.requests.indexWhere((r) => r.id == requestId);
@@ -1327,17 +1337,28 @@ class PantaProvider extends ChangeNotifier {
     bool notifyBanner = true,
   }) {
     final existing = _chatByRequestId[msg.requestId] ?? [];
-    final isNew = !existing.any((m) => m.id == msg.id);
-    if (isNew) {
-      _chatByRequestId[msg.requestId] = List<ChatMessage>.from(existing)
-        ..add(msg);
+    final isDuplicate = existing.any((m) =>
+        m.id == msg.id ||
+        (m.isArrivalAlert && msg.isArrivalAlert && m.text == msg.text) ||
+        (m.text == msg.text &&
+            m.senderRole == msg.senderRole &&
+            m.createdAt.difference(msg.createdAt).abs().inSeconds < 30));
+    if (isDuplicate) {
+      return;
     }
+    _chatByRequestId[msg.requestId] = List<ChatMessage>.from(existing)
+      ..add(msg);
 
     final index =
         _requestState.requests.indexWhere((r) => r.id == msg.requestId);
     if (index != -1) {
       final req = _requestState.requests[index];
-      if (!req.messages.any((m) => m.id == msg.id)) {
+      if (!req.messages.any((m) =>
+          m.id == msg.id ||
+          (m.isArrivalAlert && msg.isArrivalAlert && m.text == msg.text) ||
+          (m.text == msg.text &&
+              m.senderRole == msg.senderRole &&
+              m.createdAt.difference(msg.createdAt).abs().inSeconds < 30))) {
         final updated = List<ChatMessage>.from(req.messages)..add(msg);
         _requestState.requests[index] = req.copyWith(messages: updated);
       }
@@ -1348,7 +1369,7 @@ class PantaProvider extends ChangeNotifier {
     final bool isFromOtherUser = !isFromMe;
     final bool isViewingThisChat = _activeChatRequestId == msg.requestId;
 
-    if (isNew && isFromOtherUser && !isViewingThisChat) {
+    if (isFromOtherUser && !isViewingThisChat) {
       _unreadChatRequestIds.add(msg.requestId);
       _unreadChatCounts[msg.requestId] =
           (_unreadChatCounts[msg.requestId] ?? 0) + 1;

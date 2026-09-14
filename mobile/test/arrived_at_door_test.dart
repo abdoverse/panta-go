@@ -126,6 +126,13 @@ void main() {
       expect(provider.requests.first.milestone, 'arrived');
       expect(provider.lastIncomingChatMessage, isNotNull);
       expect(provider.lastIncomingChatMessage!.isArrivalAlert, isTrue);
+
+      // Verify that the arrival notification text is recorded exactly once, never duplicated
+      final arrivalMessages = provider
+          .getChatMessages('req-multi-line')
+          .where((m) => m.text == 'Erik has arrived outside your door.')
+          .toList();
+      expect(arrivalMessages.length, 1);
     });
 
     test('Helper does not ring their own doorbell upon arrival broadcast', () async {

@@ -1,4 +1,11 @@
-import "package:flutter_chat_types/flutter_chat_types.dart" as types;
+import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
+
+/// Strongly-typed enumeration of chat message types.
+enum ChatMessageType {
+  text,
+  arrivalAlert,
+}
+
 class ChatMessage {
   final String id;
   final String requestId;
@@ -6,6 +13,7 @@ class ChatMessage {
   final String senderRole; // 'user' or 'helper'
   final String senderName;
   final String text;
+  final ChatMessageType messageType;
   final bool isPreset;
   final DateTime createdAt;
   final bool isRead;
@@ -17,21 +25,72 @@ class ChatMessage {
     required this.senderRole,
     required this.senderName,
     required this.text,
+    this.messageType = ChatMessageType.text,
     this.isPreset = false,
     required this.createdAt,
     this.isRead = false,
   });
 
-  /// Identifies if this message represents a Ding-Dong arrival at door notification
-  bool get isArrivalAlert =>
-      id.startsWith('arrival-') ||
-      senderName.contains('Ding-Dong') ||
-      senderName.toLowerCase().contains('door') ||
-      text.contains('Ding-Dong') ||
-      text.toLowerCase().contains('door') ||
-      text.contains('🛎️');
+  /// Factory constructor for arrival at door alerts.
+  factory ChatMessage.arrivalAlert({
+    required String id,
+    required String requestId,
+    required String senderId,
+    required String senderRole,
+    required String senderName,
+    required String text,
+    DateTime? createdAt,
+    bool isRead = false,
+  }) {
+    return ChatMessage(
+      id: id,
+      requestId: requestId,
+      senderId: senderId,
+      senderRole: senderRole,
+      senderName: senderName,
+      text: text,
+      messageType: ChatMessageType.arrivalAlert,
+      isPreset: true,
+      createdAt: createdAt ?? DateTime.now(),
+      isRead: isRead,
+    );
+  }
+
+  /// Strongly-typed check for Ding-Dong arrival at door alerts.
+  bool get isArrivalAlert => messageType == ChatMessageType.arrivalAlert;
+
+  static ChatMessageType parseMessageType(dynamic raw) {
+    if (raw == null) return ChatMessageType.text;
+    final str = raw.toString().toLowerCase().trim();
+    switch (str) {
+      case 'arrival_alert':
+      case 'arrival':
+        return ChatMessageType.arrivalAlert;
+      case 'text':
+      default:
+        return ChatMessageType.text;
+    }
+  }
+
+  String get messageTypeValue {
+    switch (messageType) {
+      case ChatMessageType.arrivalAlert:
+        return 'arrival_alert';
+      case ChatMessageType.text:
+        return 'text';
+    }
+  }
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
+    final rawType = json['messageType'] ?? json['type'];
+    ChatMessageType msgType = parseMessageType(rawType);
+    if (msgType == ChatMessageType.text && (rawType == null || rawType.toString().isEmpty)) {
+      final text = json['text']?.toString() ?? '';
+      if (text == '🛎️ Ding-Dong! I am at your door!' || json['isArrivalAlert'] == true) {
+        msgType = ChatMessageType.arrivalAlert;
+      }
+    }
+
     return ChatMessage(
       id: json['id']?.toString() ?? '',
       requestId: json['requestId']?.toString() ?? '',
@@ -39,6 +98,7 @@ class ChatMessage {
       senderRole: json['senderRole']?.toString() ?? 'user',
       senderName: json['senderName']?.toString() ?? 'User',
       text: json['text']?.toString() ?? '',
+      messageType: msgType,
       isPreset: json['isPreset'] == true,
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
@@ -55,10 +115,37 @@ class ChatMessage {
       'senderRole': senderRole,
       'senderName': senderName,
       'text': text,
+      'messageType': messageTypeValue,
       'isPreset': isPreset,
       'createdAt': createdAt.toIso8601String(),
       'isRead': isRead,
     };
+  }
+
+  ChatMessage copyWith({
+    String? id,
+    String? requestId,
+    String? senderId,
+    String? senderRole,
+    String? senderName,
+    String? text,
+    ChatMessageType? messageType,
+    bool? isPreset,
+    DateTime? createdAt,
+    bool? isRead,
+  }) {
+    return ChatMessage(
+      id: id ?? this.id,
+      requestId: requestId ?? this.requestId,
+      senderId: senderId ?? this.senderId,
+      senderRole: senderRole ?? this.senderRole,
+      senderName: senderName ?? this.senderName,
+      text: text ?? this.text,
+      messageType: messageType ?? this.messageType,
+      isPreset: isPreset ?? this.isPreset,
+      createdAt: createdAt ?? this.createdAt,
+      isRead: isRead ?? this.isRead,
+    );
   }
 
   static const List<String> helperPresets = [

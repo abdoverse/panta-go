@@ -74,16 +74,22 @@ type ArrivedAtDoorPayload struct {
 	ID string `json:"id"`
 }
 
+const (
+	MessageTypeText         = "text"
+	MessageTypeArrivalAlert = "arrival_alert"
+)
+
 type ChatMessage struct {
-	ID         string `json:"id" dynamodbav:"id"`
-	RequestID  string `json:"requestId" dynamodbav:"requestId"`
-	SenderID   string `json:"senderId" dynamodbav:"senderId"`
-	SenderRole string `json:"senderRole" dynamodbav:"senderRole"` // "user" or "helper"
-	SenderName string `json:"senderName" dynamodbav:"senderName"`
-	Text       string `json:"text" dynamodbav:"text"`
-	IsPreset   bool   `json:"isPreset" dynamodbav:"isPreset"`
-	CreatedAt  string `json:"createdAt" dynamodbav:"createdAt"`
-	IsRead     bool   `json:"isRead" dynamodbav:"isRead"`
+	ID          string `json:"id" dynamodbav:"id"`
+	RequestID   string `json:"requestId" dynamodbav:"requestId"`
+	SenderID    string `json:"senderId" dynamodbav:"senderId"`
+	SenderRole  string `json:"senderRole" dynamodbav:"senderRole"` // "user" or "helper"
+	SenderName  string `json:"senderName" dynamodbav:"senderName"`
+	Text        string `json:"text" dynamodbav:"text"`
+	MessageType string `json:"messageType,omitempty" dynamodbav:"messageType,omitempty"`
+	IsPreset    bool   `json:"isPreset" dynamodbav:"isPreset"`
+	CreatedAt   string `json:"createdAt" dynamodbav:"createdAt"`
+	IsRead      bool   `json:"isRead" dynamodbav:"isRead"`
 }
 
 type SendChatMessagePayload struct {
