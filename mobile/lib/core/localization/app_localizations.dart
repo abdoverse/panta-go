@@ -748,6 +748,54 @@ class AppLocalizations {
 
   // Chat & Common
   String get me => _isSwedish ? 'Jag' : 'Me';
+
+  // GDPR Cookie Consent
+  String get cookieBannerTitle =>
+      _isSwedish ? 'Vi värnar om din integritet' : 'We value your privacy';
+  String get cookieBannerDescription => _isSwedish
+      ? 'Panta använder nödvändiga kakor och lokal lagring för säker inloggning, sessionshantering och kärnfunktioner. Med ditt medgivande använder vi även funktionella kakor, analyskakor och marknadsföringskakor i enlighet med lagen om elektronisk kommunikation (LEK) och GDPR.'
+      : 'Panta uses strictly necessary cookies and local storage for secure sign-in, session management, and core features. With your consent, we also use functional, analytics, and marketing cookies in compliance with Swedish LEK and GDPR.';
+  String get cookieAcceptAll =>
+      _isSwedish ? 'Godkänn alla' : 'Accept all';
+  String get cookieNecessaryOnly =>
+      _isSwedish ? 'Endast nödvändiga' : 'Necessary only';
+  String get cookieCustomize =>
+      _isSwedish ? 'Anpassa kakor' : 'Customize cookies';
+  String get cookiePreferencesTitle =>
+      _isSwedish ? 'Cookie-inställningar' : 'Cookie Preferences';
+  String get cookiePreferencesSubtitle => _isSwedish
+      ? 'Hantera samtycke för kakor och lokal lagring'
+      : 'Manage cookie and local storage consent';
+  String get cookiePreferencesDescription => _isSwedish
+      ? 'Välj vilka typer av kakor och lokal lagring du tillåter. Nödvändiga kakor krävs för att tjänsten ska fungera och kan inte stängas av.'
+      : 'Choose which types of cookies and local storage you allow. Necessary cookies are required for the service to function and cannot be turned off.';
+  String get cookieCategoryNecessary =>
+      _isSwedish ? 'Nödvändiga kakor' : 'Necessary Cookies';
+  String get cookieCategoryNecessaryDesc => _isSwedish
+      ? 'Krävs för grundläggande funktionalitet som inloggning, BankID-verifiering och säkerhet. Alltid aktiva.'
+      : 'Required for core functionality such as sign-in, BankID verification, and security. Always active.';
+  String get cookieCategoryFunctional =>
+      _isSwedish ? 'Funktionella kakor' : 'Functional Cookies';
+  String get cookieCategoryFunctionalDesc => _isSwedish
+      ? 'Sparar dina personliga gränssnittsval som språk, visningsinställningar och filter.'
+      : 'Saves your personal interface preferences like language, display settings, and filters.';
+  String get cookieCategoryAnalytics =>
+      _isSwedish ? 'Analys & Prestanda' : 'Analytics & Performance';
+  String get cookieCategoryAnalyticsDesc => _isSwedish
+      ? 'Hjälper oss förstå hur appen används och upptäcka fel så att vi kan förbättra återvinningsupplevelsen.'
+      : 'Helps us understand how the app is used and detect bugs to improve the recycling experience.';
+  String get cookieCategoryMarketing =>
+      _isSwedish ? 'Marknadsföring' : 'Marketing';
+  String get cookieCategoryMarketingDesc => _isSwedish
+      ? 'Används för att utvärdera kampanjer, värvningslänkar och återvinningsincitament.'
+      : 'Used to measure promotional campaigns, referral links, and recycling incentives.';
+  String get cookieAlwaysActive =>
+      _isSwedish ? 'Alltid aktiv' : 'Always active';
+  String get cookieSavePreferences =>
+      _isSwedish ? 'Spara inställningar' : 'Save preferences';
+  String get cookieConsentSaved => _isSwedish
+      ? 'Dina cookie-inställningar har sparats'
+      : 'Your cookie preferences have been saved';
 }
 
 class _AppLocalizationsDelegate

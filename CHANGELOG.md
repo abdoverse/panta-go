@@ -4,6 +4,16 @@ All notable changes to the Panta Go project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-09-14
+
+### Added
+- **GDPR Cookie Consent & Legal Preference Management (`plan-85`)**:
+  - Implemented Swedish LEK 2022:482 & EU GDPR compliant cookie consent system with strictly necessary, functional, analytics, and marketing categories.
+  - Added bottom overlay banner (`CookieConsentBanner`) and granular preferences modal dialog (`_CookiePreferencesDialog`).
+  - Added cookie management tile in `ProfileScreen` under Account settings for revocation and consent modification.
+  - Added backend legal declaration endpoint (`GET /api/v1/legal/cookies`).
+  - Added comprehensive unit and widget tests in `cookie_consent_test.dart` and backend `legal_test.go` with 100% localization guard compliance.
+
 ---
 
 ## [1.3.0] - 2026-09-06

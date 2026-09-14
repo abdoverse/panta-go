@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../core/constants/app_constants.dart';
 import '../core/localization/app_localizations.dart';
 import '../models/chat_message.dart';
+import '../models/cookie_consent.dart';
 import '../models/impact_summary.dart';
 import '../models/request_model.dart';
 import '../services/analytics_api_service.dart';
@@ -17,6 +18,7 @@ import '../services/api_config.dart';
 import '../services/auth_service.dart';
 import '../services/bankid_service.dart';
 import '../services/chat_api_service.dart';
+import '../services/cookie_consent_service.dart';
 import '../services/location_service.dart';
 import '../services/panta_state_services.dart' as panta_state;
 import '../services/request_api_service.dart';
@@ -52,6 +54,7 @@ class PantaProvider extends ChangeNotifier {
   final AnalyticsApiService _analyticsApiService;
   final BankIdService _bankIdService;
   final LocationService _locationService;
+  final CookieConsentService _cookieConsentService;
 
   final panta_state.PantaAuthState _authState = panta_state.PantaAuthState();
   final panta_state.PantaRequestState _requestState =
@@ -67,6 +70,8 @@ class PantaProvider extends ChangeNotifier {
   ChatMessage? _lastIncomingChatMessage;
   bool _isRestoringSession = true;
   Locale _locale = AppLocalizations.supportedLocales.first;
+  CookieConsent? _cookieConsent;
+  bool _isCookieConsentLoaded = false;
 
   PantaProvider({
     AuthService? authService,
@@ -75,12 +80,14 @@ class PantaProvider extends ChangeNotifier {
     AnalyticsApiService? analyticsApiService,
     BankIdService? bankIdService,
     LocationService? locationService,
+    CookieConsentService? cookieConsentService,
   })  : _authService = authService ?? AuthService(),
         _requestApiService = requestApiService ?? RequestApiService(),
         _chatApiService = chatApiService ?? ChatApiService(),
         _analyticsApiService = analyticsApiService ?? AnalyticsApiService(),
         _bankIdService = bankIdService ?? BankIdService(),
-        _locationService = locationService ?? LocationService() {
+        _locationService = locationService ?? LocationService(),
+        _cookieConsentService = cookieConsentService ?? CookieConsentService() {
     _initialize();
   }
 
@@ -91,6 +98,11 @@ class PantaProvider extends ChangeNotifier {
   bool get isAuthenticated => _authState.isAuthenticated;
   bool get isLoading => _requestState.isLoading;
   bool get isRestoringSession => _isRestoringSession;
+  CookieConsent? get cookieConsent => _cookieConsent;
+  bool get isCookieConsentLoaded => _isCookieConsentLoaded;
+  bool get showCookieConsentBanner =>
+      _isCookieConsentLoaded &&
+      !_cookieConsentService.hasValidConsent(_cookieConsent);
   bool get isBankIdVerified => _authState.bankIdVerified;
   String? get bankIdPersonalNumber => _authState.bankIdPersonalNumber;
   String? get bankIdVerifiedAt => _authState.bankIdVerifiedAt;
@@ -262,7 +274,54 @@ class PantaProvider extends ChangeNotifier {
 
   Future<void> _initialize() async {
     await _loadSavedLocale();
+    await _loadCookieConsent();
     await restoreSession();
+  }
+
+  Future<void> _loadCookieConsent() async {
+    try {
+      _cookieConsent = await _cookieConsentService.getConsent();
+    } catch (_) {
+      _cookieConsent = null;
+    } finally {
+      _isCookieConsentLoaded = true;
+      notifyListeners();
+    }
+  }
+
+  Future<void> acceptAllCookies() async {
+    final consent = CookieConsent.acceptAll();
+    _cookieConsent = consent;
+    notifyListeners();
+    await _cookieConsentService.saveConsent(consent);
+  }
+
+  Future<void> acceptNecessaryCookiesOnly() async {
+    final consent = CookieConsent.necessaryOnly();
+    _cookieConsent = consent;
+    notifyListeners();
+    await _cookieConsentService.saveConsent(consent);
+  }
+
+  Future<void> saveCustomCookieConsent({
+    required bool functional,
+    required bool analytics,
+    required bool marketing,
+  }) async {
+    final consent = CookieConsent.custom(
+      functional: functional,
+      analytics: analytics,
+      marketing: marketing,
+    );
+    _cookieConsent = consent;
+    notifyListeners();
+    await _cookieConsentService.saveConsent(consent);
+  }
+
+  Future<void> resetCookieConsent() async {
+    _cookieConsent = null;
+    notifyListeners();
+    await _cookieConsentService.clearConsent();
   }
 
   // --- Realtime WebSocket Messaging ---

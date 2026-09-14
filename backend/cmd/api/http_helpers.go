@@ -218,6 +218,7 @@ func registerRoutes(mux *http.ServeMux) {
 	registerFeedbackRoutes(mux)
 	registerRealtimeRoutes(mux)
 	registerAdminRoutes(mux)
+	registerLegalRoutes(mux)
 }
 
 func registerCoreRoutes(mux *http.ServeMux) {

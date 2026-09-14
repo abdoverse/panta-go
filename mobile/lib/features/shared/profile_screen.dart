@@ -7,6 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/responsive_layout.dart';
 import '../../providers/panta_provider.dart';
 import '../auth/bankid_dialog.dart';
+import 'cookie_consent_banner.dart';
 
 String _formatRating(double value) {
   return value == value.roundToDouble()
@@ -306,6 +307,12 @@ class ProfileScreen extends StatelessWidget {
                     onTap: () => _showFeedbackDialog(context, provider),
                   ),
                   const Divider(height: 1),
+                  _ProfileItem(
+                    icon: Icons.cookie_outlined,
+                    title: l10n.cookiePreferencesTitle,
+                    subtitle: l10n.cookiePreferencesSubtitle,
+                    onTap: () => showCookiePreferencesDialog(context),
+                  ),
                   const Divider(height: 1),
                   _ProfileItem(
                     icon: Icons.help_outline_rounded,

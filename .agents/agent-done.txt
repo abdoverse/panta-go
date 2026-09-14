@@ -740,3 +740,7 @@ plan-83 | done | medium | medium | none | Edit first and last name in Profile wi
 
 plan-79 | done | high | medium | none | Set market limits
   Implemented: Dynamic per-market quotas in market_config.go (plan-74) with max active requests per recycler/helper, min/max rewards, and quota enforcement in requests.go.
+
+plan-85 | done | high | medium | none | GDPR-compliant cookie consent banner and legal cookie management adhering to Swedish/EU regulations
+  Implemented: CookieConsent model and CookieConsentService with SharedPreferences persistence, Swedish/EU LEK 2022:482 & PTS compliant bottom banner (CookieConsentBanner), granular preferences dialog (_CookiePreferencesDialog), ProfileScreen cookie settings tile, backend legal declaration endpoint (/api/v1/legal/cookies), and tests in cookie_consent_test.dart and legal_test.go.
+

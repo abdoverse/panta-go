@@ -12,7 +12,7 @@
 10. [x] Add a feedback section where any user can leave feedback to the team
 11. [x] Allow users to edit their first and last name in Profile with multi-language support (Arabic, Chinese, and other Unicode special characters)
 12. [x] Display user's email address on the Profile page
-13. [ ] Implement GDPR-compliant cookie support and consent banner adhering to Swedish legal standards for online businesses
+13. [x] Implement GDPR-compliant cookie support and consent banner adhering to Swedish legal standards for online businesses
 14. [x] Remove all "-go" residue from resource names (DynamoDB tables, S3 buckets, ECS service, Secrets Manager, CloudWatch log groups: rename to panta-requests, panta-request-images, etc.)
 
 15. [ ] Add admin user suspension/blocking controls for legal or investigation cases:

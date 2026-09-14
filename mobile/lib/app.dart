@@ -9,6 +9,7 @@ import 'features/dashboard/helper_home_page.dart';
 import 'features/dashboard/user_home_page.dart';
 import 'features/auth/login_page.dart';
 import 'features/chat/chat_notification_banner.dart';
+import 'features/shared/cookie_consent_banner.dart';
 import 'providers/panta_provider.dart';
 
 class PantaApp extends StatefulWidget {
@@ -74,7 +75,14 @@ class _PantaAppState extends State<PantaApp> {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       home: const _AuthGate(),
-      builder: (context, child) => ChatNotificationListener(child: child!),
+      builder: (context, child) => ChatNotificationListener(
+        child: Stack(
+          children: [
+            if (child != null) child,
+            const CookieConsentBanner(),
+          ],
+        ),
+      ),
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
