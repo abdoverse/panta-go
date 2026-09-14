@@ -28,6 +28,12 @@
     - Make website-specific items (e.g. Cookie preferences) visible only in the web version
     - Streamline Account section layout by removing non-functional placeholders
 
+18. [ ] Dynamic & Time-Aware User Greetings:
+    - Replace static "Welcome back" with dynamic greeting strings selected from a pool of variations
+    - Adapt greetings based on time of day (morning, afternoon, evening, night)
+    - Provide slight variations/rotation each time so it feels fresh on every visit
+    - Support localization (Swedish & English) with personalized user name formatting
+
 ## Production Readiness
 1. [ ] Replace local static AWS credentials with short-lived federated credentials or workload identity before sharing/deploying the development setup; rotate and audit `panta-local-dev`.
 1. [ ] Use real BankID certificates and keys
