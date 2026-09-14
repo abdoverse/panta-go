@@ -38,6 +38,10 @@
     - Display each language option in its own native language in the language picker (e.g., "Svenska" for Swedish, "English" for English) regardless of the currently active language
     - Ensure users who cannot read the currently selected language can easily locate and select their preferred language
 
+20. [ ] Restrict Distance-Aware Sorting Indicator to Relevant Contexts:
+    - Remove the "Distance-aware sorting is enabled for this pickup" label from the Pickup History view (`isCompleted == true`)
+    - Only display distance-aware sorting indicators when relevant (e.g., browsing available jobs prioritized by helper proximity)
+
 ## Production Readiness
 1. [ ] Replace local static AWS credentials with short-lived federated credentials or workload identity before sharing/deploying the development setup; rotate and audit `panta-local-dev`.
 1. [ ] Use real BankID certificates and keys
