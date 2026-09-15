@@ -28,7 +28,7 @@
     - Make website-specific items (e.g. Cookie preferences) visible only in the web version
     - Streamline Account section layout by removing non-functional placeholders
 
-18. [ ] Dynamic & Time-Aware User Greetings:
+18. [x] Dynamic & Time-Aware User Greetings:
     - Replace static "Welcome back" with dynamic greeting strings selected from a pool of variations
     - Adapt greetings based on time of day (morning, afternoon, evening, night)
     - Provide slight variations/rotation each time so it feels fresh on every visit

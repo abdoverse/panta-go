@@ -210,8 +210,10 @@ class _MarketplaceView extends StatelessWidget {
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
               title: Text(
-                l10n.welcomeBack(displayName),
+                l10n.dynamicGreeting(displayName),
                 style: const TextStyle(fontWeight: FontWeight.bold),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
               background: Align(
                 alignment: Alignment.topRight,

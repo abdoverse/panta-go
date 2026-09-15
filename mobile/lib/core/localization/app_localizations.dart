@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import '../utils/greeting_helper.dart';
 
 class AppLocalizations {
   AppLocalizations(this.locale);
@@ -124,11 +125,25 @@ class AppLocalizations {
   String get history => _isSwedish ? 'Historik' : 'History';
   String get profile => _isSwedish ? 'Profil' : 'Profile';
   String get recycleNow => _isSwedish ? 'Återvinn nu' : 'Recycle Now';
-  String welcomeBack([String? name]) {
-    if (name == null || name.isEmpty) {
-      return _isSwedish ? 'Välkommen tillbaka!' : 'Welcome Back!';
-    }
-    return _isSwedish ? 'Välkommen tillbaka, $name!' : 'Welcome Back, $name!';
+  String dynamicGreeting([
+    String? name,
+    DateTime? dateTime,
+    int? variationIndex,
+  ]) {
+    return GreetingHelper.getGreeting(
+      isSwedish: _isSwedish,
+      name: name,
+      dateTime: dateTime,
+      variationIndex: variationIndex,
+    );
+  }
+
+  String welcomeBack([
+    String? name,
+    DateTime? dateTime,
+    int? variationIndex,
+  ]) {
+    return dynamicGreeting(name, dateTime, variationIndex);
   }
 
   String get ongoingRequests =>
