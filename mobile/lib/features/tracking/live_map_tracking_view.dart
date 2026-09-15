@@ -340,13 +340,18 @@ class _LiveMapTrackingViewState extends State<LiveMapTrackingView>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      _getLocalizedEtaStatus(context, etaInfo),
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
+                    Expanded(
+                      child: Text(
+                        _getLocalizedEtaStatus(context, etaInfo),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    const SizedBox(width: 8),
                     TextButton.icon(
                       onPressed: _openExternalMaps,
                       icon: const Icon(Icons.navigation_outlined, size: 16),

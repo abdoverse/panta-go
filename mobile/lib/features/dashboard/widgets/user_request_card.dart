@@ -91,7 +91,10 @@ class UserRequestCard extends StatelessWidget {
                             ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 6),
-                      Row(
+                      Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 8,
+                        runSpacing: 4,
                         children: [
                           Text(
                             "${AppConstants.currencySymbol}${(request.reward as num?)?.toStringAsFixed(0) ?? '0'}",
@@ -103,7 +106,6 @@ class UserRequestCard extends StatelessWidget {
                                   fontWeight: FontWeight.bold,
                                 ),
                           ),
-                          const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 10,
@@ -135,12 +137,16 @@ class UserRequestCard extends StatelessWidget {
                             color: Colors.grey[500],
                           ),
                           const SizedBox(width: 4),
-                          Text(
-                            "${DateFormat('d MMM, HH:mm', l10n.localeName).format(request.scheduledFrom)} - ${DateFormat('HH:mm', l10n.localeName).format(request.scheduledTo)}",
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(color: Colors.grey[600]),
+                          Expanded(
+                            child: Text(
+                              "${DateFormat('d MMM, HH:mm', l10n.localeName).format(request.scheduledFrom)} - ${DateFormat('HH:mm', l10n.localeName).format(request.scheduledTo)}",
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(color: Colors.grey[600]),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                         ],
                       ),
@@ -247,12 +253,16 @@ class UserRequestCard extends StatelessWidget {
                                     color: Colors.orange,
                                   ),
                                   const SizedBox(width: 4),
-                                  Text(
-                                    l10n.leaveAtDoor,
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.brown,
+                                  Flexible(
+                                    child: Text(
+                                      l10n.leaveAtDoor,
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.brown,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                                 ],
@@ -371,100 +381,161 @@ class UserRequestCard extends StatelessWidget {
             if (request.status == RequestStatus.accepted) ...[
               if (request.arrivedAtDoor != null) ...[
                 const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.amber.shade100,
-                        Colors.orange.shade50,
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+                Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(14),
+                  child: InkWell(
+                    onTap: () {
+                      provider.markChatAsRead(request.id);
+                      ChatBottomSheet.show(
+                        context,
+                        request: request,
+                        isHelper: false,
+                      );
+                    },
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: Colors.amber.shade600,
-                      width: 2.0,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.amber.withValues(alpha: 0.3),
-                        blurRadius: 10,
-                        offset: const Offset(0, 3),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
                       ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.amber.shade200,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Text('🛎️', style: TextStyle(fontSize: 24)),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l10n.helperOutsideYourDoor,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                                color: Colors.brown,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              request.leaveAtDoor
-                                  ? l10n.bagsCanBePickedUpOutsideDoor
-                                  : l10n.pleaseOpenDoorToHandOverBags,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.brown.shade800,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [
+                            Color(0xFFFFFBEB), // Amber 50
+                            Color(0xFFFEF3C7), // Amber 100
                           ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: const Color(0xFFF59E0B), // Amber 500
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.amber.withValues(alpha: 0.25),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 8),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          provider.markChatAsRead(request.id);
-                          ChatBottomSheet.show(
-                            context,
-                            request: request,
-                            isHelper: false,
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.amber.shade800,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 8,
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFDE68A), // Amber 200
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: const Color(0xFFF59E0B),
+                                width: 1.2,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.doorbell_rounded,
+                              size: 24,
+                              color: Color(0xFFB45309), // Amber 700
+                            ),
                           ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        l10n.helperOutsideYourDoor,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                          color: Color(0xFF78350F), // Amber 900
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 5,
+                                        vertical: 1.5,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF59E0B),
+                                        borderRadius: BorderRadius.circular(5),
+                                      ),
+                                      child: Text(
+                                        l10n.dingDong,
+                                        style: const TextStyle(
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.w900,
+                                          color: Colors.white,
+                                          letterSpacing: 0.4,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  request.leaveAtDoor
+                                      ? l10n.bagsCanBePickedUpOutsideDoor
+                                      : l10n.pleaseOpenDoorToHandOverBags,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF92400E), // Amber 800
+                                    fontWeight: FontWeight.w500,
+                                    height: 1.3,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        icon: const Icon(Icons.chat_bubble_outline, size: 14),
-                        label: Text(
-                          context.l10n.open,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
+                          const SizedBox(width: 8),
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              provider.markChatAsRead(request.id);
+                              ChatBottomSheet.show(
+                                context,
+                                request: request,
+                                isHelper: false,
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFB45309),
+                              foregroundColor: Colors.white,
+                              elevation: 1,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            icon: const Icon(
+                              Icons.chat_bubble_outline_rounded,
+                              size: 14,
+                            ),
+                            label: Text(
+                              context.l10n.open,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
-                ).animate().shimmer(duration: 1200.ms),
+                ),
               ],
               const SizedBox(height: 12),
               LiveMapTrackingView(request: request),
@@ -527,12 +598,16 @@ class UserRequestCard extends StatelessWidget {
                                     children: [
                                       Row(
                                         children: [
-                                          Text(
-                                            latestMsg.senderName,
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 13,
-                                              color: AppTheme.primaryGreen,
+                                          Flexible(
+                                            child: Text(
+                                              latestMsg.senderName,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 13,
+                                                color: AppTheme.primaryGreen,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
                                             ),
                                           ),
                                           const SizedBox(width: 6),

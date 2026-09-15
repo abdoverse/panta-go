@@ -579,6 +579,7 @@ class AppLocalizations {
   String get helperConfirmedPickupAtDoor => _isSwedish ? 'Hjälparen bekräftade upphämtning vid dörren:' : 'Helper confirmed pickup at door:';
   String get photoVerifiedByHelper => _isSwedish ? 'Foto verifierat av hjälparen' : 'Photo Verified by Helper';
   String get viewPhotoProof => _isSwedish ? 'Visa bildbevis ✓' : 'View Photo Proof ✓';
+  String get dingDong => 'DING-DONG';
   String get helperOutsideYourDoor => _isSwedish ? 'Hjälparen är utanför din dörr!' : 'Helper is outside your door!';
   String get bagsCanBePickedUpOutsideDoor => _isSwedish ? 'Påsarna kan hämtas direkt utanför din dörr.' : 'Bags can be picked up directly outside your door.';
   String get pleaseOpenDoorToHandOverBags => _isSwedish ? 'Vänligen öppna dörren eller möt hjälparen för att lämna över pantpåsarna.' : 'Please open your door or meet the helper to hand over pant bags.';

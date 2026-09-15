@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:panta/core/localization/app_localizations.dart';
 import 'package:panta/features/chat/chat_notification_banner.dart';
+import 'package:panta/features/dashboard/widgets/user_request_card.dart';
 import 'package:panta/models/request_model.dart';
 import 'package:panta/providers/panta_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -204,6 +205,55 @@ void main() {
       expect(find.text('Ding-Dong! Helper is at your door 🛎️'), findsOneWidget);
       expect(find.text('Erik is at your door.'), findsOneWidget);
       expect(find.byIcon(Icons.doorbell_rounded), findsOneWidget);
+    });
+
+    testWidgets('UserRequestCard renders arrival banner cleanly with doorbell icon and no overflow', (tester) async {
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      final provider = PantaProvider();
+      await provider.restoreSession();
+
+      final req = RecyclingRequest(
+        id: 'req-arrival-card',
+        title: 'Bags outside',
+        scheduledFrom: DateTime.now(),
+        scheduledTo: DateTime.now().add(const Duration(hours: 1)),
+        location: 'Stockholm',
+        status: RequestStatus.accepted,
+        arrivedAtDoor: DateTime.now(),
+        leaveAtDoor: true,
+      );
+      provider.requests.add(req);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [Locale('en'), Locale('sv')],
+          home: ChangeNotifierProvider<PantaProvider>.value(
+            value: provider,
+            child: Scaffold(
+              body: SingleChildScrollView(
+                child: UserRequestCard(request: req),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.text('Helper is outside your door!'), findsOneWidget);
+      expect(find.text('DING-DONG'), findsOneWidget);
+      expect(find.byIcon(Icons.doorbell_rounded), findsOneWidget);
+      expect(find.text('Bags can be picked up directly outside your door.'), findsOneWidget);
+      expect(find.byIcon(Icons.chat_bubble_outline_rounded), findsOneWidget);
     });
   });
 }
