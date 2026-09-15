@@ -308,6 +308,46 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             tooltip: context.l10n.refreshMarketData,
             onPressed: _isLoading ? null : _loadAdminData,
           ),
+          PopupMenuButton<Locale>(
+            key: const Key('admin_language_button'),
+            icon: const Icon(Icons.language),
+            tooltip: context.l10n.chooseLanguage,
+            onSelected: (Locale locale) async {
+              await provider.setLocale(locale);
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem<Locale>(
+                value: const Locale('sv', 'SE'),
+                child: Row(
+                  children: [
+                    const Icon(Icons.language, size: 18),
+                    const SizedBox(width: 8),
+                    Text(context.l10n.swedishNative),
+                    if (provider.locale.languageCode == 'sv') ...[
+                      const Spacer(),
+                      const Icon(Icons.check,
+                          color: AppTheme.primaryGreen, size: 18),
+                    ],
+                  ],
+                ),
+              ),
+              PopupMenuItem<Locale>(
+                value: const Locale('en', 'US'),
+                child: Row(
+                  children: [
+                    const Icon(Icons.language_outlined, size: 18),
+                    const SizedBox(width: 8),
+                    Text(context.l10n.englishNative),
+                    if (provider.locale.languageCode == 'en') ...[
+                      const Spacer(),
+                      const Icon(Icons.check,
+                          color: AppTheme.primaryGreen, size: 18),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
           IconButton(
             icon: const Icon(Icons.switch_account_outlined),
             tooltip: context.l10n.switchToUserView,
@@ -347,6 +387,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                     _buildFeedbackSection(),
                     const SizedBox(height: 20),
                     _buildUserSuspensionsSection(),
+                    const SizedBox(height: 20),
+                    _buildLanguageSettingsSection(context, provider),
                     const SizedBox(height: 80),
                   ],
                 ),
@@ -1273,6 +1315,88 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             child: Text(dialogCtx.l10n.confirm),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLanguageSettingsSection(
+      BuildContext context, PantaProvider provider) {
+    final l10n = context.l10n;
+    final isSwedish = provider.locale.languageCode == 'sv';
+
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.language, color: AppTheme.primaryGreen, size: 22),
+                const SizedBox(width: 8),
+                Text(
+                  l10n.language,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryGreen.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    isSwedish ? l10n.swedishNative : l10n.englishNative,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.primaryGreen,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              l10n.appLanguageDescription,
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey.shade600,
+              ),
+            ),
+            const SizedBox(height: 14),
+            SegmentedButton<String>(
+              key: const Key('admin_language_segmented_button'),
+              segments: [
+                ButtonSegment<String>(
+                  value: 'sv',
+                  label: Text(l10n.swedishNative),
+                  icon: const Icon(Icons.language, size: 18),
+                ),
+                ButtonSegment<String>(
+                  value: 'en',
+                  label: Text(l10n.englishNative),
+                  icon: const Icon(Icons.language_outlined, size: 18),
+                ),
+              ],
+              selected: {provider.locale.languageCode},
+              onSelectionChanged: (selected) async {
+                final code = selected.first;
+                await provider.setLocale(
+                  code == 'sv'
+                      ? const Locale('sv', 'SE')
+                      : const Locale('en', 'US'),
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

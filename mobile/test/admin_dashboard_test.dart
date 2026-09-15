@@ -61,5 +61,67 @@ void main() {
       // Verify simulation triggered
       expect(find.text('Live System & Audit Logs'), findsOneWidget);
     });
+
+    testWidgets('AdminDashboardPage can change language dynamically', (WidgetTester tester) async {
+      SharedPreferences.setMockInitialValues(const {});
+      final provider = PantaProvider();
+      await provider.setLocale(const Locale('en', 'US'));
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider.value(
+          value: provider,
+          child: Consumer<PantaProvider>(
+            builder: (context, p, _) => MaterialApp(
+              locale: p.locale,
+              localizationsDelegates: const [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: const AdminDashboardPage(),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Initially in English
+      expect(find.text('Panta Operations & Market Oversight'), findsOneWidget);
+      expect(find.byKey(const Key('admin_language_button')), findsOneWidget);
+
+      // Scroll to language section
+      final languageFinder = find.byKey(const Key('admin_language_segmented_button'));
+      await tester.scrollUntilVisible(
+        languageFinder,
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(languageFinder, findsOneWidget);
+      expect(find.text('Language'), findsOneWidget);
+
+      // Switch to Swedish via SegmentedButton
+      await tester.tap(find.text('Svenska').first);
+      await tester.pumpAndSettle();
+
+      // Verify UI updated to Swedish
+      expect(provider.locale.languageCode, 'sv');
+      expect(find.text('Drift och marknadsöversikt'), findsOneWidget);
+      expect(find.text('Språk'), findsOneWidget);
+
+      // Switch back to English via AppBar language popup menu
+      await tester.tap(find.byKey(const Key('admin_language_button')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('English').last);
+      await tester.pumpAndSettle();
+
+      // Verify UI updated back to English
+      expect(provider.locale.languageCode, 'en');
+      expect(find.text('Panta Operations & Market Oversight'), findsOneWidget);
+      expect(find.text('Language'), findsOneWidget);
+    });
   });
 }
