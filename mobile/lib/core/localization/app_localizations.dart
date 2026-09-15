@@ -853,6 +853,87 @@ class AppLocalizations {
   String accountRestrictedMessage(String ref) => _isSwedish
       ? 'Ditt konto har begränsats för juridisk eller regelefterlevnadsgranskning. Kontakta Panta Support och ange referens: $ref'
       : 'Your account is restricted for compliance or legal review. Please contact Panta Support quoting reference: $ref';
+
+  String get suspensionHistoryTitle => _isSwedish
+      ? 'Historik för avstängningar'
+      : 'Suspension & Lifting History';
+  String suspensionHistoryCount(int count) => _isSwedish
+      ? 'Historikhändelser: $count'
+      : 'History events: $count';
+  String get noSuspensionHistory => _isSwedish
+      ? 'Ingen historik för avstängningar registrerad'
+      : 'No suspension history recorded';
+  String get activeTabLabel => _isSwedish ? 'Aktiva' : 'Active';
+  String get historyTabLabel => _isSwedish ? 'Historik' : 'History';
+  String get selectUserDropdownLabel =>
+      _isSwedish ? 'Välj användare' : 'Select user';
+  String get customUserOption =>
+      _isSwedish ? 'Annan användare (ange manuellt)' : 'Other user (enter manually)';
+  String get selectReasonDropdownLabel =>
+      _isSwedish ? 'Välj standardorsak' : 'Select standard reason';
+  String get customReasonOption =>
+      _isSwedish ? 'Annat skäl (ange manuellt)' : 'Other reason (enter manually)';
+  String get selectDurationDropdownLabel =>
+      _isSwedish ? 'Avstängningens längd' : 'Suspension duration';
+  String get durationIndefinite =>
+      _isSwedish ? 'Permanent / Tills vidare' : 'Indefinite / Permanent';
+  String get duration1Day =>
+      _isSwedish ? '24 timmar (1 dag)' : '24 hours (1 day)';
+  String get duration3Days =>
+      _isSwedish ? '3 dagar' : '3 days';
+  String get duration7Days =>
+      _isSwedish ? '7 dagar (1 vecka)' : '7 days (1 week)';
+  String get duration14Days =>
+      _isSwedish ? '14 dagar (2 veckor)' : '14 days (2 weeks)';
+  String get duration30Days =>
+      _isSwedish ? '30 dagar (1 månad)' : '30 days (1 month)';
+  String get durationCustom =>
+      _isSwedish ? 'Anpassat datum (ISO/text)' : 'Custom date (ISO/text)';
+  String get selectUnblockReasonDropdownLabel =>
+      _isSwedish ? 'Välj orsak för att häva avstängning' : 'Select reason for lifting';
+  String get historyActionSuspended =>
+      _isSwedish ? 'Avstängd' : 'Suspended';
+  String get historyActionLifted =>
+      _isSwedish ? 'Hävd' : 'Lifted';
+  String get historyActionExpired =>
+      _isSwedish ? 'Utgången' : 'Expired';
+  String performedByLabel(String actor) =>
+      _isSwedish ? 'Av: $actor' : 'By: $actor';
+
+  String get reasonMissedPickups => _isSwedish
+      ? 'Upprepade uteblivna upphämtningar / no-show'
+      : 'Repeated missed pickups / no-shows';
+  String get reasonFraudulentReceipt => _isSwedish
+      ? 'Misstänkt eller ogiltigt kvitto / pantunderlag'
+      : 'Suspicious or invalid deposit slip / receipt';
+  String get reasonHarassment => _isSwedish
+      ? 'Oacceptabelt beteende eller trakasserier i chatten'
+      : 'Inappropriate chat behavior or harassment';
+  String get reasonMultiAccount => _isSwedish
+      ? 'Misstänkt fusk / otillåtna multipla konton'
+      : 'Suspected multi-accounting or fraudulent activity';
+  String get reasonSafetyViolation => _isSwedish
+      ? 'Överträdelse av säkerhets- och trivselregler'
+      : 'Safety and community guidelines violation';
+  String get reasonIdentityReview => _isSwedish
+      ? 'Kräver BankID- / identitetsverifiering'
+      : 'Identity or BankID review required';
+
+  String get unblockAppealApproved => _isSwedish
+      ? 'Överklagan godkänd / identitet verifierad'
+      : 'Appeal approved / identity verified';
+  String get unblockPenaltyServed => _isSwedish
+      ? 'Avstängningsperiod avtjänad / varning mottagen'
+      : 'Suspension period served / warning acknowledged';
+  String get unblockFalseReport => _isSwedish
+      ? 'Felaktig anmälan / användare friad efter utredning'
+      : 'False report / cleared after review';
+  String get unblockDisputeResolved => _isSwedish
+      ? 'Tvist löst / ersättning reglerad'
+      : 'Dispute resolved / restitution settled';
+  String get unblockAdminError => _isSwedish
+      ? 'Administrativt misstag / fel användare avstängd'
+      : 'Administrative error / mistaken identity';
 }
 
 class _AppLocalizationsDelegate

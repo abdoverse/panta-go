@@ -33,10 +33,53 @@ type UserBlockRecord struct {
 	UnblockReason   string `json:"unblockReason,omitempty"`
 }
 
+// SuspensionHistoryEntry represents an immutable record of a suspension, unblock, or expiry event.
+type SuspensionHistoryEntry struct {
+	ID              string `json:"id"`
+	Action          string `json:"action"` // "SUSPENDED", "LIFTED", "EXPIRED"
+	UserID          string `json:"userId"`
+	Email           string `json:"email,omitempty"`
+	CaseReferenceID string `json:"caseReferenceId"`
+	Reason          string `json:"reason"`
+	Actor           string `json:"actor"`
+	Timestamp       string `json:"timestamp"`
+	ExpiresAt       string `json:"expiresAt,omitempty"`
+}
+
 var (
-	userBlocksMu sync.RWMutex
-	userBlocks   = make(map[string]*UserBlockRecord) // keyed by normalized UserID and Email
+	userBlocksMu      sync.RWMutex
+	userBlocks        = make(map[string]*UserBlockRecord) // keyed by normalized UserID and Email
+	suspensionHistory = []*SuspensionHistoryEntry{
+		{
+			ID:              "hist-seed-1",
+			Action:          "LIFTED",
+			UserID:          userUUID("lars.recycler@example.com"),
+			Email:           "lars.recycler@example.com",
+			CaseReferenceID: "CASE-2026-SE-0012",
+			Reason:          "BankID identity verified after security check",
+			Actor:           "Admin Operator",
+			Timestamp:       "2026-09-13T14:30:00Z",
+		},
+	}
 )
+
+func appendSuspensionHistory(entry *SuspensionHistoryEntry) {
+	suspensionHistory = append(suspensionHistory, entry)
+	if len(suspensionHistory) > 200 {
+		suspensionHistory = suspensionHistory[len(suspensionHistory)-200:]
+	}
+}
+
+func getSuspensionHistory() []*SuspensionHistoryEntry {
+	userBlocksMu.RLock()
+	defer userBlocksMu.RUnlock()
+
+	result := make([]*SuspensionHistoryEntry, len(suspensionHistory))
+	for i, entry := range suspensionHistory {
+		result[len(suspensionHistory)-1-i] = entry
+	}
+	return result
+}
 
 // isUserBlocked checks if a given user ID or email is currently blocked.
 // It automatically evaluates expiration timestamps and unblocks expired restrictions.
@@ -72,6 +115,16 @@ func isUserBlocked(userID, email string) (bool, *UserBlockRecord) {
 				record.UnblockedAt = time.Now().UTC().Format(time.RFC3339)
 				record.UnblockedBy = "system_expiry_engine"
 				record.UnblockReason = "Temporary suspension period expired"
+				appendSuspensionHistory(&SuspensionHistoryEntry{
+					ID:              fmt.Sprintf("hist-exp-%d", time.Now().UnixNano()),
+					Action:          "EXPIRED",
+					UserID:          record.UserID,
+					Email:           record.Email,
+					CaseReferenceID: record.CaseReferenceID,
+					Reason:          record.UnblockReason,
+					Actor:           record.UnblockedBy,
+					Timestamp:       record.UnblockedAt,
+				})
 				return false, nil
 			}
 		}
@@ -136,6 +189,18 @@ func blockUser(rec *UserBlockRecord) error {
 	}
 	adminLogsMu.Unlock()
 
+	appendSuspensionHistory(&SuspensionHistoryEntry{
+		ID:              fmt.Sprintf("hist-block-%d", time.Now().UnixNano()),
+		Action:          "SUSPENDED",
+		UserID:          rec.UserID,
+		Email:           rec.Email,
+		CaseReferenceID: rec.CaseReferenceID,
+		Reason:          rec.Reason,
+		Actor:           rec.BlockedBy,
+		Timestamp:       rec.BlockedAt,
+		ExpiresAt:       rec.ExpiresAt,
+	})
+
 	return nil
 }
 
@@ -191,6 +256,17 @@ func unblockUser(userID, email, adminID, reason, caseRef string) (*UserBlockReco
 		adminLogs = adminLogs[len(adminLogs)-100:]
 	}
 	adminLogsMu.Unlock()
+
+	appendSuspensionHistory(&SuspensionHistoryEntry{
+		ID:              fmt.Sprintf("hist-unblock-%d", time.Now().UnixNano()),
+		Action:          "LIFTED",
+		UserID:          record.UserID,
+		Email:           record.Email,
+		CaseReferenceID: record.CaseReferenceID,
+		Reason:          reason,
+		Actor:           adminID,
+		Timestamp:       record.UnblockedAt,
+	})
 
 	return record, nil
 }
@@ -416,8 +492,77 @@ func handleAdminListBlocks(w http.ResponseWriter, r *http.Request) {
 		records = []*UserBlockRecord{}
 	}
 
+	hist := getSuspensionHistory()
+	if hist == nil {
+		hist = []*SuspensionHistoryEntry{}
+	}
+
 	jsonResponse(w, http.StatusOK, map[string]interface{}{
-		"blocks": records,
-		"count":  len(records),
+		"blocks":  records,
+		"history": hist,
+		"count":   len(records),
+	})
+}
+
+func handleAdminListSuspensionHistory(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	claims, ok := currentClaims(r)
+	if !ok || claims == nil || !claims.isAdmin() {
+		http.Error(w, "Forbidden: admin access required", http.StatusForbidden)
+		return
+	}
+
+	hist := getSuspensionHistory()
+	if hist == nil {
+		hist = []*SuspensionHistoryEntry{}
+	}
+
+	jsonResponse(w, http.StatusOK, map[string]interface{}{
+		"history": hist,
+		"count":   len(hist),
+	})
+}
+
+type AdminUserInfo struct {
+	UserID      string `json:"userId"`
+	DisplayName string `json:"displayName"`
+	Email       string `json:"email"`
+	Role        string `json:"role"`
+	IsBlocked   bool   `json:"isBlocked"`
+}
+
+func handleAdminListUsers(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	claims, ok := currentClaims(r)
+	if !ok || claims == nil || !claims.isAdmin() {
+		http.Error(w, "Forbidden: admin access required", http.StatusForbidden)
+		return
+	}
+
+	knownUsers := []AdminUserInfo{
+		{UserID: userUUID("anna.recycler@example.com"), DisplayName: "Anna Recycler", Email: "anna.recycler@example.com", Role: "user"},
+		{UserID: userUUID("erik.helper@example.com"), DisplayName: "Erik Helper", Email: "erik.helper@example.com", Role: "helper"},
+		{UserID: userUUID("johan.recycler@example.com"), DisplayName: "Johan Recycler", Email: "johan.recycler@example.com", Role: "user"},
+		{UserID: userUUID("sara.recycler@example.com"), DisplayName: "Sara Recycler", Email: "sara.recycler@example.com", Role: "user"},
+		{UserID: userUUID("karin.recycler@example.com"), DisplayName: "Karin Recycler", Email: "karin.recycler@example.com", Role: "user"},
+		{UserID: userUUID("oskar.helper@example.com"), DisplayName: "Oskar Helper", Email: "oskar.helper@example.com", Role: "helper"},
+	}
+
+	for i := range knownUsers {
+		blocked, _ := isUserBlocked(knownUsers[i].UserID, knownUsers[i].Email)
+		knownUsers[i].IsBlocked = blocked
+	}
+
+	jsonResponse(w, http.StatusOK, map[string]interface{}{
+		"users": knownUsers,
+		"count": len(knownUsers),
 	})
 }

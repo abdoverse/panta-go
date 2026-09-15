@@ -123,5 +123,66 @@ void main() {
       expect(find.text('Panta Operations & Market Oversight'), findsOneWidget);
       expect(find.text('Language'), findsOneWidget);
     });
+
+    testWidgets('AdminDashboardPage displays suspension history and provides dropdown lists for suspend and lift actions', (WidgetTester tester) async {
+      SharedPreferences.setMockInitialValues(const {});
+      final provider = PantaProvider();
+      await provider.setLocale(const Locale('en', 'US'));
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider.value(
+          value: provider,
+          child: Consumer<PantaProvider>(
+            builder: (context, p, _) => MaterialApp(
+              locale: p.locale,
+              localizationsDelegates: const [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: const AdminDashboardPage(),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Scroll to suspension section
+      final tabSelectorFinder = find.byKey(const Key('suspension_tab_selector'));
+      await tester.scrollUntilVisible(
+        tabSelectorFinder,
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(tabSelectorFinder, findsOneWidget);
+
+      // Verify Suspend user action button is visible
+      expect(find.byKey(const Key('suspend_user_action_button')), findsOneWidget);
+
+      // Switch to History tab
+      await tester.tap(find.textContaining('History'));
+      await tester.pumpAndSettle();
+
+      // Verify history card is displayed with case reference and Lifted status
+      expect(find.textContaining('CASE-2026-SE-0012'), findsOneWidget);
+      expect(find.text('Lifted'), findsOneWidget);
+
+      // Open Suspend User dialog
+      await tester.tap(find.byKey(const Key('suspend_user_action_button')));
+      await tester.pumpAndSettle();
+
+      // Verify dropdowns appear in the dialog
+      expect(find.byKey(const Key('suspend_user_dropdown')), findsOneWidget);
+      expect(find.byKey(const Key('suspend_reason_dropdown')), findsOneWidget);
+      expect(find.byKey(const Key('suspend_duration_dropdown')), findsOneWidget);
+      expect(find.byKey(const Key('confirm_suspend_button')), findsOneWidget);
+
+      // Close dialog
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+    });
   });
 }

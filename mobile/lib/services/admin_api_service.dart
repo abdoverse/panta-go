@@ -375,6 +375,60 @@ class AdminApiService {
       return false;
     }
   }
+
+  Future<List<SuspensionHistoryModel>> fetchSuspensionHistory({
+    required String token,
+  }) async {
+    try {
+      final uri = ApiConfig.apiUri('/api/v1/admin/users/suspensions/history');
+      final response = await _client.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        final histList = data['history'] as List<dynamic>? ?? [];
+        return histList
+            .whereType<Map<String, dynamic>>()
+            .map(SuspensionHistoryModel.fromJson)
+            .toList();
+      }
+      debugPrint('Admin fetchSuspensionHistory failed: ${response.statusCode}');
+    } catch (e) {
+      debugPrint('Admin fetchSuspensionHistory error: $e');
+    }
+    return [];
+  }
+
+  Future<List<AdminUserModel>> fetchAdminUsers({
+    required String token,
+  }) async {
+    try {
+      final uri = ApiConfig.apiUri('/api/v1/admin/users');
+      final response = await _client.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        final usersList = data['users'] as List<dynamic>? ?? [];
+        return usersList
+            .whereType<Map<String, dynamic>>()
+            .map(AdminUserModel.fromJson)
+            .toList();
+      }
+      debugPrint('Admin fetchAdminUsers failed: ${response.statusCode}');
+    } catch (e) {
+      debugPrint('Admin fetchAdminUsers error: $e');
+    }
+    return [];
+  }
 }
 
 class UserBlockModel {
@@ -417,6 +471,70 @@ class UserBlockModel {
       unblockedAt: json['unblockedAt']?.toString(),
       unblockedBy: json['unblockedBy']?.toString(),
       unblockReason: json['unblockReason']?.toString(),
+    );
+  }
+}
+
+class SuspensionHistoryModel {
+  final String id;
+  final String action; // SUSPENDED, LIFTED, EXPIRED
+  final String userId;
+  final String email;
+  final String caseReferenceId;
+  final String reason;
+  final String actor;
+  final String timestamp;
+  final String? expiresAt;
+
+  const SuspensionHistoryModel({
+    required this.id,
+    required this.action,
+    required this.userId,
+    this.email = '',
+    required this.caseReferenceId,
+    required this.reason,
+    required this.actor,
+    required this.timestamp,
+    this.expiresAt,
+  });
+
+  factory SuspensionHistoryModel.fromJson(Map<String, dynamic> json) {
+    return SuspensionHistoryModel(
+      id: json['id']?.toString() ?? '',
+      action: json['action']?.toString() ?? 'SUSPENDED',
+      userId: json['userId']?.toString() ?? '',
+      email: json['email']?.toString() ?? '',
+      caseReferenceId: json['caseReferenceId']?.toString() ?? '',
+      reason: json['reason']?.toString() ?? '',
+      actor: json['actor']?.toString() ?? '',
+      timestamp: json['timestamp']?.toString() ?? '',
+      expiresAt: json['expiresAt']?.toString(),
+    );
+  }
+}
+
+class AdminUserModel {
+  final String userId;
+  final String displayName;
+  final String email;
+  final String role;
+  final bool isBlocked;
+
+  const AdminUserModel({
+    required this.userId,
+    required this.displayName,
+    this.email = '',
+    this.role = '',
+    this.isBlocked = false,
+  });
+
+  factory AdminUserModel.fromJson(Map<String, dynamic> json) {
+    return AdminUserModel(
+      userId: json['userId']?.toString() ?? '',
+      displayName: json['displayName']?.toString() ?? '',
+      email: json['email']?.toString() ?? '',
+      role: json['role']?.toString() ?? '',
+      isBlocked: json['isBlocked'] == true,
     );
   }
 }

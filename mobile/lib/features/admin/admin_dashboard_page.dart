@@ -27,6 +27,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   List<AdminLogModel> _logs = [];
   List<AdminFeedbackModel> _feedback = [];
   List<UserBlockModel> _userBlocks = [];
+  List<SuspensionHistoryModel> _suspensionHistory = [];
+  List<AdminUserModel> _adminUsers = [];
+  int _suspensionTab = 0; // 0 = Active, 1 = History
   CityTrendModel? _selectedCity;
 
   bool _isLoading = true;
@@ -49,6 +52,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       final logs = await _adminApiService.fetchLogs(token: token);
       final feedback = await _adminApiService.fetchFeedback(token: token);
       final blocks = await _adminApiService.fetchUserBlocks(token: token);
+      final hist = await _adminApiService.fetchSuspensionHistory(token: token);
+      final users = await _adminApiService.fetchAdminUsers(token: token);
 
       if (overview != null) {
         setState(() {
@@ -69,11 +74,19 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         });
       }
 
-      if (blocks.isNotEmpty) {
-        setState(() {
-          _userBlocks = blocks;
-        });
-      }
+      setState(() {
+        _userBlocks = blocks;
+        if (hist.isNotEmpty) {
+          _suspensionHistory = hist;
+        } else if (_suspensionHistory.isEmpty) {
+          _loadFallbackSuspensionHistory();
+        }
+        if (users.isNotEmpty) {
+          _adminUsers = users;
+        } else if (_adminUsers.isEmpty) {
+          _loadFallbackAdminUsers();
+        }
+      });
 
       if (logs.isNotEmpty) {
         setState(() {
@@ -86,6 +99,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       debugPrint('Error loading admin data: $e');
       _loadFallbackData();
       _loadFallbackLogs();
+      _loadFallbackSuspensionHistory();
+      _loadFallbackAdminUsers();
     } finally {
       if (mounted) {
         setState(() {
@@ -207,6 +222,62 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         message:
             'Disbursed 70/30 pant revenue: 175.00 SEK to Anna Recycler, 75.00 SEK to Erik Helper', // l10n-ignore
         city: 'Stockholm',
+      ),
+    ];
+  }
+
+  void _loadFallbackSuspensionHistory() {
+    _suspensionHistory = const [
+      SuspensionHistoryModel(
+        id: 'hist-demo-1',
+        action: 'LIFTED',
+        userId: 'user-lars-123',
+        email: 'lars.recycler@example.com',
+        caseReferenceId: 'CASE-2026-SE-0012',
+        reason: 'BankID identity verified after security check',
+        actor: 'Admin Operator',
+        timestamp: '2026-09-13T14:30:00Z',
+      ),
+    ];
+  }
+
+  void _loadFallbackAdminUsers() {
+    _adminUsers = const [
+      AdminUserModel(
+        userId: 'anna-recycler-id',
+        displayName: 'Anna Recycler',
+        email: 'anna.recycler@example.com',
+        role: 'user',
+      ),
+      AdminUserModel(
+        userId: 'erik-helper-id',
+        displayName: 'Erik Helper',
+        email: 'erik.helper@example.com',
+        role: 'helper',
+      ),
+      AdminUserModel(
+        userId: 'johan-recycler-id',
+        displayName: 'Johan Recycler',
+        email: 'johan.recycler@example.com',
+        role: 'user',
+      ),
+      AdminUserModel(
+        userId: 'sara-recycler-id',
+        displayName: 'Sara Recycler',
+        email: 'sara.recycler@example.com',
+        role: 'user',
+      ),
+      AdminUserModel(
+        userId: 'karin-recycler-id',
+        displayName: 'Karin Recycler',
+        email: 'karin.recycler@example.com',
+        role: 'user',
+      ),
+      AdminUserModel(
+        userId: 'oskar-helper-id',
+        displayName: 'Oskar Helper',
+        email: 'oskar.helper@example.com',
+        role: 'helper',
       ),
     ];
   }
@@ -1080,39 +1151,74 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  context.l10n.activeSuspensionsCount(activeBlocks.length),
-                  style:
-                      TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                FilledButton.icon(
+                  key: const Key('suspend_user_action_button'),
+                  onPressed: _showSuspendUserDialog,
+                  icon: const Icon(Icons.block, size: 16),
+                  label: Text(context.l10n.suspendUserAction),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.redAccent,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 8),
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.centerRight,
-              child: FilledButton.icon(
-                onPressed: _showSuspendUserDialog,
-                icon: const Icon(Icons.block, size: 16),
-                label: Text(context.l10n.suspendUserAction),
-                style: FilledButton.styleFrom(
-                  backgroundColor: Colors.redAccent,
+            const SizedBox(height: 14),
+
+            // Tab selector for Active vs History
+            SegmentedButton<int>(
+              key: const Key('suspension_tab_selector'),
+              segments: [
+                ButtonSegment<int>(
+                  value: 0,
+                  icon: const Icon(Icons.shield, size: 16),
+                  label: Text(
+                      '${context.l10n.activeTabLabel} (${activeBlocks.length})'),
                 ),
-              ),
+                ButtonSegment<int>(
+                  value: 1,
+                  icon: const Icon(Icons.history, size: 16),
+                  label: Text(
+                      '${context.l10n.historyTabLabel} (${_suspensionHistory.length})'),
+                ),
+              ],
+              selected: {_suspensionTab},
+              onSelectionChanged: (selected) {
+                setState(() {
+                  _suspensionTab = selected.first;
+                });
+              },
             ),
-            const SizedBox(height: 12),
-            if (activeBlocks.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                child: Center(
-                  child: Text(
-                    context.l10n.noActiveSuspensions,
-                    style: TextStyle(color: Colors.grey.shade600),
+            const SizedBox(height: 14),
+
+            if (_suspensionTab == 0) ...[
+              if (activeBlocks.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: Center(
+                    child: Text(
+                      context.l10n.noActiveSuspensions,
+                      style: TextStyle(color: Colors.grey.shade600),
+                    ),
                   ),
-                ),
-              )
-            else
-              ...activeBlocks.map(_buildUserBlockCard),
+                )
+              else
+                ...activeBlocks.map(_buildUserBlockCard),
+            ] else ...[
+              if (_suspensionHistory.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: Center(
+                    child: Text(
+                      context.l10n.noSuspensionHistory,
+                      style: TextStyle(color: Colors.grey.shade600),
+                    ),
+                  ),
+                )
+              else
+                ..._suspensionHistory.map(_buildSuspensionHistoryCard),
+            ],
           ],
         ),
       ),
@@ -1177,144 +1283,569 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
-  Future<void> _showSuspendUserDialog() async {
-    final userController = TextEditingController();
-    final caseController = TextEditingController();
-    final reasonController = TextEditingController();
-    final expiryController = TextEditingController();
+  Widget _buildSuspensionHistoryCard(SuspensionHistoryModel hist) {
+    final isSuspended = hist.action == 'SUSPENDED'; // l10n-ignore
+    final isLifted = hist.action == 'LIFTED'; // l10n-ignore
 
-    await showDialog<void>(
-      context: context,
-      builder: (dialogCtx) => AlertDialog(
-        title: Text(dialogCtx.l10n.suspendUserAction),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+    final Color badgeBg;
+    final Color badgeText;
+    final String actionLabel;
+    final IconData actionIcon;
+
+    if (isSuspended) {
+      badgeBg = Colors.red.shade100;
+      badgeText = Colors.red.shade900;
+      actionLabel = context.l10n.historyActionSuspended;
+      actionIcon = Icons.block;
+    } else if (isLifted) {
+      badgeBg = Colors.green.shade100;
+      badgeText = Colors.green.shade900;
+      actionLabel = context.l10n.historyActionLifted;
+      actionIcon = Icons.check_circle_outline;
+    } else {
+      badgeBg = Colors.orange.shade100;
+      badgeText = Colors.orange.shade900;
+      actionLabel = context.l10n.historyActionExpired;
+      actionIcon = Icons.timer_outlined;
+    }
+
+    final formattedDate = hist.timestamp.length >= 16
+        ? hist.timestamp.substring(0, 16).replaceAll('T', ' ')
+        : hist.timestamp;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              TextField(
-                controller: userController,
-                decoration: InputDecoration(
-                  labelText: dialogCtx.l10n.userIdOrEmailLabel,
+              Expanded(
+                child: Text(
+                  hist.email.isNotEmpty ? hist.email : hist.userId,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: caseController,
-                decoration: InputDecoration(
-                  labelText: dialogCtx.l10n.caseReferenceIdLabel,
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: badgeBg,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: reasonController,
-                decoration: InputDecoration(
-                  labelText: dialogCtx.l10n.suspensionReasonLabel,
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: expiryController,
-                decoration: InputDecoration(
-                  labelText: dialogCtx.l10n.optionalExpiryDateLabel,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(actionIcon, size: 12, color: badgeText),
+                    const SizedBox(width: 4),
+                    Text(
+                      actionLabel,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: badgeText,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogCtx).pop(),
-            child: Text(dialogCtx.l10n.cancel),
+          const SizedBox(height: 6),
+          Text(
+            '${context.l10n.caseReferenceIdLabel}: ${hist.caseReferenceId}',
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
-            onPressed: () async {
-              final user = userController.text.trim();
-              final caseId = caseController.text.trim();
-              final reason = reasonController.text.trim();
-              final expiry = expiryController.text.trim();
-
-              if (user.isEmpty || caseId.isEmpty || reason.isEmpty) return;
-
-              final token = await _authService.getToken() ?? '';
-              final success = await _adminApiService.blockUser(
-                token: token,
-                userId: user,
-                email: user.contains('@') ? user : null,
-                caseReferenceId: caseId,
-                reason: reason,
-                expiresAt: expiry.isNotEmpty ? expiry : null,
-              );
-
-              if (mounted && dialogCtx.mounted) {
-                Navigator.of(dialogCtx).pop();
-                if (success) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(context.l10n.userSuspendedSuccess)),
-                  );
-                  _loadAdminData();
-                }
-              }
-            },
-            child: Text(dialogCtx.l10n.confirm),
+          const SizedBox(height: 2),
+          Text(
+            '${context.l10n.suspensionReasonLabel}: ${hist.reason}',
+            style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Text(
+                context.l10n.performedByLabel(hist.actor),
+                style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+              ),
+              const Spacer(),
+              Text(
+                formattedDate,
+                style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Future<void> _showUnblockUserDialog(UserBlockModel block) async {
-    final reasonController = TextEditingController();
+  Future<void> _showSuspendUserDialog() async {
+    final now = DateTime.now();
+    final defaultCaseId =
+        'CASE-${now.year}-${now.millisecondsSinceEpoch.toString().substring(7)}';
+    final caseController = TextEditingController(text: defaultCaseId);
+
+    // Prepare known users for dropdown
+    final availableUsers = _adminUsers.isNotEmpty
+        ? _adminUsers
+        : const [
+            AdminUserModel(
+              userId: 'anna-id',
+              displayName: 'Anna Recycler',
+              email: 'anna.recycler@example.com',
+            ),
+            AdminUserModel(
+              userId: 'erik-id',
+              displayName: 'Erik Helper',
+              email: 'erik.helper@example.com',
+            ),
+            AdminUserModel(
+              userId: 'johan-id',
+              displayName: 'Johan Recycler',
+              email: 'johan.recycler@example.com',
+            ),
+          ];
+
+    String selectedUserValue = availableUsers.first.email.isNotEmpty
+        ? availableUsers.first.email
+        : availableUsers.first.userId;
+    final userController = TextEditingController(text: selectedUserValue);
+    bool isCustomUser = false;
+
+    // Standard Reasons
+    final l10n = context.l10n;
+    final standardReasons = [
+      l10n.reasonMissedPickups,
+      l10n.reasonFraudulentReceipt,
+      l10n.reasonHarassment,
+      l10n.reasonMultiAccount,
+      l10n.reasonSafetyViolation,
+      l10n.reasonIdentityReview,
+    ];
+    String selectedReasonValue = standardReasons.first;
+    final reasonController = TextEditingController(text: selectedReasonValue);
+    bool isCustomReason = false;
+
+    // Durations: Indefinite (0), 1d, 3d, 7d, 14d, 30d, custom (-1)
+    int selectedDurationDays = 0;
+    final expiryController = TextEditingController();
 
     await showDialog<void>(
       context: context,
-      builder: (dialogCtx) => AlertDialog(
-        title: Text(dialogCtx.l10n.unblockUserAction),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('${dialogCtx.l10n.caseReferenceIdLabel}: ${block.caseReferenceId}'),
-            const SizedBox(height: 12),
-            TextField(
-              controller: reasonController,
-              decoration: InputDecoration(
-                labelText: dialogCtx.l10n.suspensionReasonLabel,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          final dl10n = dialogCtx.l10n;
+
+          return AlertDialog(
+            title: Row(
+              children: [
+                const Icon(Icons.block, color: Colors.redAccent, size: 22),
+                const SizedBox(width: 8),
+                Text(dl10n.suspendUserAction),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 1. User Dropdown
+                  Text(
+                    dl10n.selectUserDropdownLabel,
+                    style: const TextStyle(
+                        fontSize: 12, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 4),
+                  DropdownButtonFormField<String>(
+                    key: const Key('suspend_user_dropdown'),
+                    value: isCustomUser ? '__custom__' : selectedUserValue, // l10n-ignore
+                    isExpanded: true,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                    ),
+                    items: [
+                      ...availableUsers.map((u) {
+                        final identifier =
+                            u.email.isNotEmpty ? u.email : u.userId;
+                        final label = u.displayName.isNotEmpty
+                            ? '${u.displayName} ($identifier)'
+                            : identifier;
+                        return DropdownMenuItem<String>(
+                          value: identifier,
+                          child: Text(label, overflow: TextOverflow.ellipsis),
+                        );
+                      }),
+                      DropdownMenuItem<String>(
+                        value: '__custom__', // l10n-ignore
+                        child: Text(dl10n.customUserOption,
+                            style:
+                                const TextStyle(fontStyle: FontStyle.italic)),
+                      ),
+                    ],
+                    onChanged: (val) {
+                      if (val == null) return;
+                      setDialogState(() {
+                        if (val == '__custom__') { // l10n-ignore
+                          isCustomUser = true;
+                          userController.text = '';
+                        } else {
+                          isCustomUser = false;
+                          selectedUserValue = val;
+                          userController.text = val;
+                        }
+                      });
+                    },
+                  ),
+                  if (isCustomUser) ...[
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: userController,
+                      decoration: InputDecoration(
+                        labelText: dl10n.userIdOrEmailLabel,
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+
+                  // 2. Reason Dropdown
+                  Text(
+                    dl10n.selectReasonDropdownLabel,
+                    style: const TextStyle(
+                        fontSize: 12, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 4),
+                  DropdownButtonFormField<String>(
+                    key: const Key('suspend_reason_dropdown'),
+                    value:
+                        isCustomReason ? '__custom__' : selectedReasonValue, // l10n-ignore
+                    isExpanded: true,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                    ),
+                    items: [
+                      ...standardReasons.map((r) => DropdownMenuItem<String>(
+                            value: r,
+                            child: Text(r, overflow: TextOverflow.ellipsis),
+                          )),
+                      DropdownMenuItem<String>(
+                        value: '__custom__', // l10n-ignore
+                        child: Text(dl10n.customReasonOption,
+                            style:
+                                const TextStyle(fontStyle: FontStyle.italic)),
+                      ),
+                    ],
+                    onChanged: (val) {
+                      if (val == null) return;
+                      setDialogState(() {
+                        if (val == '__custom__') { // l10n-ignore
+                          isCustomReason = true;
+                          reasonController.text = '';
+                        } else {
+                          isCustomReason = false;
+                          selectedReasonValue = val;
+                          reasonController.text = val;
+                        }
+                      });
+                    },
+                  ),
+                  if (isCustomReason) ...[
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: reasonController,
+                      decoration: InputDecoration(
+                        labelText: dl10n.suspensionReasonLabel,
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+
+                  // 3. Duration Dropdown
+                  Text(
+                    dl10n.selectDurationDropdownLabel,
+                    style: const TextStyle(
+                        fontSize: 12, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 4),
+                  DropdownButtonFormField<int>(
+                    key: const Key('suspend_duration_dropdown'),
+                    value: selectedDurationDays,
+                    isExpanded: true,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                    ),
+                    items: [
+                      DropdownMenuItem<int>(
+                        value: 0,
+                        child: Text(dl10n.durationIndefinite),
+                      ),
+                      DropdownMenuItem<int>(
+                        value: 1,
+                        child: Text(dl10n.duration1Day),
+                      ),
+                      DropdownMenuItem<int>(
+                        value: 3,
+                        child: Text(dl10n.duration3Days),
+                      ),
+                      DropdownMenuItem<int>(
+                        value: 7,
+                        child: Text(dl10n.duration7Days),
+                      ),
+                      DropdownMenuItem<int>(
+                        value: 14,
+                        child: Text(dl10n.duration14Days),
+                      ),
+                      DropdownMenuItem<int>(
+                        value: 30,
+                        child: Text(dl10n.duration30Days),
+                      ),
+                      DropdownMenuItem<int>(
+                        value: -1,
+                        child: Text(dl10n.durationCustom),
+                      ),
+                    ],
+                    onChanged: (val) {
+                      if (val == null) return;
+                      setDialogState(() {
+                        selectedDurationDays = val;
+                        if (val == 0) {
+                          expiryController.text = '';
+                        } else if (val > 0) {
+                          expiryController.text = DateTime.now()
+                              .add(Duration(days: val))
+                              .toIso8601String();
+                        } else {
+                          expiryController.text = '';
+                        }
+                      });
+                    },
+                  ),
+                  if (selectedDurationDays == -1) ...[
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: expiryController,
+                      decoration: InputDecoration(
+                        labelText: dl10n.durationCustom,
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+
+                  // 4. Case Reference ID
+                  TextField(
+                    controller: caseController,
+                    decoration: InputDecoration(
+                      labelText: dl10n.caseReferenceIdLabel,
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogCtx).pop(),
-            child: Text(dialogCtx.l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () async {
-              final reason = reasonController.text.trim();
-              if (reason.isEmpty) return;
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogCtx).pop(),
+                child: Text(dl10n.cancel),
+              ),
+              FilledButton(
+                key: const Key('confirm_suspend_button'),
+                style:
+                    FilledButton.styleFrom(backgroundColor: Colors.redAccent),
+                onPressed: () async {
+                  final user = userController.text.trim();
+                  final caseId = caseController.text.trim();
+                  final reason = reasonController.text.trim();
+                  final expiry = expiryController.text.trim();
 
-              final token = await _authService.getToken() ?? '';
-              final success = await _adminApiService.unblockUser(
-                token: token,
-                userId: block.userId,
-                reason: reason,
-                caseReferenceId: block.caseReferenceId,
-              );
+                  if (user.isEmpty || caseId.isEmpty || reason.isEmpty) return;
 
-              if (mounted && dialogCtx.mounted) {
-                Navigator.of(dialogCtx).pop();
-                if (success) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(context.l10n.userUnblockedSuccess)),
+                  final token = await _authService.getToken() ?? '';
+                  final success = await _adminApiService.blockUser(
+                    token: token,
+                    userId: user,
+                    email: user.contains('@') ? user : null,
+                    caseReferenceId: caseId,
+                    reason: reason,
+                    expiresAt: expiry.isNotEmpty ? expiry : null,
                   );
-                  _loadAdminData();
-                }
-              }
-            },
-            child: Text(dialogCtx.l10n.confirm),
-          ),
-        ],
+
+                  if (mounted && dialogCtx.mounted) {
+                    Navigator.of(dialogCtx).pop();
+                    if (success) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text(context.l10n.userSuspendedSuccess)),
+                      );
+                      _loadAdminData();
+                    }
+                  }
+                },
+                child: Text(dl10n.confirm),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _showUnblockUserDialog(UserBlockModel block) async {
+    final l10n = context.l10n;
+    final standardUnblockReasons = [
+      l10n.unblockAppealApproved,
+      l10n.unblockPenaltyServed,
+      l10n.unblockFalseReport,
+      l10n.unblockDisputeResolved,
+      l10n.unblockAdminError,
+    ];
+
+    String selectedUnblockReason = standardUnblockReasons.first;
+    final reasonController = TextEditingController(text: selectedUnblockReason);
+    bool isCustomReason = false;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          final dl10n = dialogCtx.l10n;
+
+          return AlertDialog(
+            title: Row(
+              children: [
+                const Icon(Icons.check_circle_outline,
+                    color: Colors.green, size: 22),
+                const SizedBox(width: 8),
+                Text(dl10n.unblockUserAction),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${dl10n.caseReferenceIdLabel}: ${block.caseReferenceId}',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  dl10n.selectUnblockReasonDropdownLabel,
+                  style: const TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 4),
+                DropdownButtonFormField<String>(
+                  key: const Key('unblock_reason_dropdown'),
+                  value: isCustomReason ? '__custom__' : selectedUnblockReason, // l10n-ignore
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 8),
+                  ),
+                  items: [
+                    ...standardUnblockReasons
+                        .map((r) => DropdownMenuItem<String>(
+                              value: r,
+                              child:
+                                  Text(r, overflow: TextOverflow.ellipsis),
+                            )),
+                    DropdownMenuItem<String>(
+                      value: '__custom__', // l10n-ignore
+                      child: Text(dl10n.customReasonOption,
+                          style:
+                              const TextStyle(fontStyle: FontStyle.italic)),
+                    ),
+                  ],
+                  onChanged: (val) {
+                    if (val == null) return;
+                    setDialogState(() {
+                      if (val == '__custom__') { // l10n-ignore
+                        isCustomReason = true;
+                        reasonController.text = '';
+                      } else {
+                        isCustomReason = false;
+                        selectedUnblockReason = val;
+                        reasonController.text = val;
+                      }
+                    });
+                  },
+                ),
+                if (isCustomReason) ...[
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: reasonController,
+                    decoration: InputDecoration(
+                      labelText: dl10n.suspensionReasonLabel,
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogCtx).pop(),
+                child: Text(dl10n.cancel),
+              ),
+              FilledButton(
+                key: const Key('confirm_unblock_button'),
+                style: FilledButton.styleFrom(backgroundColor: Colors.green),
+                onPressed: () async {
+                  final reason = reasonController.text.trim();
+                  if (reason.isEmpty) return;
+
+                  final token = await _authService.getToken() ?? '';
+                  final success = await _adminApiService.unblockUser(
+                    token: token,
+                    userId: block.userId,
+                    reason: reason,
+                    caseReferenceId: block.caseReferenceId,
+                  );
+
+                  if (mounted && dialogCtx.mounted) {
+                    Navigator.of(dialogCtx).pop();
+                    if (success) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text(context.l10n.userUnblockedSuccess)),
+                      );
+                      _loadAdminData();
+                    }
+                  }
+                },
+                child: Text(dl10n.confirm),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

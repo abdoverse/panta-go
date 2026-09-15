@@ -201,3 +201,53 @@ func TestUserSuspension_Expiry(t *testing.T) {
 		t.Errorf("expected user with past expiry to not be blocked")
 	}
 }
+
+func TestUserSuspension_HistoryAndUsersEndpoints(t *testing.T) {
+	mux := http.NewServeMux()
+	registerAuthRoutes(mux)
+	registerAdminRoutes(mux)
+
+	adminToken := generateTestAdminToken()
+
+	// 1. GET /api/v1/admin/users
+	reqUsers := httptest.NewRequest(http.MethodGet, "/api/v1/admin/users", nil)
+	reqUsers.Header.Set("Authorization", "Bearer "+adminToken)
+	rrUsers := httptest.NewRecorder()
+	mux.ServeHTTP(rrUsers, reqUsers)
+
+	if rrUsers.Code != http.StatusOK {
+		t.Fatalf("expected admin users status 200, got %d", rrUsers.Code)
+	}
+
+	var usersResp struct {
+		Users []AdminUserInfo `json:"users"`
+		Count int             `json:"count"`
+	}
+	if err := json.Unmarshal(rrUsers.Body.Bytes(), &usersResp); err != nil {
+		t.Fatalf("failed to decode users response: %v", err)
+	}
+	if len(usersResp.Users) == 0 {
+		t.Fatalf("expected non-empty users list")
+	}
+
+	// 2. GET /api/v1/admin/users/suspensions/history
+	reqHist := httptest.NewRequest(http.MethodGet, "/api/v1/admin/users/suspensions/history", nil)
+	reqHist.Header.Set("Authorization", "Bearer "+adminToken)
+	rrHist := httptest.NewRecorder()
+	mux.ServeHTTP(rrHist, reqHist)
+
+	if rrHist.Code != http.StatusOK {
+		t.Fatalf("expected suspension history status 200, got %d", rrHist.Code)
+	}
+
+	var histResp struct {
+		History []SuspensionHistoryEntry `json:"history"`
+		Count   int                      `json:"count"`
+	}
+	if err := json.Unmarshal(rrHist.Body.Bytes(), &histResp); err != nil {
+		t.Fatalf("failed to decode history response: %v", err)
+	}
+	if len(histResp.History) == 0 {
+		t.Fatalf("expected non-empty suspension history")
+	}
+}
