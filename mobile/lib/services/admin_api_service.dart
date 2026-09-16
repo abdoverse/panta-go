@@ -460,6 +460,49 @@ class AdminApiService {
     return [];
   }
 
+  Future<MarketNotification?> createMarketNotification({
+    required String token,
+    required String market,
+    required String title,
+    String? titleSv,
+    required String message,
+    String? messageSv,
+    String severity = 'warning',
+    bool dismissible = true,
+  }) async {
+    try {
+      final uri = ApiConfig.apiUri('/api/v1/admin/market/notifications');
+      final response = await _client.post(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode({
+          'market': market,
+          'title': title,
+          if (titleSv != null && titleSv.isNotEmpty) 'titleSv': titleSv,
+          'message': message,
+          if (messageSv != null && messageSv.isNotEmpty) 'messageSv': messageSv,
+          'severity': severity,
+          'active': true,
+          'dismissible': dismissible,
+        }),
+      );
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final decoded = json.decode(response.body);
+        if (decoded is Map<String, dynamic>) {
+          return MarketNotification.fromJson(decoded);
+        }
+      }
+      debugPrint(
+          'Admin createMarketNotification failed: ${response.statusCode}');
+    } catch (e) {
+      debugPrint('Admin createMarketNotification error: $e');
+    }
+    return null;
+  }
+
   Future<MarketNotification?> simulateMarketNotification({
     required String token,
   }) async {

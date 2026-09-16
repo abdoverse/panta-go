@@ -184,5 +184,50 @@ void main() {
       await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
     });
+
+    testWidgets('renders Market Announcements section and allows opening broadcast dialog', (WidgetTester tester) async {
+      SharedPreferences.setMockInitialValues(const {});
+      final provider = PantaProvider();
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider.value(
+          value: provider,
+          child: const MaterialApp(
+            localizationsDelegates: [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: AdminDashboardPage(),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Scroll to Market Announcements section
+      final broadcastBtn = find.byKey(const Key('broadcast_announcement_action_button'));
+      await tester.scrollUntilVisible(
+        broadcastBtn,
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(broadcastBtn, findsOneWidget);
+      expect(find.byKey(const Key('simulate_outage_action_button')), findsOneWidget);
+      expect(find.text('Market Announcements'), findsOneWidget);
+
+      // Open broadcast announcement dialog
+      await tester.tap(broadcastBtn);
+      await tester.pumpAndSettle();
+
+      // Verify dialog is rendered with action button
+      expect(find.byKey(const Key('submit_announcement_button')), findsOneWidget);
+
+      // Close dialog
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+    });
   });
 }

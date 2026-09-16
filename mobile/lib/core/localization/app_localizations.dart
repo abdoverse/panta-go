@@ -953,6 +953,35 @@ class AppLocalizations {
       _isSwedish ? 'Simulera driftstörning' : 'Simulate technical issue';
   String get simulateTechnicalIssueSuccess =>
       _isSwedish ? 'Driftmeddelande aktiverat' : 'Market notice activated';
+  String get marketAnnouncementsTitle =>
+      _isSwedish ? 'Driftmeddelanden & Marknadsnotiser' : 'Market Announcements';
+  String get marketAnnouncementsSubtitle => _isSwedish
+      ? 'Skicka driftmeddelanden i realtid till app- och webbanvändare utan pushnotiser.'
+      : 'Broadcast real-time operational messages to app and web users without push notifications.';
+  String get broadcastNewAnnouncement =>
+      _isSwedish ? 'Skicka nytt meddelande' : 'Broadcast Announcement';
+  String get noActiveAnnouncements =>
+      _isSwedish ? 'Inga aktiva driftmeddelanden.' : 'No active market announcements.';
+  String get announcementTitleLabel =>
+      _isSwedish ? 'Rubrik (Engelska)' : 'Title (English)';
+  String get announcementTitleSvLabel =>
+      _isSwedish ? 'Rubrik (Svenska)' : 'Title (Swedish)';
+  String get announcementMessageLabel =>
+      _isSwedish ? 'Meddelande (Engelska)' : 'Message (English)';
+  String get announcementMessageSvLabel =>
+      _isSwedish ? 'Meddelande (Svenska)' : 'Message (Swedish)';
+  String get severityLabel =>
+      _isSwedish ? 'Allvarlighetsgrad' : 'Severity';
+  String get marketTargetLabel =>
+      _isSwedish ? 'Målmarknad' : 'Target Market';
+  String get broadcastSuccess =>
+      _isSwedish ? 'Meddelandet har skickats' : 'Announcement broadcasted successfully';
+  String get broadcastFailed =>
+      _isSwedish ? 'Kunde inte skicka meddelandet' : 'Failed to broadcast announcement';
+  String get activeToggleLabel =>
+      _isSwedish ? 'Aktiv' : 'Active';
+  String get dismissibleLabel =>
+      _isSwedish ? 'Användare kan stänga notisen' : 'Dismissible by users';
 }
 
 class _AppLocalizationsDelegate

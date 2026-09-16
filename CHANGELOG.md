@@ -17,7 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added Flutter data model (`MarketNotification`) and HTTP fetch service (`MarketNotificationService`) with local dismissal persistence in `SharedPreferences`.
   - Added top-level animated banner (`MarketNotificationBanner`) in `MaterialApp.builder` in `app.dart` displaying cleanly across mobile viewports and desktop web viewports for all pages and user roles (login, recycler, helper, admin).
   - Integrated auto-refreshing in `PantaProvider` upon market switch (`setMarket`), dashboard pull-to-refresh (`UserHomePage` & `HelperHomePage`), and app initialization.
-  - Added full test coverage: Go backend unit tests (`market_notifications_test.go`) and Flutter unit & widget tests (`market_notification_test.dart`), maintaining 100% compliance with `l10n_guard_test.dart`.
+  - Added Market Announcements management section and broadcast dialog to `AdminDashboardPage`:
+    - Allows administrators to view all active and historical operational announcements.
+    - Added one-tap "Broadcast Announcement" modal dialog with target market selector (`ALL`, `SE`, `NO`, `DK`, `FI`, etc.), severity levels (`warning`, `critical`, `info`), and dual-language (Swedish/English) title and message composition.
+    - Added instant toggle switch to activate or deactivate individual announcements.
+    - Added one-tap "Simulate technical issue" action button for operational drills.
+  - Added full test coverage: Go backend unit tests (`market_notifications_test.go`) and Flutter unit & widget tests (`market_notification_test.dart`, `admin_dashboard_test.dart`), maintaining 100% compliance with `l10n_guard_test.dart`.
 
 ### Fixed
 - **Web Tooltip Hover Crash (`minified:jx<void>`)**: Resolved Flutter Web exception triggered when hovering over the notification banner dismiss button by replacing the default tooltip overlay trigger and enclosing the root builder in an `Overlay`.

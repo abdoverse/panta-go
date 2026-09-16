@@ -4,6 +4,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../models/market_notification.dart';
 import '../../providers/panta_provider.dart';
 import '../../services/admin_api_service.dart';
 import '../../services/auth_service.dart';
@@ -29,6 +30,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   List<UserBlockModel> _userBlocks = [];
   List<SuspensionHistoryModel> _suspensionHistory = [];
   List<AdminUserModel> _adminUsers = [];
+  List<MarketNotification> _marketNotifications = [];
   int _suspensionTab = 0; // 0 = Active, 1 = History
   CityTrendModel? _selectedCity;
 
@@ -54,6 +56,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       final blocks = await _adminApiService.fetchUserBlocks(token: token);
       final hist = await _adminApiService.fetchSuspensionHistory(token: token);
       final users = await _adminApiService.fetchAdminUsers(token: token);
+      final notifs =
+          await _adminApiService.fetchMarketNotificationsAdmin(token: token);
 
       if (overview != null) {
         setState(() {
@@ -86,6 +90,11 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         } else if (_adminUsers.isEmpty) {
           _loadFallbackAdminUsers();
         }
+        if (notifs.isNotEmpty) {
+          _marketNotifications = notifs;
+        } else if (_marketNotifications.isEmpty) {
+          _loadFallbackMarketNotifications();
+        }
       });
 
       if (logs.isNotEmpty) {
@@ -101,6 +110,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       _loadFallbackLogs();
       _loadFallbackSuspensionHistory();
       _loadFallbackAdminUsers();
+      _loadFallbackMarketNotifications();
     } finally {
       if (mounted) {
         setState(() {
@@ -108,6 +118,28 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         });
       }
     }
+  }
+
+  void _loadFallbackMarketNotifications() {
+    setState(() {
+      _marketNotifications = [
+        MarketNotification(
+          id: 'market-notice-tech-issue-1', // l10n-ignore
+          market: 'ALL', // l10n-ignore
+          title: 'Technical Issues', // l10n-ignore
+          titleSv: 'Tekniska problem', // l10n-ignore
+          message:
+              'We are experiencing some technical issues and are looking into it.', // l10n-ignore
+          messageSv:
+              'Vi upplever för närvarande vissa tekniska problem och undersöker saken.', // l10n-ignore
+          severity: MarketNotificationSeverity.warning,
+          active: true,
+          dismissible: true,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+      ];
+    });
   }
 
   void _loadFallbackData() {
@@ -456,6 +488,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                     _buildLogsSection(),
                     const SizedBox(height: 20),
                     _buildFeedbackSection(),
+                    const SizedBox(height: 20),
+                    _buildMarketAnnouncementsSection(),
                     const SizedBox(height: 20),
                     _buildUserSuspensionsSection(),
                     const SizedBox(height: 20),
@@ -1116,6 +1150,420 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           fontWeight: FontWeight.bold,
         ),
       ),
+    );
+  }
+
+  Widget _buildMarketAnnouncementsSection() {
+    final isSwedish =
+        Localizations.localeOf(context).languageCode == 'sv'; // l10n-ignore
+
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 12,
+              runSpacing: 10,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.campaign_outlined,
+                        color: AppTheme.primaryGreen, size: 24),
+                    const SizedBox(width: 8),
+                    Text(
+                      context.l10n.marketAnnouncementsTitle,
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    OutlinedButton.icon(
+                      key: const Key('simulate_outage_action_button'),
+                      onPressed: _simulateOutage,
+                      icon: const Icon(Icons.warning_amber_rounded, size: 16),
+                      label: Text(context.l10n.simulateTechnicalIssue),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.orange.shade800,
+                        side: BorderSide(color: Colors.orange.shade300),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 8),
+                      ),
+                    ),
+                    FilledButton.icon(
+                      key: const Key('broadcast_announcement_action_button'),
+                      onPressed: _showBroadcastDialog,
+                      icon: const Icon(Icons.add_alert_rounded, size: 16),
+                      label: Text(context.l10n.broadcastNewAnnouncement),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppTheme.primaryGreen,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              context.l10n.marketAnnouncementsSubtitle,
+              style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+            ),
+            const SizedBox(height: 14),
+            if (_marketNotifications.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                child: Center(
+                  child: Text(
+                    context.l10n.noActiveAnnouncements,
+                    style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade500,
+                        fontStyle: FontStyle.italic),
+                  ),
+                ),
+              )
+            else
+              ..._marketNotifications.map((notif) =>
+                  _buildMarketNotificationCard(notif, isSwedish)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMarketNotificationCard(
+      MarketNotification notif, bool isSwedish) {
+    final title = notif.localizedTitle(isSwedish);
+    final message = notif.localizedMessage(isSwedish);
+
+    Color badgeColor;
+    Color badgeTextColor;
+    if (notif.severity == MarketNotificationSeverity.critical ||
+        notif.severity == MarketNotificationSeverity.incident) {
+      badgeColor = Colors.red.shade50;
+      badgeTextColor = Colors.red.shade700;
+    } else if (notif.severity == MarketNotificationSeverity.info) {
+      badgeColor = Colors.blue.shade50;
+      badgeTextColor = Colors.blue.shade700;
+    } else {
+      badgeColor = Colors.amber.shade50;
+      badgeTextColor = Colors.amber.shade900;
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: notif.active ? AppTheme.surfaceWhite : Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: notif.active
+              ? badgeTextColor.withValues(alpha: 0.3)
+              : Colors.grey.shade300,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: badgeColor,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  notif.market,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: badgeTextColor,
+                  ),
+                ),
+                Text(
+                  notif.severity.toValue().toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w600,
+                    color: badgeTextColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: notif.active
+                        ? AppTheme.textPrimary
+                        : Colors.grey.shade600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  message,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: notif.active
+                        ? AppTheme.textSecondary
+                        : Colors.grey.shade500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Switch(
+            value: notif.active,
+            activeColor: AppTheme.primaryGreen,
+            onChanged: (val) => _toggleNotification(notif, val),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _toggleNotification(
+      MarketNotification notif, bool newActive) async {
+    final token = await _authService.getToken() ?? '';
+    final success = await _adminApiService.toggleMarketNotification(
+      token: token,
+      id: notif.id,
+      active: newActive,
+    );
+
+    if (success || token.isEmpty) {
+      setState(() {
+        final idx =
+            _marketNotifications.indexWhere((n) => n.id == notif.id);
+        if (idx != -1) {
+          _marketNotifications[idx] = notif.copyWith(active: newActive);
+        }
+      });
+      if (mounted) {
+        Provider.of<PantaProvider>(context, listen: false)
+            .fetchMarketNotifications();
+      }
+    }
+  }
+
+  Future<void> _simulateOutage() async {
+    final token = await _authService.getToken() ?? '';
+    final result =
+        await _adminApiService.simulateMarketNotification(token: token);
+
+    if (result != null) {
+      setState(() {
+        _marketNotifications.insert(0, result);
+      });
+      if (mounted) {
+        Provider.of<PantaProvider>(context, listen: false)
+            .fetchMarketNotifications();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.l10n.simulateTechnicalIssueSuccess),
+            backgroundColor: Colors.orange.shade800,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showBroadcastDialog() {
+    final titleEnCtrl = TextEditingController();
+    final titleSvCtrl = TextEditingController();
+    final messageEnCtrl = TextEditingController();
+    final messageSvCtrl = TextEditingController();
+    String selectedMarket = 'ALL'; // l10n-ignore
+    String selectedSeverity = 'warning'; // l10n-ignore
+    bool dismissible = true;
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+              title: Row(
+                children: [
+                  const Icon(Icons.campaign_rounded,
+                      color: AppTheme.primaryGreen),
+                  const SizedBox(width: 8),
+                  Text(context.l10n.broadcastNewAnnouncement),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    DropdownButtonFormField<String>(
+                      value: selectedMarket,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        labelText: context.l10n.marketTargetLabel,
+                        border: const OutlineInputBorder(),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 8),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'ALL', child: Text('ALL (*)')), // l10n-ignore
+                        DropdownMenuItem(value: 'SE', child: Text('Sweden (SE)')), // l10n-ignore
+                        DropdownMenuItem(value: 'NO', child: Text('Norway (NO)')), // l10n-ignore
+                        DropdownMenuItem(value: 'DK', child: Text('Denmark (DK)')), // l10n-ignore
+                        DropdownMenuItem(value: 'FI', child: Text('Finland (FI)')), // l10n-ignore
+                        DropdownMenuItem(value: 'DE', child: Text('Germany (DE)')), // l10n-ignore
+                        DropdownMenuItem(value: 'US', child: Text('United States (US)')), // l10n-ignore
+                        DropdownMenuItem(value: 'GB', child: Text('United Kingdom (GB)')), // l10n-ignore
+                      ],
+                      onChanged: (val) {
+                        if (val != null) {
+                          setDialogState(() => selectedMarket = val);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    DropdownButtonFormField<String>(
+                      value: selectedSeverity,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        labelText: context.l10n.severityLabel,
+                        border: const OutlineInputBorder(),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 8),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'warning', child: Text('Warning')), // l10n-ignore
+                        DropdownMenuItem(value: 'critical', child: Text('Critical')), // l10n-ignore
+                        DropdownMenuItem(value: 'info', child: Text('Info')), // l10n-ignore
+                      ],
+                      onChanged: (val) {
+                        if (val != null) {
+                          setDialogState(() => selectedSeverity = val);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: titleEnCtrl,
+                      decoration: InputDecoration(
+                        labelText: context.l10n.announcementTitleLabel,
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: titleSvCtrl,
+                      decoration: InputDecoration(
+                        labelText: context.l10n.announcementTitleSvLabel,
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: messageEnCtrl,
+                      maxLines: 2,
+                      decoration: InputDecoration(
+                        labelText: context.l10n.announcementMessageLabel,
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: messageSvCtrl,
+                      maxLines: 2,
+                      decoration: InputDecoration(
+                        labelText: context.l10n.announcementMessageSvLabel,
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    CheckboxListTile(
+                      value: dismissible,
+                      title: Text(context.l10n.dismissibleLabel),
+                      controlAffinity: ListTileControlAffinity.leading,
+                      contentPadding: EdgeInsets.zero,
+                      onChanged: (val) {
+                        setDialogState(() => dismissible = val ?? true);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogCtx).pop(),
+                  child: Text(context.l10n.cancel),
+                ),
+                FilledButton(
+                  key: const Key('submit_announcement_button'),
+                  onPressed: () async {
+                    final title = titleEnCtrl.text.trim();
+                    final message = messageEnCtrl.text.trim();
+                    if (message.isEmpty) return;
+
+                    final token = await _authService.getToken() ?? '';
+                    final created =
+                        await _adminApiService.createMarketNotification(
+                      token: token,
+                      market: selectedMarket,
+                      title: title.isEmpty ? 'Service Notice' : title, // l10n-ignore
+                      titleSv: titleSvCtrl.text.trim(),
+                      message: message,
+                      messageSv: messageSvCtrl.text.trim(),
+                      severity: selectedSeverity,
+                      dismissible: dismissible,
+                    );
+
+                    if (mounted) {
+                      Navigator.of(dialogCtx).pop();
+                      if (created != null) {
+                        setState(() {
+                          _marketNotifications.insert(0, created);
+                        });
+                        Provider.of<PantaProvider>(context, listen: false)
+                            .fetchMarketNotifications();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(context.l10n.broadcastSuccess),
+                            backgroundColor: AppTheme.primaryGreen,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppTheme.primaryGreen,
+                  ),
+                  child: Text(context.l10n.broadcastNewAnnouncement),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
