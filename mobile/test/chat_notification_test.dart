@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:panta/core/localization/app_localizations.dart';
+import 'package:panta/features/chat/chat_bottom_sheet.dart';
 import 'package:panta/features/chat/chat_notification_banner.dart';
 import 'package:panta/features/dashboard/widgets/helper_job_card.dart';
 import 'package:panta/features/dashboard/widgets/user_request_card.dart';
@@ -482,6 +483,183 @@ void main() {
 
       expect(find.text('Anna Recycler'), findsOneWidget);
       expect(find.text('Hej! Jag är hemma nu.'), findsOneWidget);
+    });
+
+    testWidgets('Tapping Open on banner opens ChatBottomSheet', (tester) async {
+      final rootNavKey = GlobalKey<NavigatorState>();
+      final provider = PantaProvider();
+      await provider.restoreSession();
+
+      final req = RecyclingRequest(
+        id: 'req-open-1',
+        title: 'Glass bottles',
+        scheduledFrom: DateTime.now(),
+        scheduledTo: DateTime.now().add(const Duration(hours: 1)),
+        location: 'Storgatan 4',
+        status: RequestStatus.accepted,
+      );
+      provider.requests.add(req);
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<PantaProvider>.value(
+          value: provider,
+          child: MaterialApp(
+            navigatorKey: rootNavKey,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [Locale('en'), Locale('sv')],
+            home: const Scaffold(body: Text('Home Screen')),
+            builder: (context, child) => Overlay(
+              initialEntries: [
+                OverlayEntry(
+                  builder: (overlayCtx) => ChatNotificationListener(
+                    navigatorKey: rootNavKey,
+                    child: child!,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final incoming = ChatMessage(
+        id: 'msg-open-1',
+        requestId: 'req-open-1',
+        senderId: 'helper-42',
+        senderRole: 'helper',
+        senderName: 'Erik Helper',
+        text: 'Jag är vid dörren!',
+        createdAt: DateTime.now(),
+      );
+
+      provider.handleIncomingChatMessage(incoming);
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Open'), findsOneWidget);
+
+      await tester.tap(find.text('Open'));
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ChatBottomSheet), findsOneWidget);
+    });
+
+    testWidgets('Tapping Open on banner opens ChatBottomSheet even if request is not preloaded', (tester) async {
+      final rootNavKey = GlobalKey<NavigatorState>();
+      final provider = PantaProvider();
+      await provider.restoreSession();
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<PantaProvider>.value(
+          value: provider,
+          child: MaterialApp(
+            navigatorKey: rootNavKey,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [Locale('en'), Locale('sv')],
+            home: const Scaffold(body: Text('Home Screen')),
+            builder: (context, child) => Overlay(
+              initialEntries: [
+                OverlayEntry(
+                  builder: (overlayCtx) => ChatNotificationListener(
+                    navigatorKey: rootNavKey,
+                    child: child!,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final incoming = ChatMessage(
+        id: 'msg-unknown-1',
+        requestId: 'req-unknown-999',
+        senderId: 'helper-42',
+        senderRole: 'helper',
+        senderName: 'Erik Helper',
+        text: 'Jag är utanför porten!',
+        createdAt: DateTime.now(),
+      );
+
+      provider.handleIncomingChatMessage(incoming);
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Open'), findsOneWidget);
+
+      await tester.tap(find.text('Open'));
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ChatBottomSheet), findsOneWidget);
+    });
+
+    testWidgets('Tapping the banner card body opens ChatBottomSheet', (tester) async {
+      final rootNavKey = GlobalKey<NavigatorState>();
+      final provider = PantaProvider();
+      await provider.restoreSession();
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<PantaProvider>.value(
+          value: provider,
+          child: MaterialApp(
+            navigatorKey: rootNavKey,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [Locale('en'), Locale('sv')],
+            home: const Scaffold(body: Text('Home Screen')),
+            builder: (context, child) => Overlay(
+              initialEntries: [
+                OverlayEntry(
+                  builder: (overlayCtx) => ChatNotificationListener(
+                    navigatorKey: rootNavKey,
+                    child: child!,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final incoming = ChatMessage(
+        id: 'msg-body-1',
+        requestId: 'req-body-1',
+        senderId: 'helper-42',
+        senderRole: 'helper',
+        senderName: 'Erik Helper',
+        text: 'Jag är vid dörren nu!',
+        createdAt: DateTime.now(),
+      );
+
+      provider.handleIncomingChatMessage(incoming);
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      // Tap on the text body of the banner (hitting the InkWell)
+      await tester.tap(find.text('Jag är vid dörren nu!'));
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ChatBottomSheet), findsOneWidget);
     });
   });
 }

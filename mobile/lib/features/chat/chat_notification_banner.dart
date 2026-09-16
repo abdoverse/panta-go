@@ -89,6 +89,8 @@ class _ChatNotificationListenerState extends State<ChatNotificationListener>
     });
   }
 
+  bool _isOpeningChat = false;
+
   void _dismiss() {
     _dismissTimer?.cancel();
     if (mounted && _animController.status != AnimationStatus.dismissed) {
@@ -96,14 +98,20 @@ class _ChatNotificationListenerState extends State<ChatNotificationListener>
         if (mounted) {
           setState(() {
             _activeNotification = null;
+            _isOpeningChat = false;
           });
           context.read<PantaProvider>().clearLastIncomingChatMessage();
         }
       });
+    } else {
+      _isOpeningChat = false;
     }
   }
 
   void _openChat(PantaProvider provider, ChatMessage msg) {
+    if (_isOpeningChat) return;
+    _isOpeningChat = true;
+
     _dismiss();
     provider.markChatAsRead(msg.requestId);
 
@@ -115,14 +123,32 @@ class _ChatNotificationListenerState extends State<ChatNotificationListener>
       }
     }
 
-    final navContext = widget.navigatorKey?.currentContext ?? context;
-    if (targetRequest != null) {
-      ChatBottomSheet.show(
-        navContext,
-        request: targetRequest,
-        isHelper: provider.isHelper,
-      );
-    }
+    // Fallback if request is not yet loaded into memory
+    targetRequest ??= RecyclingRequest(
+      id: msg.requestId,
+      title: msg.senderName.isNotEmpty
+          ? msg.senderName
+          : (mounted ? context.l10n.newPickupRequest : 'Request'), // l10n-ignore
+      creatorName: msg.senderRole == 'helper' ? null : msg.senderName,
+      creatorId: msg.senderRole == 'helper' ? null : msg.senderId,
+      helperName: msg.senderRole == 'helper' ? msg.senderName : null,
+      helperId: msg.senderRole == 'helper' ? msg.senderId : null,
+      scheduledFrom: msg.createdAt,
+      scheduledTo: msg.createdAt.add(const Duration(hours: 2)),
+      location: '',
+      status: RequestStatus.accepted,
+    );
+    provider.fetchRequests(silent: true);
+
+    final navContext = widget.navigatorKey?.currentState?.context ??
+        widget.navigatorKey?.currentContext ??
+        (Navigator.maybeOf(context)?.context ?? context);
+
+    ChatBottomSheet.show(
+      navContext,
+      request: targetRequest,
+      isHelper: provider.isHelper,
+    );
   }
 
   @override
@@ -146,10 +172,12 @@ class _ChatNotificationListenerState extends State<ChatNotificationListener>
       }
     }
 
+    final activeMsg = _activeNotification;
+
     return Stack(
       children: [
         widget.child,
-        if (_activeNotification != null)
+        if (activeMsg != null)
           Positioned(
             top: MediaQuery.paddingOf(context).top + 12,
             left: 16,
@@ -163,8 +191,8 @@ class _ChatNotificationListenerState extends State<ChatNotificationListener>
                   child: FadeTransition(
                     opacity: _fadeAnimation,
                     child: _ChatBannerCard(
-                      message: _activeNotification!,
-                      onOpen: () => _openChat(provider, _activeNotification!),
+                      message: activeMsg,
+                      onOpen: () => _openChat(provider, activeMsg),
                       onDismiss: _dismiss,
                     ),
                   ),
