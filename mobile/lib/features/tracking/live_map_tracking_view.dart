@@ -1,10 +1,9 @@
-
 import 'package:flutter/material.dart';
 import '../../../core/localization/app_localizations.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/request_model.dart';
 import '../../services/eta_service.dart';
+import '../shared/widgets/location_actions.dart';
 
 class LiveMapTrackingView extends StatefulWidget {
   final RecyclingRequest request;
@@ -25,33 +24,33 @@ class LiveMapTrackingView extends StatefulWidget {
 
 class _LiveMapTrackingViewState extends State<LiveMapTrackingView>
     with SingleTickerProviderStateMixin {
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
-
-  // Coordinate defaults (Stockholm center if not specified)
   late double _pickupLat;
   late double _pickupLng;
   late double _helperLat;
   late double _helperLng;
   late double _initialHelperLat;
   late double _initialHelperLng;
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
 
   @override
   void initState() {
     super.initState();
+    _pickupLat = widget.request.locationLatitude ?? 59.3293;
+    _pickupLng = widget.request.locationLongitude ?? 18.0686;
+
+    _helperLat = widget.request.helperLatitude ?? (_pickupLat + 0.015);
+    _helperLng = widget.request.helperLongitude ?? (_pickupLng + 0.015);
+
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
 
-    _pulseAnimation = Tween<double>(begin: 0.85, end: 1.15).animate(
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
 
-    _pickupLat = widget.request.locationLatitude ?? 59.3293;
-    _pickupLng = widget.request.locationLongitude ?? 18.0686;
-    _helperLat = widget.request.helperLatitude ?? (_pickupLat + 0.012);
-    _helperLng = widget.request.helperLongitude ?? (_pickupLng + 0.014);
     _initialHelperLat = _helperLat;
     _initialHelperLng = _helperLng;
   }
@@ -63,12 +62,11 @@ class _LiveMapTrackingViewState extends State<LiveMapTrackingView>
   }
 
   Future<void> _openExternalMaps() async {
-    final url = Uri.parse(
-      'https://www.google.com/maps/dir/?api=1&destination=$_pickupLat,$_pickupLng',
+    await LocationActions.launchMapApp(
+      context: context,
+      addressOrCoordinates: '$_pickupLat,$_pickupLng',
+      directions: true,
     );
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    }
   }
 
   void _stepSimulation() {
