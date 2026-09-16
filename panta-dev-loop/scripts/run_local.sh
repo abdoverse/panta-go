@@ -124,7 +124,7 @@ start_backend() {
     AWS_REGION=eu-north-1 \
     COGNITO_USER_POOL_ID=eu-north-1_Rg7i36e8Q \
     PORT="" \
-    nohup ./bin/api > "$BACKEND_LOG" 2>&1 &
+    setsid ./bin/api > "$BACKEND_LOG" 2>&1 &
     local b_pid=$!
     disown "$b_pid" 2>/dev/null || true
     echo "$b_pid" > "$BACKEND_PID_FILE"
@@ -139,19 +139,23 @@ start_frontend() {
     fi
 
     local web_build_dir="$FRONTEND_DIR/build/web"
-    if [ -z "$GOOGLE_MAPS_API_KEY" ]; then
-        echo "⚠️ GOOGLE_MAPS_API_KEY is not configured; admin map will remain unavailable."
+    if [ ! -f "$web_build_dir/index.html" ] || [ "${FORCE_BUILD:-0}" = "1" ]; then
+        if [ -z "$GOOGLE_MAPS_API_KEY" ]; then
+            echo "⚠️ GOOGLE_MAPS_API_KEY is not configured; admin map will remain unavailable."
+        fi
+        echo "🔨 Building Flutter web bundle for the local backend..."
+        cd "$FRONTEND_DIR"
+        flutter build web --release --no-wasm-dry-run --dart-define=API_BASE_URL="$API_BASE_URL"
+        if [ -n "$GOOGLE_MAPS_API_KEY" ]; then
+            sed -i "s|__GOOGLE_MAPS_API_KEY__|$GOOGLE_MAPS_API_KEY|g" "$web_build_dir/index.html"
+        fi
+        cd "$PROJECT_ROOT"
+    else
+        echo "⚡ Using existing Flutter web bundle in $web_build_dir (set FORCE_BUILD=1 to rebuild)"
     fi
-    echo "🔨 Building Flutter web bundle for the local backend..."
-    cd "$FRONTEND_DIR"
-    flutter build web --release --no-wasm-dry-run --dart-define=API_BASE_URL="$API_BASE_URL"
-    if [ -n "$GOOGLE_MAPS_API_KEY" ]; then
-        sed -i "s|__GOOGLE_MAPS_API_KEY__|$GOOGLE_MAPS_API_KEY|g" "$web_build_dir/index.html"
-    fi
-    cd "$PROJECT_ROOT"
 
     echo "🚀 Starting fast Flutter web server on port $FRONTEND_PORT..."
-    nohup python3 -m http.server "$FRONTEND_PORT" \
+    setsid python3 -m http.server "$FRONTEND_PORT" \
         --directory "$web_build_dir" \
         --bind 0.0.0.0 \
         > "$FRONTEND_LOG" 2>&1 &
@@ -237,6 +241,17 @@ case "$1" in
         check_frontend_health
         show_instructions
         ;;
+    dev)
+        start_backend
+        check_backend_health
+        seed_demo_data
+        echo "⚡ Launching Flutter dev server on port $FRONTEND_PORT with Hot Reload..."
+        cd "$FRONTEND_DIR"
+        flutter run -d web-server \
+            --web-hostname 0.0.0.0 \
+            --web-port "$FRONTEND_PORT" \
+            --dart-define=API_BASE_URL="$API_BASE_URL"
+        ;;
     stop)
         stop_all
         ;;
@@ -258,7 +273,7 @@ case "$1" in
         tail -f "$BACKEND_LOG" "$FRONTEND_LOG"
         ;;
     *)
-        echo "Usage: $0 {start|stop|restart|status|seed|browse|logs}"
+        echo "Usage: $0 {start|dev|stop|restart|status|seed|browse|logs}"
         exit 1
         ;;
 esac

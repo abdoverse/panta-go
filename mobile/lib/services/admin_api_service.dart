@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import '../models/market_notification.dart';
 import 'api_config.dart';
 
 class AdminFeedbackModel {
@@ -428,6 +429,87 @@ class AdminApiService {
       debugPrint('Admin fetchAdminUsers error: $e');
     }
     return [];
+  }
+
+  Future<List<MarketNotification>> fetchMarketNotificationsAdmin({
+    required String token,
+  }) async {
+    try {
+      final uri = ApiConfig.apiUri('/api/v1/admin/market/notifications');
+      final response = await _client.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final decoded = json.decode(response.body);
+        if (decoded is List) {
+          return decoded
+              .whereType<Map<String, dynamic>>()
+              .map(MarketNotification.fromJson)
+              .toList();
+        }
+      }
+      debugPrint(
+          'Admin fetchMarketNotificationsAdmin failed: ${response.statusCode}');
+    } catch (e) {
+      debugPrint('Admin fetchMarketNotificationsAdmin error: $e');
+    }
+    return [];
+  }
+
+  Future<MarketNotification?> simulateMarketNotification({
+    required String token,
+  }) async {
+    try {
+      final uri =
+          ApiConfig.apiUri('/api/v1/admin/market/notifications/simulate');
+      final response = await _client.post(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final decoded = json.decode(response.body);
+        if (decoded is Map<String, dynamic>) {
+          return MarketNotification.fromJson(decoded);
+        }
+      }
+      debugPrint(
+          'Admin simulateMarketNotification failed: ${response.statusCode}');
+    } catch (e) {
+      debugPrint('Admin simulateMarketNotification error: $e');
+    }
+    return null;
+  }
+
+  Future<bool> toggleMarketNotification({
+    required String token,
+    required String id,
+    required bool active,
+  }) async {
+    try {
+      final uri = ApiConfig.apiUri('/api/v1/admin/market/notifications');
+      final response = await _client.put(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode({
+          'id': id,
+          'active': active,
+        }),
+      );
+      return response.statusCode >= 200 && response.statusCode < 300;
+    } catch (e) {
+      debugPrint('Admin toggleMarketNotification error: $e');
+      return false;
+    }
   }
 }
 

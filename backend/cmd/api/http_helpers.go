@@ -219,6 +219,7 @@ func registerRoutes(mux *http.ServeMux) {
 	registerRealtimeRoutes(mux)
 	registerAdminRoutes(mux)
 	registerLegalRoutes(mux)
+	registerMarketNotificationRoutes(mux)
 }
 
 func registerCoreRoutes(mux *http.ServeMux) {

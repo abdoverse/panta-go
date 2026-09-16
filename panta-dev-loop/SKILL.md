@@ -9,9 +9,11 @@ This skill brings up and manages the **complete Panta application stack locally 
 
 ## Quick Start: Run the Whole App Locally
 
-To start the full stack (Backend + Seed Data + Flutter Web):
+To start the full stack (Backend + Seed Data + Fast Flutter Web):
 ```bash
 scripts/run_local.sh start
+# Or start in interactive Hot-Reload mode (no release build):
+scripts/run_local.sh dev
 # or via manage_loop.sh:
 scripts/manage_loop.sh local start
 ```

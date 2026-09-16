@@ -21,8 +21,11 @@ This workspace operates with **non-critical action auto-approval**:
 Run the full local stack in the browser for manual or automated verification:
 
 ```bash
-# Start backend (8080) and Flutter web (3000)
+# Start backend (8080) and fast Flutter web (3000) using cached bundle
 ./panta-dev-loop/scripts/run_local.sh start
+
+# Start interactive local stack with Flutter Hot Reload (no release build)
+./panta-dev-loop/scripts/run_local.sh dev
 
 # Check status of local services
 ./panta-dev-loop/scripts/run_local.sh status
@@ -44,10 +47,12 @@ Access points:
 
 ---
 
-## Testing & Verification
-Before delivering changes, ensure all automated verification checks pass:
-- **Backend Tests**: `cd backend && go test ./...`
-- **Mobile / Web Tests**: `cd mobile && flutter test`
+## Testing & Fast Feedback Loop
+Use the optimized test runner `./scripts/fast_test.sh`:
+- **Full Stack Fast Verification (~40s)**: `./scripts/fast_test.sh all`
+- **Targeted Mobile Test (~8-12s)**: `./scripts/fast_test.sh mobile <pattern-or-file>` (e.g. `./scripts/fast_test.sh mobile market_notification`)
+- **Aggregated Mobile Suite (~35s)**: `./scripts/fast_test.sh mobile`
+- **Backend Tests (~1-2s)**: `./scripts/fast_test.sh backend` (or `cd backend && go test ./...`)
 
 ---
 

@@ -210,7 +210,10 @@ void main() {
     testWidgets('UserRequestCard renders arrival banner cleanly with doorbell icon and no overflow', (tester) async {
       tester.view.physicalSize = const Size(360, 800);
       tester.view.devicePixelRatio = 1.0;
-      addTearDown(() => tester.view.resetPhysicalSize());
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
 
       final provider = PantaProvider();
       await provider.restoreSession();

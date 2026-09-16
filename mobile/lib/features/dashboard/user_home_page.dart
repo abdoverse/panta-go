@@ -182,7 +182,10 @@ class _DashboardView extends StatelessWidget {
 
     return RefreshIndicator(
       onRefresh: () async {
-        await context.read<PantaProvider>().fetchRequests();
+        await Future.wait([
+          context.read<PantaProvider>().fetchRequests(),
+          context.read<PantaProvider>().fetchMarketNotifications(silent: true),
+        ]);
       },
       child: CustomScrollView(
         slivers: [

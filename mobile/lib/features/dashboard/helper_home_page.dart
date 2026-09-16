@@ -160,8 +160,11 @@ class _MarketplaceView extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: () async {
         final provider = context.read<PantaProvider>();
-        await provider.refreshHelperLocation();
-        await provider.fetchRequests();
+        await Future.wait([
+          provider.refreshHelperLocation(),
+          provider.fetchRequests(),
+          provider.fetchMarketNotifications(silent: true),
+        ]);
       },
       child: CustomScrollView(
         slivers: [

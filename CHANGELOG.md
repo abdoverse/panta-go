@@ -4,6 +4,31 @@ All notable changes to the Panta Go project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-09-16
+
+### Added
+- **Market-Based In-App Notification System (Client-Fetched Operational Notices)**:
+  - Implemented client-side server-fetched market notification system that does not rely on push notifications or device tokens.
+  - Added backend endpoints:
+    - `GET /api/v1/market/notifications?market={market}`: Public endpoint returning active operational notices targeted to the requested market (`SE`, `NO`, etc.) or global (`ALL` / `*`) system announcements.
+    - `POST /api/v1/admin/market/notifications`: Admin-protected endpoint to broadcast operational notices with title, Swedish/English text, severity (`warning`, `critical`, `info`), and dismissibility flags.
+    - `POST /api/v1/admin/market/notifications/simulate`: Endpoint for testing and simulated technical outage announcements.
+  - Added in-memory thread-safe store pre-seeded with: `"We are experiencing some technical issues and are looking into it."` (`"Vi upplever för närvarande vissa tekniska problem och undersöker saken."`).
+  - Added Flutter data model (`MarketNotification`) and HTTP fetch service (`MarketNotificationService`) with local dismissal persistence in `SharedPreferences`.
+  - Added top-level animated banner (`MarketNotificationBanner`) in `MaterialApp.builder` in `app.dart` displaying cleanly across mobile viewports and desktop web viewports for all pages and user roles (login, recycler, helper, admin).
+  - Integrated auto-refreshing in `PantaProvider` upon market switch (`setMarket`), dashboard pull-to-refresh (`UserHomePage` & `HelperHomePage`), and app initialization.
+  - Added full test coverage: Go backend unit tests (`market_notifications_test.go`) and Flutter unit & widget tests (`market_notification_test.dart`), maintaining 100% compliance with `l10n_guard_test.dart`.
+
+### Fixed
+- **Web Tooltip Hover Crash (`minified:jx<void>`)**: Resolved Flutter Web exception triggered when hovering over the notification banner dismiss button by replacing the default tooltip overlay trigger and enclosing the root builder in an `Overlay`.
+- **Test Runner State Leakage**: Fixed un-reset `tester.view.devicePixelRatio` teardown leaks across `admin_user_suspension_test.dart`, `arrived_at_door_test.dart`, `cookie_consent_test.dart`, and `profile_screen_test.dart`, restoring test isolation across all suites.
+
+### Changed
+- **Ultra-Fast Local Feedback Loop & Tooling**:
+  - Added [`scripts/fast_test.sh`](scripts/fast_test.sh) providing targeted sub-12s test execution (`fast_test.sh mobile <pattern>`) and an aggregated runner executing all 114+ Flutter tests in ~40s (down from 80+s sequential run).
+  - Added `dev` target in `panta-dev-loop/scripts/run_local.sh dev` launching interactive hot reload on port 3000 without requiring 92-second release builds.
+  - Cached web builds in `run_local.sh start` to reuse existing bundles when `build/web/index.html` is present.
+
 ## [1.4.0] - 2026-09-14
 
 ### Added

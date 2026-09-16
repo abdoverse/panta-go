@@ -12,6 +12,7 @@ import '../core/localization/app_localizations.dart';
 import '../models/chat_message.dart';
 import '../models/cookie_consent.dart';
 import '../models/impact_summary.dart';
+import '../models/market_notification.dart';
 import '../models/request_model.dart';
 import '../services/analytics_api_service.dart';
 import '../services/api_config.dart';
@@ -20,6 +21,7 @@ import '../services/bankid_service.dart';
 import '../services/chat_api_service.dart';
 import '../services/cookie_consent_service.dart';
 import '../services/location_service.dart';
+import '../services/market_notification_service.dart';
 import '../services/panta_state_services.dart' as panta_state;
 import '../services/request_api_service.dart';
 import '../core/utils/sound_helper.dart';
@@ -56,6 +58,7 @@ class PantaProvider extends ChangeNotifier {
   final BankIdService _bankIdService;
   final LocationService _locationService;
   final CookieConsentService _cookieConsentService;
+  final MarketNotificationService _marketNotificationService;
 
   final panta_state.PantaAuthState _authState = panta_state.PantaAuthState();
   final panta_state.PantaRequestState _requestState =
@@ -73,6 +76,9 @@ class PantaProvider extends ChangeNotifier {
   Locale _locale = AppLocalizations.supportedLocales.first;
   CookieConsent? _cookieConsent;
   bool _isCookieConsentLoaded = false;
+  List<MarketNotification> _marketNotifications = const [];
+  Set<String> _dismissedMarketNotificationIds = <String>{};
+  bool _isFetchingMarketNotifications = false;
 
   PantaProvider({
     AuthService? authService,
@@ -82,13 +88,17 @@ class PantaProvider extends ChangeNotifier {
     BankIdService? bankIdService,
     LocationService? locationService,
     CookieConsentService? cookieConsentService,
+    MarketNotificationService? marketNotificationService,
   })  : _authService = authService ?? AuthService(),
         _requestApiService = requestApiService ?? RequestApiService(),
         _chatApiService = chatApiService ?? ChatApiService(),
         _analyticsApiService = analyticsApiService ?? AnalyticsApiService(),
         _bankIdService = bankIdService ?? BankIdService(),
         _locationService = locationService ?? LocationService(),
-        _cookieConsentService = cookieConsentService ?? CookieConsentService() {
+        _cookieConsentService =
+            cookieConsentService ?? CookieConsentService(),
+        _marketNotificationService =
+            marketNotificationService ?? MarketNotificationService() {
     _initialize();
   }
 
@@ -133,7 +143,21 @@ class PantaProvider extends ChangeNotifier {
   void setMarket(String marketCode) {
     _currentMarket = marketCode.toUpperCase();
     notifyListeners();
+    fetchMarketNotifications(marketCode: _currentMarket, silent: true);
   }
+
+  // --- Market Notifications (In-App Operational Status) ---
+  List<MarketNotification> get marketNotifications => _marketNotifications;
+  MarketNotification? get activeMarketNotification {
+    for (final notif in _marketNotifications) {
+      if (notif.active && !_dismissedMarketNotificationIds.contains(notif.id)) {
+        return notif;
+      }
+    }
+    return null;
+  }
+  bool get hasActiveMarketNotification => activeMarketNotification != null;
+  bool get isFetchingMarketNotifications => _isFetchingMarketNotifications;
 
   String get currencyCode =>
       AppConstants.getProfileForMarket(_currentMarket).currencyCode;
@@ -276,6 +300,7 @@ class PantaProvider extends ChangeNotifier {
   Future<void> _initialize() async {
     await _loadSavedLocale();
     await _loadCookieConsent();
+    await fetchMarketNotifications(silent: true);
     await restoreSession();
   }
 
@@ -323,6 +348,47 @@ class PantaProvider extends ChangeNotifier {
     _cookieConsent = null;
     notifyListeners();
     await _cookieConsentService.clearConsent();
+  }
+
+  // --- Market Notifications Actions ---
+
+  Future<void> fetchMarketNotifications({
+    String? marketCode,
+    bool silent = false,
+  }) async {
+    if (!silent) {
+      _isFetchingMarketNotifications = true;
+      notifyListeners();
+    }
+    final targetMarket = marketCode ?? _currentMarket;
+    try {
+      final results = await _marketNotificationService.fetchMarketNotifications(
+        market: targetMarket,
+      );
+      final dismissed =
+          await _marketNotificationService.getDismissedNotificationIds();
+      _marketNotifications = results;
+      _dismissedMarketNotificationIds = dismissed;
+    } catch (e) {
+      debugPrint('fetchMarketNotifications error: $e');
+    } finally {
+      if (!silent) {
+        _isFetchingMarketNotifications = false;
+      }
+      notifyListeners();
+    }
+  }
+
+  Future<void> dismissMarketNotification(String id) async {
+    _dismissedMarketNotificationIds.add(id);
+    notifyListeners();
+    await _marketNotificationService.dismissNotification(id);
+  }
+
+  Future<void> clearDismissedMarketNotifications() async {
+    _dismissedMarketNotificationIds.clear();
+    notifyListeners();
+    await _marketNotificationService.clearDismissed();
   }
 
   // --- Realtime WebSocket Messaging ---

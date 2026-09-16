@@ -10,6 +10,7 @@ import 'features/dashboard/user_home_page.dart';
 import 'features/auth/login_page.dart';
 import 'features/chat/chat_notification_banner.dart';
 import 'features/shared/cookie_consent_banner.dart';
+import 'features/shared/market_notification_banner.dart';
 import 'providers/panta_provider.dart';
 
 class PantaApp extends StatefulWidget {
@@ -78,14 +79,42 @@ class _PantaAppState extends State<PantaApp> {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       home: const _AuthGate(),
-      builder: (context, child) => ChatNotificationListener(
-        navigatorKey: rootNavigatorKey,
-        child: Stack(
-          children: [
-            if (child != null) child,
-            const CookieConsentBanner(),
-          ],
-        ),
+      builder: (context, child) => Overlay(
+        initialEntries: [
+          OverlayEntry(
+            builder: (overlayCtx) => ChatNotificationListener(
+              navigatorKey: rootNavigatorKey,
+              child: Stack(
+                children: [
+                  Column(
+                    children: [
+                      MarketNotificationBanner(navigatorKey: rootNavigatorKey),
+                      Expanded(
+                        child: Builder(
+                          builder: (innerCtx) {
+                            final hasBanner = innerCtx
+                                    .watch<PantaProvider>()
+                                    .activeMarketNotification !=
+                                null;
+                            if (hasBanner && child != null) {
+                              return MediaQuery.removePadding(
+                                context: innerCtx,
+                                removeTop: true,
+                                child: child,
+                              );
+                            }
+                            return child ?? const SizedBox.shrink();
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const CookieConsentBanner(),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
       localizationsDelegates: const [
         AppLocalizations.delegate,

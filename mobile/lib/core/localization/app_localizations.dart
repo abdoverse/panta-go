@@ -934,6 +934,25 @@ class AppLocalizations {
   String get unblockAdminError => _isSwedish
       ? 'Administrativt misstag / fel användare avstängd'
       : 'Administrative error / mistaken identity';
+
+  // Market Notifications & Operational Notices
+  String get marketNoticeTitle =>
+      _isSwedish ? 'Driftinformation' : 'Market Notice';
+  String get marketNoticeDismiss => _isSwedish ? 'Stäng' : 'Dismiss';
+  String get marketNoticeLearnMore => _isSwedish ? 'Mer info' : 'Details';
+  String get technicalIssuesTitle =>
+      _isSwedish ? 'Tekniska problem' : 'Technical Issues';
+  String get technicalIssuesDefault => _isSwedish
+      ? 'Vi upplever för närvarande vissa tekniska problem och undersöker saken.'
+      : 'We are experiencing some technical issues and are looking into it.';
+  String get marketNoticeStatus =>
+      _isSwedish ? 'Driftstatus' : 'System Status';
+  String get marketNoticeActiveBadge =>
+      _isSwedish ? 'DRIFTMEDDELANDE' : 'MARKET NOTICE';
+  String get simulateTechnicalIssue =>
+      _isSwedish ? 'Simulera driftstörning' : 'Simulate technical issue';
+  String get simulateTechnicalIssueSuccess =>
+      _isSwedish ? 'Driftmeddelande aktiverat' : 'Market notice activated';
 }
 
 class _AppLocalizationsDelegate
