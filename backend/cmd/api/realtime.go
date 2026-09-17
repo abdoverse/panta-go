@@ -70,200 +70,211 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodGet:
-		requestID := strings.TrimSpace(r.URL.Query().Get("requestId"))
-		if requestID == "" {
-			http.Error(w, "requestId is required", http.StatusBadRequest)
-			return
-		}
-
-		out, err := svc.GetItem(r.Context(), &dynamodb.GetItemInput{
-			TableName: aws.String(tableName),
-			Key: map[string]types.AttributeValue{
-				"id": &types.AttributeValueMemberS{Value: requestID},
-			},
-		})
-		if err != nil || len(out.Item) == 0 {
-			http.Error(w, "Request not found", http.StatusNotFound)
-			return
-		}
-
-		var req RecyclingRequest
-		if err := attributevalue.UnmarshalMap(out.Item, &req); err != nil {
-			http.Error(w, "Failed to parse request", http.StatusInternalServerError)
-			return
-		}
-
-		req.Messages = sanitizeAndDecryptMessages(req.Messages, req.ID)
-
-		jsonResponse(w, http.StatusOK, map[string]interface{}{
-			"requestId": req.ID,
-			"messages":  req.Messages,
-		})
-
+		handleGetChat(w, r, claims)
 	case http.MethodPost:
-		var payload SendChatMessagePayload
-		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-			http.Error(w, "Invalid request payload", http.StatusBadRequest)
-			return
-		}
-
-		payload.RequestID = strings.TrimSpace(payload.RequestID)
-		payload.Text = strings.TrimSpace(payload.Text)
-		if payload.RequestID == "" || payload.Text == "" {
-			http.Error(w, "requestId and text cannot be empty", http.StatusBadRequest)
-			return
-		}
-
-		out, err := svc.GetItem(r.Context(), &dynamodb.GetItemInput{
-			TableName: aws.String(tableName),
-			Key: map[string]types.AttributeValue{
-				"id": &types.AttributeValueMemberS{Value: payload.RequestID},
-			},
-		})
-		if err != nil || len(out.Item) == 0 {
-			http.Error(w, "Request not found", http.StatusNotFound)
-			return
-		}
-
-		var req RecyclingRequest
-		if err := attributevalue.UnmarshalMap(out.Item, &req); err != nil {
-			http.Error(w, "Failed to parse request", http.StatusInternalServerError)
-			return
-		}
-
-		senderID := claims.requestOwnerID()
-		if (req.CreatorID != "" || req.HelperID != "") && !claims.isParticipant(req.CreatorID, req.HelperID) {
-			http.Error(w, "Forbidden: not a participant of this request", http.StatusForbidden)
-			return
-		}
-
-		if claims.matchesUser(req.CreatorID) && req.CreatorID != "" {
-			senderID = req.CreatorID
-		} else if claims.matchesUser(req.HelperID) && req.HelperID != "" {
-			senderID = req.HelperID
-		}
-
-		senderName := strings.TrimSpace(claims.DisplayName)
-		if senderName == "" {
-			if claims.Role == "helper" {
-				senderName = "Helper"
-			} else {
-				senderName = "User"
-			}
-		}
-
-		newMsg := ChatMessage{
-			ID:          fmt.Sprintf("msg-%d", time.Now().UnixNano()),
-			RequestID:   payload.RequestID,
-			SenderID:    senderID,
-			SenderRole:  claims.Role,
-			SenderName:  senderName,
-			Text:        payload.Text,
-			MessageType: MessageTypeText,
-			IsPreset:    payload.IsPreset,
-			CreatedAt:   time.Now().UTC().Format(time.RFC3339),
-		}
-
-		encryptedMsg := newMsg
-		encryptedText, err := encryptChatMessageText(newMsg.Text, newMsg.RequestID)
-		if err != nil {
-			log.Printf("Failed to encrypt chat message: %v", err)
-			http.Error(w, "Failed to encrypt message", http.StatusInternalServerError)
-			return
-		}
-		encryptedMsg.Text = encryptedText
-
-		msgAV, err := attributevalue.Marshal(encryptedMsg)
-		if err != nil {
-			http.Error(w, "Failed to serialize message", http.StatusInternalServerError)
-			return
-		}
-
-		_, err = svc.UpdateItem(r.Context(), &dynamodb.UpdateItemInput{
-			TableName: aws.String(tableName),
-			Key: map[string]types.AttributeValue{
-				"id": &types.AttributeValueMemberS{Value: payload.RequestID},
-			},
-			UpdateExpression: aws.String("SET #msgs = list_append(if_not_exists(#msgs, :empty_list), :new_msg)"),
-			ExpressionAttributeNames: map[string]string{
-				"#msgs": "messages",
-			},
-			ExpressionAttributeValues: map[string]types.AttributeValue{
-				":empty_list": &types.AttributeValueMemberL{Value: []types.AttributeValue{}},
-				":new_msg":    &types.AttributeValueMemberL{Value: []types.AttributeValue{msgAV}},
-			},
-		})
-		if err != nil {
-			log.Printf("Failed to append chat message to DynamoDB: %v", err)
-			http.Error(w, "Failed to save message", http.StatusInternalServerError)
-			return
-		}
-
-		broadcastChatMessage(r.Context(), newMsg)
-
-		// Push notification to creator device when helper sends a message
-		if claims.Role == "helper" && req.CreatorDeviceToken != "" {
-			notifTitle := fmt.Sprintf("Message from %s", senderName)
-			go sendPushNotification(req.CreatorDeviceToken, notifTitle, payload.Text)
-		} else if (claims.Role == "user" || claims.Role == "recycler") && req.HelperDeviceToken != "" {
-			notifTitle := fmt.Sprintf("Message from %s", senderName)
-			go sendPushNotification(req.HelperDeviceToken, notifTitle, payload.Text)
-		}
-
-		jsonResponse(w, http.StatusCreated, newMsg)
-
+		handlePostChat(w, r, claims)
 	case http.MethodDelete:
-		requestID := strings.TrimSpace(r.URL.Query().Get("requestId"))
-		if requestID == "" {
-			http.Error(w, "requestId is required", http.StatusBadRequest)
-			return
-		}
-
-		out, err := svc.GetItem(r.Context(), &dynamodb.GetItemInput{
-			TableName: aws.String(tableName),
-			Key: map[string]types.AttributeValue{
-				"id": &types.AttributeValueMemberS{Value: requestID},
-			},
-		})
-		if err != nil || len(out.Item) == 0 {
-			http.Error(w, "Request not found", http.StatusNotFound)
-			return
-		}
-
-		var req RecyclingRequest
-		if err := attributevalue.UnmarshalMap(out.Item, &req); err != nil {
-			http.Error(w, "Failed to parse request", http.StatusInternalServerError)
-			return
-		}
-
-		if (req.CreatorID != "" || req.HelperID != "") && !claims.isParticipant(req.CreatorID, req.HelperID) {
-			http.Error(w, "Forbidden: not a participant of this request", http.StatusForbidden)
-			return
-		}
-
-		if err := eraseChatHistory(r.Context(), requestID); err != nil {
-			log.Printf("Failed to erase chat history for request %s: %v", requestID, err)
-			http.Error(w, "Failed to erase chat messages", http.StatusInternalServerError)
-			return
-		}
-
-		if hub != nil {
-			payload, _ := json.Marshal(map[string]interface{}{
-				"type":      "chat-erased",
-				"requestId": requestID,
-			})
-			hub.broadcast <- payload
-		}
-
-		jsonResponse(w, http.StatusOK, map[string]interface{}{
-			"status":    "erased",
-			"requestId": requestID,
-			"message":   "Chat history purged under GDPR Right to Erasure",
-		})
-
+		handleDeleteChat(w, r, claims)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
+}
+
+func handleGetChat(w http.ResponseWriter, r *http.Request, claims *Claims) {
+	requestID := strings.TrimSpace(r.URL.Query().Get("requestId"))
+	if requestID == "" {
+		http.Error(w, "requestId is required", http.StatusBadRequest)
+		return
+	}
+
+	out, err := svc.GetItem(r.Context(), &dynamodb.GetItemInput{
+		TableName: aws.String(tableName),
+		Key: map[string]types.AttributeValue{
+			"id": &types.AttributeValueMemberS{Value: requestID},
+		},
+	})
+	if err != nil || len(out.Item) == 0 {
+		http.Error(w, "Request not found", http.StatusNotFound)
+		return
+	}
+
+	var req RecyclingRequest
+	if err := attributevalue.UnmarshalMap(out.Item, &req); err != nil {
+		http.Error(w, "Failed to parse request", http.StatusInternalServerError)
+		return
+	}
+
+	req.Messages = sanitizeAndDecryptMessages(req.Messages, req.ID)
+
+	jsonResponse(w, http.StatusOK, map[string]interface{}{
+		"requestId": req.ID,
+		"messages":  req.Messages,
+	})
+}
+
+func handlePostChat(w http.ResponseWriter, r *http.Request, claims *Claims) {
+	var payload SendChatMessagePayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	payload.RequestID = strings.TrimSpace(payload.RequestID)
+	payload.Text = strings.TrimSpace(payload.Text)
+	if payload.RequestID == "" || payload.Text == "" {
+		http.Error(w, "requestId and text cannot be empty", http.StatusBadRequest)
+		return
+	}
+
+	out, err := svc.GetItem(r.Context(), &dynamodb.GetItemInput{
+		TableName: aws.String(tableName),
+		Key: map[string]types.AttributeValue{
+			"id": &types.AttributeValueMemberS{Value: payload.RequestID},
+		},
+	})
+	if err != nil || len(out.Item) == 0 {
+		http.Error(w, "Request not found", http.StatusNotFound)
+		return
+	}
+
+	var req RecyclingRequest
+	if err := attributevalue.UnmarshalMap(out.Item, &req); err != nil {
+		http.Error(w, "Failed to parse request", http.StatusInternalServerError)
+		return
+	}
+
+	senderID := claims.requestOwnerID()
+	if (req.CreatorID != "" || req.HelperID != "") && !claims.isParticipant(req.CreatorID, req.HelperID) {
+		http.Error(w, "Forbidden: not a participant of this request", http.StatusForbidden)
+		return
+	}
+
+	if claims.matchesUser(req.CreatorID) && req.CreatorID != "" {
+		senderID = req.CreatorID
+	} else if claims.matchesUser(req.HelperID) && req.HelperID != "" {
+		senderID = req.HelperID
+	}
+
+	senderName := strings.TrimSpace(claims.DisplayName)
+	if senderName == "" {
+		if claims.Role == "helper" {
+			senderName = "Helper"
+		} else {
+			senderName = "User"
+		}
+	}
+
+	newMsg := ChatMessage{
+		ID:          fmt.Sprintf("msg-%d", time.Now().UnixNano()),
+		RequestID:   payload.RequestID,
+		SenderID:    senderID,
+		SenderRole:  claims.Role,
+		SenderName:  senderName,
+		Text:        payload.Text,
+		MessageType: MessageTypeText,
+		IsPreset:    payload.IsPreset,
+		CreatedAt:   time.Now().UTC().Format(time.RFC3339),
+	}
+
+	encryptedMsg := newMsg
+	encryptedText, err := encryptChatMessageText(newMsg.Text, newMsg.RequestID)
+	if err != nil {
+		log.Printf("Failed to encrypt chat message: %v", err)
+		http.Error(w, "Failed to encrypt message", http.StatusInternalServerError)
+		return
+	}
+	encryptedMsg.Text = encryptedText
+
+	msgAV, err := attributevalue.Marshal(encryptedMsg)
+	if err != nil {
+		http.Error(w, "Failed to serialize message", http.StatusInternalServerError)
+		return
+	}
+
+	_, err = svc.UpdateItem(r.Context(), &dynamodb.UpdateItemInput{
+		TableName: aws.String(tableName),
+		Key: map[string]types.AttributeValue{
+			"id": &types.AttributeValueMemberS{Value: payload.RequestID},
+		},
+		UpdateExpression: aws.String("SET #msgs = list_append(if_not_exists(#msgs, :empty_list), :new_msg)"),
+		ExpressionAttributeNames: map[string]string{
+			"#msgs": "messages",
+		},
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":empty_list": &types.AttributeValueMemberL{Value: []types.AttributeValue{}},
+			":new_msg":    &types.AttributeValueMemberL{Value: []types.AttributeValue{msgAV}},
+		},
+	})
+	if err != nil {
+		log.Printf("Failed to append chat message to DynamoDB: %v", err)
+		http.Error(w, "Failed to save message", http.StatusInternalServerError)
+		return
+	}
+
+	broadcastChatMessage(r.Context(), newMsg)
+
+	// Push notification to creator device when helper sends a message
+	if claims.Role == "helper" && req.CreatorDeviceToken != "" {
+		notifTitle := fmt.Sprintf("Message from %s", senderName)
+		go sendPushNotification(req.CreatorDeviceToken, notifTitle, payload.Text)
+	} else if (claims.Role == "user" || claims.Role == "recycler") && req.HelperDeviceToken != "" {
+		notifTitle := fmt.Sprintf("Message from %s", senderName)
+		go sendPushNotification(req.HelperDeviceToken, notifTitle, payload.Text)
+	}
+
+	jsonResponse(w, http.StatusCreated, newMsg)
+}
+
+func handleDeleteChat(w http.ResponseWriter, r *http.Request, claims *Claims) {
+	requestID := strings.TrimSpace(r.URL.Query().Get("requestId"))
+	if requestID == "" {
+		http.Error(w, "requestId is required", http.StatusBadRequest)
+		return
+	}
+
+	out, err := svc.GetItem(r.Context(), &dynamodb.GetItemInput{
+		TableName: aws.String(tableName),
+		Key: map[string]types.AttributeValue{
+			"id": &types.AttributeValueMemberS{Value: requestID},
+		},
+	})
+	if err != nil || len(out.Item) == 0 {
+		http.Error(w, "Request not found", http.StatusNotFound)
+		return
+	}
+
+	var req RecyclingRequest
+	if err := attributevalue.UnmarshalMap(out.Item, &req); err != nil {
+		http.Error(w, "Failed to parse request", http.StatusInternalServerError)
+		return
+	}
+
+	if (req.CreatorID != "" || req.HelperID != "") && !claims.isParticipant(req.CreatorID, req.HelperID) {
+		http.Error(w, "Forbidden: not a participant of this request", http.StatusForbidden)
+		return
+	}
+
+	if err := eraseChatHistory(r.Context(), requestID); err != nil {
+		log.Printf("Failed to erase chat history for request %s: %v", requestID, err)
+		http.Error(w, "Failed to erase chat messages", http.StatusInternalServerError)
+		return
+	}
+
+	if hub != nil {
+		// Broadcast empty messages payload to force client sync
+		rawMsg, _ := json.Marshal(map[string]interface{}{
+			"type":      "chat-history-erased",
+			"requestId": requestID,
+			"messages":  []ChatMessage{},
+		})
+		hub.broadcast <- rawMsg
+	}
+
+	jsonResponse(w, http.StatusOK, map[string]interface{}{
+		"success":   true,
+		"requestId": requestID,
+		"messages":  []ChatMessage{},
+	})
 }
 
 func handleWebSocket(w http.ResponseWriter, r *http.Request) {
