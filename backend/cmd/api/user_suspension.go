@@ -308,7 +308,7 @@ func handleActiveRequestsOnBlock(userID, email, caseRef string) {
 		}
 
 		// 2. Creator jobs
-		if created, err := listCreatorRequests(ctx, normID); err == nil {
+		if created, err := listCreatorRequests(ctx, normID, nil); err == nil {
 			for _, req := range created {
 				if req.Status == "pending" {
 					_, _ = svc.UpdateItem(ctx, &dynamodb.UpdateItemInput{

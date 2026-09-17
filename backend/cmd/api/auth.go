@@ -75,13 +75,10 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 		name = strings.TrimSpace(req.Name)
 	}
 	if name == "" {
-		if role == "helper" {
-			name = "Erik Helper"
-		} else if role == "admin" {
-			name = "Admin Operator"
-		} else {
-			name = "Anna Recycler"
-		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Missing username or name"})
+		return
 	}
 
 	expirationTime := time.Now().Add(24 * time.Hour)

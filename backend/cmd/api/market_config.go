@@ -158,7 +158,7 @@ func handleMarketConfig(w http.ResponseWriter, r *http.Request) {
 			}
 		} else {
 			creatorID := claims.requestOwnerID()
-			requests, err := listCreatorRequests(r.Context(), creatorID)
+			requests, err := listCreatorRequests(r.Context(), creatorID, nil)
 			if err == nil {
 				for _, req := range requests {
 					if req.Status == "pending" || req.Status == "accepted" {

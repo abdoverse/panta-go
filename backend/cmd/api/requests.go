@@ -745,17 +745,6 @@ func handleDemoSeed(w http.ResponseWriter, r *http.Request) {
 				if len(existing.Messages) > 0 {
 					req.Messages = existing.Messages
 				}
-				if existing.Status != "" {
-					req.Status = existing.Status
-				}
-				if existing.HelperID != "" {
-					if _, err := uuid.Parse(existing.HelperID); err == nil {
-						req.HelperID = existing.HelperID
-					} else {
-						req.HelperID = helperID
-						req.HelperName = helperName
-					}
-				}
 			}
 		}
 

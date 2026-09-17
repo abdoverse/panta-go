@@ -490,35 +490,26 @@ func (c *Claims) isAdmin() bool {
 	return strings.EqualFold(strings.TrimSpace(c.Role), "admin")
 }
 
-func (c *Claims) matchesPersona(persona string) bool {
-	p := strings.ToLower(persona)
-	check := func(s string) bool {
-		return strings.Contains(strings.ToLower(s), p)
-	}
-	return check(c.DisplayName) || check(c.Email) || check(c.CognitoUsername)
-}
-
-// matchesUser returns true if targetID represents the user identified by Claims.
-// It checks direct equality and userUUID equivalence against UserID, Subject,
-// Email, CognitoUsername, DisplayName, derived email aliases, and known personas.
-func (c *Claims) matchesUser(targetID string) bool {
+// candidateIDs returns a slice of all possible IDs (names, emails, UUIDs) for the user.
+func (c *Claims) candidateIDs() []string {
 	if c == nil {
-		return false
+		return nil
 	}
-	target := strings.TrimSpace(targetID)
-	if target == "" {
-		return false
-	}
+	var candidates []string
+	seen := make(map[string]bool)
 
-	candidates := make([]string, 0, 16)
 	addCandidate := func(val string) {
 		v := strings.TrimSpace(val)
 		if v == "" {
 			return
 		}
-		candidates = append(candidates, v)
+		if !seen[v] {
+			seen[v] = true
+			candidates = append(candidates, v)
+		}
 		u := userUUID(v)
-		if u != "" && !strings.EqualFold(u, v) {
+		if u != "" && !seen[u] {
+			seen[u] = true
 			candidates = append(candidates, u)
 		}
 	}
@@ -538,28 +529,27 @@ func (c *Claims) matchesUser(targetID string) bool {
 		addCandidate(derivedEmail)
 	}
 
-	// Known demo personas
-	if c.matchesPersona("erik") {
-		addCandidate("Erik Helper")
-		addCandidate("erik.helper@example.com")
-		addCandidate(userUUID("Erik Helper"))
-		addCandidate(userUUID("erik.helper@example.com"))
-	}
-	if c.matchesPersona("anna") {
-		addCandidate("Anna Recycler")
-		addCandidate("anna.recycler@example.com")
-		addCandidate(userUUID("Anna Recycler"))
-		addCandidate(userUUID("anna.recycler@example.com"))
+	return candidates
+}
+
+// matchesUser returns true if targetID represents the user identified by Claims.
+// It checks direct equality and userUUID equivalence against UserID, Subject,
+// Email, CognitoUsername, DisplayName, and derived email aliases.
+func (c *Claims) matchesUser(targetID string) bool {
+	target := strings.TrimSpace(targetID)
+	if target == "" || c == nil {
+		return false
 	}
 
 	targetUUID := userUUID(target)
-	for _, cand := range candidates {
+	for _, cand := range c.candidateIDs() {
 		if strings.EqualFold(target, cand) || strings.EqualFold(targetUUID, cand) {
 			return true
 		}
 	}
 	return false
 }
+
 
 // isParticipant returns true if the caller is authorized to view and participate
 // in the chat of a request with the given creatorID and helperID. Admins are always authorized.
