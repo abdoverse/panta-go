@@ -164,27 +164,24 @@ class LocationActions extends StatelessWidget {
           }
         }
       } else {
-        if (defaultTargetPlatform == TargetPlatform.iOS) {
-          try {
-            launched = await launchUrl(
-              nativeUri,
-              mode: LaunchMode.platformDefault,
-              webOnlyWindowName: '_self',
-            );
-          } catch (_) {
-            launched = false;
-          }
-        }
-      }
-
-      if (!launched) {
+        // On web, navigate with _self so browsers hand off to Apple Maps
+        // without creating an empty orphan blank tab.
         try {
           launched = await launchUrl(
             webUri,
-            mode: kIsWeb
-                ? LaunchMode.platformDefault
-                : LaunchMode.externalApplication,
-            webOnlyWindowName: kIsWeb ? '_blank' : null,
+            mode: LaunchMode.platformDefault,
+            webOnlyWindowName: '_self',
+          );
+        } catch (_) {
+          launched = false;
+        }
+      }
+
+      if (!launched && !kIsWeb) {
+        try {
+          launched = await launchUrl(
+            webUri,
+            mode: LaunchMode.externalApplication,
           );
         } catch (_) {
           launched = false;
@@ -243,28 +240,29 @@ class LocationActions extends StatelessWidget {
           }
         }
       } else {
-        if (defaultTargetPlatform == TargetPlatform.android) {
-          try {
-            launched = await launchUrl(
-              nativeUri,
-              mode: LaunchMode.platformDefault,
-              webOnlyWindowName: '_self',
-            );
-          } catch (_) {
-            launched = false;
-          }
-        }
-      }
-
-      // Fallback to web URL if native app wasn't launched
-      if (!launched) {
+        // On Web (Chrome, Safari, Firefox):
+        // Always launch the webUri using '_self' rather than '_blank'.
+        // When using '_self', mobile Chrome/Safari passes the Google Maps link
+        // to the installed Google Maps app via Android App Links / iOS Universal Links.
+        // Chrome DOES NOT create a new tab, so NO blank tab is left behind!
+        // On desktop Chrome, it navigates directly in the tab without opening an empty window.
         try {
           launched = await launchUrl(
             webUri,
-            mode: kIsWeb
-                ? LaunchMode.platformDefault
-                : LaunchMode.externalApplication,
-            webOnlyWindowName: kIsWeb ? '_blank' : null,
+            mode: LaunchMode.platformDefault,
+            webOnlyWindowName: '_self',
+          );
+        } catch (_) {
+          launched = false;
+        }
+      }
+
+      // Fallback to web URL on native platforms if non-browser intent wasn't handled
+      if (!launched && !kIsWeb) {
+        try {
+          launched = await launchUrl(
+            webUri,
+            mode: LaunchMode.externalApplication,
           );
         } catch (_) {
           launched = false;

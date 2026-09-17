@@ -15,13 +15,92 @@ BACKEND_DIR="$PROJECT_ROOT/backend"
 MOBILE_DIR="$PROJECT_ROOT/mobile"
 SUITE_TEST="$MOBILE_DIR/test/_suite_test.dart"
 
+get_timestamp() {
+    date +%s.%N 2>/dev/null || date +%s
+}
+
+format_time() {
+    date +"%H:%M:%S"
+}
+
+format_duration() {
+    local start="$1"
+    local end="$2"
+    python3 -c "
+import sys
+try:
+    s = float('$start')
+    e = float('$end')
+    elapsed = max(0.0, e - s)
+    mins = int(elapsed // 60)
+    secs = elapsed % 60
+    if mins > 0:
+        print(f'{mins}m {secs:.1f}s ({elapsed:.2f}s)')
+    else:
+        print(f'{elapsed:.2f}s')
+except Exception:
+    print('unknown')
+" 2>/dev/null || awk -v s="$start" -v e="$end" 'BEGIN { d = e - s; if (d < 0) d = 0; if (d >= 60) printf "%dm %.1fs (%.2fs)\n", int(d/60), (d%60), d; else printf "%.2fs\n", d }'
+}
+
+print_summary_banner() {
+    local title="$1"
+    local target="$2"
+    local status="$3"
+    local duration="$4"
+    local start_clock="$5"
+    local end_clock="$6"
+
+    echo ""
+    echo "============================================================"
+    echo "⏱️  $title"
+    echo "============================================================"
+    echo "  🎯 Target:   $target"
+    if [ "$status" = "0" ] || [ "$status" = "PASSED" ]; then
+        echo "  📊 Status:   ✅ PASSED"
+    else
+        echo "  📊 Status:   ❌ FAILED"
+    fi
+    echo "  ⏱️  Duration: $duration"
+    echo "  🕒 Started:  $start_clock"
+    echo "  🕒 Finished: $end_clock"
+    echo "============================================================"
+    echo ""
+}
+
+LAST_BACKEND_STATUS=0
+LAST_BACKEND_DURATION="0.00s"
+LAST_BACKEND_START=""
+LAST_BACKEND_END=""
+
 run_backend() {
+    LAST_BACKEND_START=$(format_time)
+    local start_time
+    start_time=$(get_timestamp)
+
     echo "⚡ [BACKEND] Running Go test suite..."
-    start_time=$(date +%s)
+    echo "🕒 Started at: $LAST_BACKEND_START"
+
     cd "$BACKEND_DIR"
+    local status=0
+    set +e
     go test -v ./...
-    end_time=$(date +%s)
-    echo "✅ [BACKEND] All Go tests passed in $((end_time - start_time))s!"
+    status=$?
+    set -e
+
+    local end_time
+    end_time=$(get_timestamp)
+    LAST_BACKEND_END=$(format_time)
+    LAST_BACKEND_DURATION=$(format_duration "$start_time" "$end_time")
+    LAST_BACKEND_STATUS=$status
+
+    if [ $status -eq 0 ]; then
+        echo "✅ [BACKEND] All Go tests passed in $LAST_BACKEND_DURATION!"
+    else
+        echo "❌ [BACKEND] Go tests failed after $LAST_BACKEND_DURATION!"
+    fi
+
+    return $status
 }
 
 generate_suite() {
@@ -55,12 +134,23 @@ with open('$SUITE_TEST', 'w') as out:
 "
 }
 
+LAST_MOBILE_STATUS=0
+LAST_MOBILE_DURATION="0.00s"
+LAST_MOBILE_START=""
+LAST_MOBILE_END=""
+LAST_MOBILE_DESC=""
+
 run_mobile() {
     local target="$1"
     cd "$MOBILE_DIR"
 
+    LAST_MOBILE_START=$(format_time)
+    local start_time
+    start_time=$(get_timestamp)
+
+    local status=0
+
     if [ -n "$target" ] && [ "$target" != "all" ]; then
-        # Check if target is a file or search pattern
         local test_file=""
         if [ -f "$target" ]; then
             test_file="$target"
@@ -69,30 +159,50 @@ run_mobile() {
         elif [ -f "test/${target}_test.dart" ]; then
             test_file="test/${target}_test.dart"
         else
-            # Try finding matching file
-            test_file=$(find test -name "*${target}*test.dart" | head -n 1)
+            test_file=$(find test -name "*${target}*test.dart" 2>/dev/null | head -n 1)
         fi
 
         if [ -n "$test_file" ] && [ -f "$test_file" ]; then
+            LAST_MOBILE_DESC="Targeted Flutter test: $test_file"
             echo "⚡ [MOBILE] Running targeted test: $test_file..."
-            start_time=$(date +%s)
+            echo "🕒 Started at: $LAST_MOBILE_START"
+            set +e
             flutter test --no-test-assets "$test_file"
-            end_time=$(date +%s)
-            echo "✅ [MOBILE] Targeted test passed in $((end_time - start_time))s!"
-            return 0
+            status=$?
+            set -e
         else
+            LAST_MOBILE_DESC="Targeted Flutter filter: '$target'"
             echo "⚠️ [MOBILE] No exact file found for '$target'. Running flutter test with pattern filter..."
+            echo "🕒 Started at: $LAST_MOBILE_START"
+            set +e
             flutter test --plain-name "$target"
-            return 0
+            status=$?
+            set -e
         fi
+    else
+        LAST_MOBILE_DESC="Aggregated Flutter test suite (114+ tests)"
+        echo "⚡ [MOBILE] Running aggregated Flutter test suite (114+ tests)..."
+        generate_suite
+        echo "🕒 Started at: $LAST_MOBILE_START"
+        set +e
+        flutter test --no-test-assets test/_suite_test.dart
+        status=$?
+        set -e
     fi
 
-    echo "⚡ [MOBILE] Running aggregated Flutter test suite (114+ tests)..."
-    generate_suite
-    start_time=$(date +%s)
-    flutter test --no-test-assets test/_suite_test.dart
-    end_time=$(date +%s)
-    echo "✅ [MOBILE] Aggregated test suite passed in $((end_time - start_time))s!"
+    local end_time
+    end_time=$(get_timestamp)
+    LAST_MOBILE_END=$(format_time)
+    LAST_MOBILE_DURATION=$(format_duration "$start_time" "$end_time")
+    LAST_MOBILE_STATUS=$status
+
+    if [ $status -eq 0 ]; then
+        echo "✅ [MOBILE] $LAST_MOBILE_DESC passed in $LAST_MOBILE_DURATION!"
+    else
+        echo "❌ [MOBILE] $LAST_MOBILE_DESC failed after $LAST_MOBILE_DURATION!"
+    fi
+
+    return $status
 }
 
 MODE="${1:-all}"
@@ -100,24 +210,75 @@ shift 2>/dev/null || true
 
 case "$MODE" in
     backend)
-        run_backend
+        status=0
+        run_backend || status=$?
+        print_summary_banner "TEST EXECUTION SUMMARY" "Go Test Suite (backend)" "$status" "$LAST_BACKEND_DURATION" "$LAST_BACKEND_START" "$LAST_BACKEND_END"
+        exit $status
         ;;
     mobile)
-        run_mobile "$1"
+        status=0
+        run_mobile "$1" || status=$?
+        print_summary_banner "TEST EXECUTION SUMMARY" "$LAST_MOBILE_DESC" "$status" "$LAST_MOBILE_DURATION" "$LAST_MOBILE_START" "$LAST_MOBILE_END"
+        exit $status
         ;;
     all)
-        overall_start=$(date +%s)
-        run_backend
+        overall_start=$(get_timestamp)
+        overall_clock=$(format_time)
+
+        echo "============================================================"
+        echo "🚀 STARTING FULL STACK VERIFICATION (Backend + Mobile)"
+        echo "🕒 Started at: $overall_clock"
+        echo "============================================================"
         echo ""
-        run_mobile ""
-        overall_end=$(date +%s)
+
+        overall_status=0
+        run_backend || overall_status=$?
+
         echo ""
-        echo "🎉 [PANTA] Complete stack verification finished in $((overall_end - overall_start))s!"
+        run_mobile "" || overall_status=$?
+
+        overall_end=$(get_timestamp)
+        overall_end_clock=$(format_time)
+        overall_duration=$(format_duration "$overall_start" "$overall_end")
+
+        echo ""
+        echo "============================================================"
+        echo "⏱️  PANTA TEST SUITE SUMMARY"
+        echo "============================================================"
+        if [ $LAST_BACKEND_STATUS -eq 0 ]; then
+            echo "  ⚡ Backend (Go):     $LAST_BACKEND_DURATION [✅ PASSED]"
+        else
+            echo "  ⚡ Backend (Go):     $LAST_BACKEND_DURATION [❌ FAILED]"
+        fi
+        if [ $LAST_MOBILE_STATUS -eq 0 ]; then
+            echo "  📱 Mobile (Flutter): $LAST_MOBILE_DURATION [✅ PASSED]"
+        else
+            echo "  📱 Mobile (Flutter): $LAST_MOBILE_DURATION [❌ FAILED]"
+        fi
+        echo "  ----------------------------------------------------------"
+        if [ $overall_status -eq 0 ]; then
+            echo "  🎯 Overall Status:   ✅ PASSED"
+            echo "  ⏱️  Total Duration:   $overall_duration"
+            echo "  🕒 Started:          $overall_clock"
+            echo "  🕒 Finished:         $overall_end_clock"
+            echo "============================================================"
+            echo "🎉 [PANTA] Complete stack verification finished in $overall_duration!"
+        else
+            echo "  🎯 Overall Status:   ❌ FAILED"
+            echo "  ⏱️  Total Duration:   $overall_duration"
+            echo "  🕒 Started:          $overall_clock"
+            echo "  🕒 Finished:         $overall_end_clock"
+            echo "============================================================"
+            echo "❌ [PANTA] Stack verification failed after $overall_duration!"
+            exit $overall_status
+        fi
         ;;
     *)
-        # If passed an existing test name directly
         if [[ "$MODE" == *"test.dart"* ]] || [ -f "$MOBILE_DIR/test/$MODE" ]; then
-            run_mobile "$MODE"
+            status=0
+            run_mobile "$MODE" || status=$?
+            print_summary_banner "TEST EXECUTION SUMMARY" "$LAST_MOBILE_DESC" "$status" "$LAST_MOBILE_DURATION" "$LAST_MOBILE_START" "$LAST_MOBILE_END"
+            exit $status
         else
             echo "Usage: $0 {backend|mobile [pattern]|all}"
             exit 1
