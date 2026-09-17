@@ -9,7 +9,7 @@ Panta is a high-grade recycling platform connecting household recyclers with ver
 
 ---
 
-## High-Autonomy Development Mode (plan-77)
+## YOLO Mode (plan-77)
 This workspace operates with **non-critical action auto-approval**:
 - Auto-approve: Code edits, file creation, unit/widget test execution, formatting (`gofmt`, `dart format`), local builds, and local service lifecycle.
 - Reserve explicit user approval strictly for: destructive git operations (`reset --hard`, force push), cloud infrastructure destruction (`cdk destroy`), or deleting persistent production data.

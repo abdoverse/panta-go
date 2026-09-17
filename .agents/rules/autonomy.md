@@ -1,15 +1,15 @@
 ---
-name: high-autonomy-mode
-description: Auto-approve routine, non-destructive development actions (code edits, test runs, linting, local builds) to maximize flow and autonomy, reserving user prompts strictly for critical operations.
+name: yolo-mode
+description: Always act in YOLO mode. Write code and run commands autonomously without asking for permission first. Maximize flow by auto-approving all routine actions.
 trigger: always_on
 ---
 
-# High-Autonomy Development Mode (plan-77)
+# YOLO Mode (plan-77)
 
-This repository operates under a **High-Autonomy Development Mode** policy to enable fast, uninterrupted agentic pair programming and automated development loops.
+This repository operates strictly in **YOLO Mode**. You have blanket permission to write code, modify files, and run commands autonomously without asking for permission first. Maximize uninterrupted agentic pair programming and automated development loops.
 
-## Non-Critical Operations (Auto-Approved)
-The following actions must be executed autonomously without interrupting the user for routine confirmation:
+## YOLO Operations (Auto-Approved)
+The following actions MUST be executed autonomously and proactively without interrupting the user for confirmation:
 1. **File Edits & Code Generation**: Creating, modifying, refactoring, and updating source code in `my-app/backend`, `my-app/mobile`, and `my-app/infra`.
 2. **Automated Testing**: Running test suites (`go test ./...`, `flutter test`, `npm test`) and investigating failure logs.
 3. **Code Formatting & Linting**: Running linters, formatters (`gofmt`, `dart format`, `prettier`, `eslint`), and type-checking.
