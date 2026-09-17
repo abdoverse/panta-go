@@ -132,9 +132,15 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 		}
 
 		senderID := claims.requestOwnerID()
-		if req.CreatorID != "" && senderID != req.CreatorID && senderID != req.HelperID {
+		if (req.CreatorID != "" || req.HelperID != "") && !claims.isParticipant(req.CreatorID, req.HelperID) {
 			http.Error(w, "Forbidden: not a participant of this request", http.StatusForbidden)
 			return
+		}
+
+		if claims.matchesUser(req.CreatorID) && req.CreatorID != "" {
+			senderID = req.CreatorID
+		} else if claims.matchesUser(req.HelperID) && req.HelperID != "" {
+			senderID = req.HelperID
 		}
 
 		senderName := strings.TrimSpace(claims.DisplayName)
@@ -203,7 +209,7 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 				notifTitle = "Ding-Dong! Helper is at your door 🛎️"
 			}
 			go sendPushNotification(req.CreatorDeviceToken, notifTitle, payload.Text)
-		} else if claims.Role == "recycler" && req.HelperDeviceToken != "" {
+		} else if (claims.Role == "user" || claims.Role == "recycler") && req.HelperDeviceToken != "" {
 			notifTitle := fmt.Sprintf("Message from %s", senderName)
 			go sendPushNotification(req.HelperDeviceToken, notifTitle, payload.Text)
 		}
@@ -234,8 +240,7 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		senderID := claims.requestOwnerID()
-		if req.CreatorID != "" && senderID != req.CreatorID && senderID != req.HelperID {
+		if (req.CreatorID != "" || req.HelperID != "") && !claims.isParticipant(req.CreatorID, req.HelperID) {
 			http.Error(w, "Forbidden: not a participant of this request", http.StatusForbidden)
 			return
 		}
@@ -329,15 +334,14 @@ func handleMarkMessagesRead(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	senderID := claims.requestOwnerID()
-	if req.CreatorID != "" && senderID != req.CreatorID && senderID != req.HelperID {
-		http.Error(w, "Forbidden: not a participant", http.StatusForbidden)
+	if (req.CreatorID != "" || req.HelperID != "") && !claims.isParticipant(req.CreatorID, req.HelperID) {
+		http.Error(w, "Forbidden: not a participant of this request", http.StatusForbidden)
 		return
 	}
 
 	changed := false
 	for i, msg := range req.Messages {
-		if msg.SenderID != senderID && !msg.IsRead {
+		if !claims.matchesUser(msg.SenderID) && !msg.IsRead {
 			req.Messages[i].IsRead = true
 			changed = true
 		}

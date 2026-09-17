@@ -12,6 +12,7 @@ import (
 
 	"github.com/MicahParks/keyfunc/v2"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 type contextKey string
@@ -88,7 +89,10 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	if strings.Contains(name, "@") {
 		email = name
 	}
-	uID := userUUID(name)
+	uID := userUUID(email)
+	if _, err := uuid.Parse(name); err == nil {
+		uID = name
+	}
 
 	// User Suspension / Blocking Enforcement
 	if blocked, blockRec := isUserBlocked(uID, email); blocked {

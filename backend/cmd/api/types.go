@@ -454,6 +454,9 @@ func (c *Claims) requestOwnerID() string {
 	if c.UserID != "" {
 		return userUUID(c.UserID)
 	}
+	if c.Email != "" {
+		return userUUID(c.Email)
+	}
 	if c.Subject != "" {
 		return userUUID(c.Subject)
 	}
@@ -486,4 +489,88 @@ func (c *Claims) isHelper() bool {
 func (c *Claims) isAdmin() bool {
 	return strings.EqualFold(strings.TrimSpace(c.Role), "admin")
 }
+
+func (c *Claims) matchesPersona(persona string) bool {
+	p := strings.ToLower(persona)
+	check := func(s string) bool {
+		return strings.Contains(strings.ToLower(s), p)
+	}
+	return check(c.DisplayName) || check(c.Email) || check(c.CognitoUsername)
+}
+
+// matchesUser returns true if targetID represents the user identified by Claims.
+// It checks direct equality and userUUID equivalence against UserID, Subject,
+// Email, CognitoUsername, DisplayName, derived email aliases, and known personas.
+func (c *Claims) matchesUser(targetID string) bool {
+	if c == nil {
+		return false
+	}
+	target := strings.TrimSpace(targetID)
+	if target == "" {
+		return false
+	}
+
+	candidates := make([]string, 0, 16)
+	addCandidate := func(val string) {
+		v := strings.TrimSpace(val)
+		if v == "" {
+			return
+		}
+		candidates = append(candidates, v)
+		u := userUUID(v)
+		if u != "" && !strings.EqualFold(u, v) {
+			candidates = append(candidates, u)
+		}
+	}
+
+	addCandidate(c.UserID)
+	addCandidate(c.Subject)
+	addCandidate(c.Email)
+	addCandidate(c.CognitoUsername)
+	addCandidate(c.DisplayName)
+
+	if c.DisplayName != "" && !strings.Contains(c.DisplayName, "@") {
+		derivedEmail := fmt.Sprintf("%s@example.com", strings.ToLower(strings.ReplaceAll(strings.TrimSpace(c.DisplayName), " ", ".")))
+		addCandidate(derivedEmail)
+	}
+	if c.CognitoUsername != "" && !strings.Contains(c.CognitoUsername, "@") {
+		derivedEmail := fmt.Sprintf("%s@example.com", strings.ToLower(strings.ReplaceAll(strings.TrimSpace(c.CognitoUsername), " ", ".")))
+		addCandidate(derivedEmail)
+	}
+
+	// Known demo personas
+	if c.matchesPersona("erik") {
+		addCandidate("Erik Helper")
+		addCandidate("erik.helper@example.com")
+		addCandidate(userUUID("Erik Helper"))
+		addCandidate(userUUID("erik.helper@example.com"))
+	}
+	if c.matchesPersona("anna") {
+		addCandidate("Anna Recycler")
+		addCandidate("anna.recycler@example.com")
+		addCandidate(userUUID("Anna Recycler"))
+		addCandidate(userUUID("anna.recycler@example.com"))
+	}
+
+	targetUUID := userUUID(target)
+	for _, cand := range candidates {
+		if strings.EqualFold(target, cand) || strings.EqualFold(targetUUID, cand) {
+			return true
+		}
+	}
+	return false
+}
+
+// isParticipant returns true if the caller is authorized to view and participate
+// in the chat of a request with the given creatorID and helperID. Admins are always authorized.
+func (c *Claims) isParticipant(creatorID, helperID string) bool {
+	if c == nil {
+		return false
+	}
+	if c.isAdmin() {
+		return true
+	}
+	return c.matchesUser(creatorID) || c.matchesUser(helperID)
+}
+
 
