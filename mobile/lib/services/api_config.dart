@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class ApiConfig {
   static const String _defaultBaseUrl =
       'https://pa-b4e8e272d1194dae93b9d860991c7e74.ecs.eu-north-1.on.aws';
@@ -27,6 +29,24 @@ class ApiConfig {
         "Use a secure API_BASE_URL or a local emulator host.",
       );
     }
+
+    // On Flutter Web, align local/LAN backend host with current browser page origin
+    // to prevent cross-origin WebSocket failures or Private Network Access (PNA) blocks.
+    if (kIsWeb && isLocalHost) {
+      final pageHost = Uri.base.host;
+      if (pageHost.isNotEmpty &&
+          (pageHost == 'localhost' ||
+              pageHost == '127.0.0.1' ||
+              _isPrivateLanHost(pageHost))) {
+        return uri.replace(
+          host: pageHost,
+          path: '',
+          query: null,
+          fragment: null,
+        );
+      }
+    }
+
     return uri.replace(path: '', query: null, fragment: null);
   }
 

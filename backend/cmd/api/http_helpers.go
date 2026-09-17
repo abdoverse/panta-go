@@ -144,7 +144,10 @@ func isLocalhostOrigin(origin string) bool {
 		return false
 	}
 	hostname := strings.ToLower(parsedOrigin.Hostname())
-	return hostname == "localhost" || hostname == "127.0.0.1" || hostname == "::1" || strings.HasPrefix(hostname, "192.168.")
+	if hostname == "localhost" || hostname == "127.0.0.1" || hostname == "::1" {
+		return true
+	}
+	return strings.HasPrefix(hostname, "192.168.") || strings.HasPrefix(hostname, "10.") || strings.HasPrefix(hostname, "172.")
 }
 
 func normalizeAllowedOrigin(rawOrigin string) (string, bool) {

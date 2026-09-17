@@ -1,15 +1,12 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../../core/widgets/responsive_layout.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/panta_provider.dart';
-import '../../services/api_config.dart';
-import '../../services/auth_service.dart';
+import '../../services/realtime_service.dart';
 import '../analytics/impact_dashboard_view.dart';
 import '../shared/profile_screen.dart';
 import '../shared/widgets/loading_skeletons.dart';
@@ -24,76 +21,26 @@ class HelperHomePage extends StatefulWidget {
 
 class _HelperHomePageState extends State<HelperHomePage> {
   int _currentIndex = 0;
-  WebSocketChannel? _channel;
-  Timer? _reconnectTimer;
-  bool _isConnecting = false;
 
   @override
   void initState() {
     super.initState();
-    _connectWebSocket();
+    RealtimeService.instance.addHandler(_handleRealtimeMessage);
+    RealtimeService.instance.connect();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<PantaProvider>().refreshHelperLocation();
     });
   }
 
-  void _scheduleReconnect([int seconds = 3]) {
+  void _handleRealtimeMessage(String message) {
     if (!mounted) return;
-    _reconnectTimer?.cancel();
-    _reconnectTimer = Timer(Duration(seconds: seconds), () {
-      if (mounted) {
-        _connectWebSocket();
-      }
-    });
-  }
-
-  void _connectWebSocket() async {
-    if (!mounted || _isConnecting) return;
-    _isConnecting = true;
-
-    final token = await AuthService().getToken();
-    if (token == null) {
-      debugPrint('WS Error: No Auth Token available');
-      _isConnecting = false;
-      _scheduleReconnect(2);
-      return;
-    }
-
-    final uri = ApiConfig.webSocketUri(queryParameters: {'token': token});
-
-    try {
-      _channel?.sink.close();
-      _channel = WebSocketChannel.connect(uri);
-
-      _channel!.stream.listen(
-        (message) {
-          if (!mounted) return;
-          context
-              .read<PantaProvider>()
-              .handleRealtimeMessage(message.toString());
-        },
-        onError: (error) {
-          debugPrint('WS Error: $error');
-          _scheduleReconnect(3);
-        },
-        onDone: () {
-          debugPrint('WS Closed');
-          _scheduleReconnect(3);
-        },
-      );
-    } catch (e) {
-      debugPrint('WS Connection Error: $e');
-      _scheduleReconnect(4);
-    } finally {
-      _isConnecting = false;
-    }
+    context.read<PantaProvider>().handleRealtimeMessage(message);
   }
 
   @override
   void dispose() {
-    _reconnectTimer?.cancel();
-    _channel?.sink.close();
+    RealtimeService.instance.removeHandler(_handleRealtimeMessage);
     super.dispose();
   }
 
