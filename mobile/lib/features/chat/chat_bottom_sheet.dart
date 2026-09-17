@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../../core/localization/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
@@ -9,6 +10,7 @@ import '../../core/theme/app_theme.dart';
 import '../../models/request_model.dart';
 import '../../models/chat_message.dart';
 import '../../providers/panta_provider.dart';
+import '../dashboard/widgets/user_request_card.dart';
 
 class ChatBottomSheet extends StatefulWidget {
   final RecyclingRequest request;
@@ -46,6 +48,7 @@ class _ChatBottomSheetState extends State<ChatBottomSheet> {
   Timer? _pollingTimer;
   PantaProvider? _provider;
   late types.User _currentUser;
+  bool _isRequestDetailsExpanded = false;
 
   @override
   void initState() {
@@ -223,6 +226,20 @@ class _ChatBottomSheetState extends State<ChatBottomSheet> {
               const Divider(
                   height: 1, thickness: 1, color: AppTheme.borderSubtle),
 
+              // ── Request Context Card ──────────────────────────────────────
+              Consumer<PantaProvider>(
+                builder: (context, provider, _) {
+                  final req = provider.requests.firstWhere(
+                    (r) => r.id == widget.request.id,
+                    orElse: () => widget.request,
+                  );
+                  return _buildRequestContextCard(context, req);
+                },
+              ),
+
+              const Divider(
+                  height: 1, thickness: 1, color: AppTheme.borderSubtle),
+
               // ── Quick Presets ─────────────────────────────────────────────
               Consumer<PantaProvider>(
                 builder: (context, provider, _) {
@@ -379,6 +396,339 @@ class _ChatBottomSheetState extends State<ChatBottomSheet> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildRequestContextCard(BuildContext context, RecyclingRequest req) {
+    final l10n = context.l10n;
+
+    Color statusBgColor;
+    Color statusBorderColor;
+    Color statusTextColor;
+    String statusLabel;
+    IconData statusIcon;
+
+    if (req.arrivedAtDoor != null) {
+      statusBgColor = const Color(0xFFFFF8E1);
+      statusBorderColor = const Color(0xFFFFD54F);
+      statusTextColor = const Color(0xFF8D4F00);
+      statusLabel = l10n.etaHelperArrived;
+      statusIcon = Icons.doorbell_rounded;
+    } else {
+      switch (req.status) {
+        case RequestStatus.accepted:
+          statusBgColor = const Color(0xFFE3F2FD);
+          statusBorderColor = const Color(0xFF90CAF9);
+          statusTextColor = const Color(0xFF1565C0);
+          statusLabel = req.etaMinutes != null
+              ? l10n.etaArrivingSoon(req.etaMinutes!)
+              : l10n.helperOnTheWay;
+          statusIcon = Icons.directions_bike_rounded;
+          break;
+        case RequestStatus.pickedUp:
+          statusBgColor = const Color(0xFFE8F5E9);
+          statusBorderColor = const Color(0xFFA5D6A7);
+          statusTextColor = const Color(0xFF2E7D32);
+          statusLabel = l10n.pickedUp;
+          statusIcon = Icons.check_circle_outline_rounded;
+          break;
+        case RequestStatus.canceled:
+          statusBgColor = const Color(0xFFF5F5F5);
+          statusBorderColor = const Color(0xFFE0E0E0);
+          statusTextColor = const Color(0xFF757575);
+          statusLabel = l10n.cancel;
+          statusIcon = Icons.cancel_outlined;
+          break;
+        case RequestStatus.pending:
+        default:
+          statusBgColor = const Color(0xFFFFF3E0);
+          statusBorderColor = const Color(0xFFFFCC80);
+          statusTextColor = const Color(0xFFE65100);
+          statusLabel = l10n.waitingForHelper;
+          statusIcon = Icons.hourglass_top_rounded;
+          break;
+      }
+    }
+
+    final currency = req.currencySymbol.isNotEmpty ? req.currencySymbol : 'kr';
+    final rewardText = req.reward != null
+        ? '${(req.reward as num).toStringAsFixed(0)} $currency'
+        : null;
+
+    final resolvedImageUrl = RequestImage.resolveUrl(req.imageUrl);
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceGrey,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppTheme.primaryGreen.withValues(alpha: 0.12),
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            setState(() {
+              _isRequestDetailsExpanded = !_isRequestDetailsExpanded;
+            });
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    // Thumbnail or Eco Icon
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppTheme.accentLeaf,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: resolvedImageUrl != null
+                            ? Image.network(
+                                resolvedImageUrl,
+                                width: 40,
+                                height: 40,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => const Center(
+                                  child: Icon(
+                                    Icons.recycling_rounded,
+                                    color: AppTheme.primaryGreen,
+                                    size: 22,
+                                  ),
+                                ),
+                              )
+                            : const Center(
+                                child: Icon(
+                                  Icons.recycling_rounded,
+                                  color: AppTheme.primaryGreen,
+                                  size: 22,
+                                ),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    // Title & Status & Location
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  req.title.isNotEmpty
+                                      ? req.title
+                                      : l10n.newPickupRequest,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppTheme.textPrimary,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: statusBgColor,
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: statusBorderColor,
+                                    width: 0.8,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      statusIcon,
+                                      size: 11,
+                                      color: statusTextColor,
+                                    ),
+                                    const SizedBox(width: 3),
+                                    Text(
+                                      statusLabel,
+                                      style: TextStyle(
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: statusTextColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 3),
+                          Row(
+                            children: [
+                              if (req.location.isNotEmpty) ...[
+                                const Icon(
+                                  Icons.location_on_rounded,
+                                  size: 12,
+                                  color: AppTheme.textSecondary,
+                                ),
+                                const SizedBox(width: 2),
+                                Flexible(
+                                  child: Text(
+                                    req.location,
+                                    style: const TextStyle(
+                                      fontSize: 11.5,
+                                      color: AppTheme.textSecondary,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                              if (rewardText != null) ...[
+                                Text(
+                                  ' • $rewardText',
+                                  style: const TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppTheme.primaryGreen,
+                                  ),
+                                ),
+                              ],
+                              if (req.leaveAtDoor) ...[
+                                const SizedBox(width: 4),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                    vertical: 1,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade200,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.door_front_door_outlined,
+                                        size: 10,
+                                        color: Colors.grey.shade700,
+                                      ),
+                                      const SizedBox(width: 2),
+                                      Text(
+                                        l10n.leaveAtDoor,
+                                        style: TextStyle(
+                                          fontSize: 9.5,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.grey.shade700,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Icon(
+                      _isRequestDetailsExpanded
+                          ? Icons.keyboard_arrow_up_rounded
+                          : Icons.keyboard_arrow_down_rounded,
+                      color: AppTheme.textSecondary,
+                      size: 20,
+                    ),
+                  ],
+                ),
+                // Expandable Details Section
+                if (_isRequestDetailsExpanded) ...[
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Divider(
+                      height: 1,
+                      thickness: 0.8,
+                      color: AppTheme.borderSubtle,
+                    ),
+                  ),
+                  if (req.description.isNotEmpty) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Text(
+                        req.description,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade700,
+                          height: 1.3,
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (req.leaveAtDoor &&
+                      req.doorInstructions != null &&
+                      req.doorInstructions!.isNotEmpty) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(
+                            Icons.info_outline_rounded,
+                            size: 13,
+                            color: AppTheme.primaryGreen,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              '${l10n.doorInstructionsLabel}: ${req.doorInstructions}',
+                              style: const TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w500,
+                                color: AppTheme.textPrimary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.schedule_rounded,
+                        size: 13,
+                        color: Colors.grey.shade600,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${DateFormat('d MMM, HH:mm').format(req.scheduledFrom)} – ${DateFormat('HH:mm').format(req.scheduledTo)}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

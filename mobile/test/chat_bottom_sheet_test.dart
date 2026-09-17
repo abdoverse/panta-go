@@ -233,4 +233,100 @@ void main() {
       tester.view.resetViewInsets();
     });
   });
+
+  group('ChatBottomSheet Request Context Card', () {
+    setUp(() {
+      SharedPreferences.setMockInitialValues({});
+    });
+
+    testWidgets(
+        'renders request context card with title, location, reward, and status',
+        (tester) async {
+      final provider = PantaProvider();
+      await provider.restoreSession();
+
+      final req = RecyclingRequest(
+        id: 'req-context-test-1',
+        title: '3 Bags of Bottles & Cans',
+        scheduledFrom: DateTime(2026, 9, 18, 14, 0),
+        scheduledTo: DateTime(2026, 9, 18, 16, 0),
+        location: 'Götgatan 22, Stockholm',
+        reward: 50.0,
+        currencySymbol: 'kr',
+        status: RequestStatus.accepted,
+        leaveAtDoor: true,
+        doorInstructions: 'Code 1234, 3rd floor',
+        description: 'Glass bottles and clean aluminum cans from birthday party',
+        messages: const [],
+      );
+
+      provider.requests.add(req);
+
+      await tester.pumpWidget(buildTestApp(
+        child: ChatBottomSheet(request: req, isHelper: false),
+        provider: provider,
+      ));
+      await tester.pumpAndSettle();
+
+      // Card must be visible with request title, location, reward, and leave-at-door indicator
+      expect(find.text('3 Bags of Bottles & Cans'), findsOneWidget);
+      expect(find.textContaining('Götgatan 22, Stockholm'), findsOneWidget);
+      expect(find.textContaining('50 kr'), findsOneWidget);
+
+      // Status badge for accepted request
+      expect(find.byIcon(Icons.directions_bike_rounded), findsOneWidget);
+
+      // Initially description is collapsed
+      expect(
+          find.text('Glass bottles and clean aluminum cans from birthday party'),
+          findsNothing);
+
+      // Tap on card to expand details
+      await tester.tap(find.text('3 Bags of Bottles & Cans'));
+      await tester.pumpAndSettle();
+
+      // Expanded details should now be visible
+      expect(
+          find.text('Glass bottles and clean aluminum cans from birthday party'),
+          findsOneWidget);
+      expect(find.textContaining('Code 1234, 3rd floor'), findsOneWidget);
+
+      // Tap again to collapse
+      await tester.tap(find.text('3 Bags of Bottles & Cans'));
+      await tester.pumpAndSettle();
+
+      expect(
+          find.text('Glass bottles and clean aluminum cans from birthday party'),
+          findsNothing);
+    });
+
+    testWidgets('dynamically displays arrival badge when helper is at door',
+        (tester) async {
+      final provider = PantaProvider();
+      await provider.restoreSession();
+
+      final req = RecyclingRequest(
+        id: 'req-context-test-2',
+        title: 'Office Cans Pickup',
+        scheduledFrom: DateTime(2026, 9, 18, 10, 0),
+        scheduledTo: DateTime(2026, 9, 18, 12, 0),
+        location: 'Sveavägen 44, Stockholm',
+        reward: 75.0,
+        status: RequestStatus.accepted,
+        arrivedAtDoor: DateTime.now(),
+        messages: const [],
+      );
+
+      provider.requests.add(req);
+
+      await tester.pumpWidget(buildTestApp(
+        child: ChatBottomSheet(request: req, isHelper: false),
+        provider: provider,
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Office Cans Pickup'), findsOneWidget);
+      expect(find.byIcon(Icons.doorbell_rounded), findsOneWidget);
+    });
+  });
 }

@@ -565,6 +565,11 @@ class AppLocalizations {
   // Chat & Navigation
   String get newBadge => _isSwedish ? 'NY' : 'NEW';
   String get dismiss => _isSwedish ? 'Avfärda' : 'Dismiss';
+  String get regardingRequest => _isSwedish ? 'Gällande förfrågan' : 'Regarding request';
+  String regardingRequestTitle(String title) => _isSwedish ? 'Gällande: $title' : 'Regarding: $title';
+  String get viewRequestDetails => _isSwedish ? 'Visa detaljer' : 'View details';
+  String get hideRequestDetails => _isSwedish ? 'Dölj detaljer' : 'Hide details';
+  String get doorInstructionsLabel => _isSwedish ? 'Dörrinstruktioner' : 'Door instructions';
 
   // Receipt Scanner & Verification
   String get takeDropoffPhotoProof => _isSwedish ? 'Ta bildbevis för avlämning' : 'Take Drop-off Photo Proof';

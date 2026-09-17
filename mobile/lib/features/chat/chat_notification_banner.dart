@@ -173,6 +173,12 @@ class _ChatNotificationListenerState extends State<ChatNotificationListener>
     }
 
     final activeMsg = _activeNotification;
+    final activeRequest = activeMsg != null
+        ? provider.requests.cast<RecyclingRequest?>().firstWhere(
+            (r) => r?.id == activeMsg.requestId,
+            orElse: () => null,
+          )
+        : null;
 
     return Stack(
       children: [
@@ -192,6 +198,7 @@ class _ChatNotificationListenerState extends State<ChatNotificationListener>
                     opacity: _fadeAnimation,
                     child: _ChatBannerCard(
                       message: activeMsg,
+                      requestTitle: activeRequest?.title,
                       onOpen: () => _openChat(provider, activeMsg),
                       onDismiss: _dismiss,
                     ),
@@ -207,11 +214,13 @@ class _ChatNotificationListenerState extends State<ChatNotificationListener>
 
 class _ChatBannerCard extends StatelessWidget {
   final ChatMessage message;
+  final String? requestTitle;
   final VoidCallback onOpen;
   final VoidCallback onDismiss;
 
   const _ChatBannerCard({
     required this.message,
+    this.requestTitle,
     required this.onOpen,
     required this.onDismiss,
   });
@@ -346,6 +355,31 @@ class _ChatBannerCard extends StatelessWidget {
                         ),
                       ],
                     ),
+                    if (requestTitle != null && requestTitle!.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.recycling_rounded,
+                            size: 13,
+                            color: Color(0xFFFFD54F),
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              l10n.regardingRequestTitle(requestTitle!),
+                              style: const TextStyle(
+                                color: Color(0xFFFFF9C4),
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                     const SizedBox(height: 3),
                     Text(
                       message.text.isNotEmpty ? message.text : '...',
