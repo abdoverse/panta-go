@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -75,7 +74,7 @@ func handleAcceptRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	helperVerified := claims.BankIdVerified
-	out, err := svc.UpdateItem(context.TODO(), &dynamodb.UpdateItemInput{
+	out, err := svc.UpdateItem(r.Context(), &dynamodb.UpdateItemInput{
 		TableName: aws.String(tableName),
 		Key: map[string]types.AttributeValue{
 			"id": &types.AttributeValueMemberS{Value: payload.ID},
@@ -142,7 +141,7 @@ func handleCancelRequest(w http.ResponseWriter, r *http.Request) {
 	if claims.isHelper() {
 		// Helper logic: cancel an accepted request
 		helperID := claims.helperID()
-		out, err := svc.UpdateItem(context.TODO(), &dynamodb.UpdateItemInput{
+		out, err := svc.UpdateItem(r.Context(), &dynamodb.UpdateItemInput{
 			TableName: aws.String(tableName),
 			Key: map[string]types.AttributeValue{
 				"id": &types.AttributeValueMemberS{Value: payload.ID},
@@ -192,7 +191,7 @@ func handleCancelRequest(w http.ResponseWriter, r *http.Request) {
 	} else {
 		// Creator logic: delete a pending request
 		creatorID := claims.requestOwnerID()
-		_, err := svc.DeleteItem(context.TODO(), &dynamodb.DeleteItemInput{
+		_, err := svc.DeleteItem(r.Context(), &dynamodb.DeleteItemInput{
 			TableName: aws.String(tableName),
 			Key: map[string]types.AttributeValue{
 				"id": &types.AttributeValueMemberS{Value: payload.ID},
@@ -296,7 +295,7 @@ func handleCompleteRequest(w http.ResponseWriter, r *http.Request) {
 		exprValues[":dropoffConfirmedAt"] = &types.AttributeValueMemberS{Value: now}
 	}
 
-	out, err := svc.UpdateItem(context.TODO(), &dynamodb.UpdateItemInput{
+	out, err := svc.UpdateItem(r.Context(), &dynamodb.UpdateItemInput{
 		TableName: aws.String(tableName),
 		Key: map[string]types.AttributeValue{
 			"id": &types.AttributeValueMemberS{Value: payload.ID},
@@ -370,7 +369,7 @@ func handleUpdateLocation(w http.ResponseWriter, r *http.Request) {
 		exprValues[":milestone"] = &types.AttributeValueMemberS{Value: payload.Milestone}
 	}
 
-	out, err := svc.UpdateItem(context.TODO(), &dynamodb.UpdateItemInput{
+	out, err := svc.UpdateItem(r.Context(), &dynamodb.UpdateItemInput{
 		TableName: aws.String(tableName),
 		Key: map[string]types.AttributeValue{
 			"id": &types.AttributeValueMemberS{Value: payload.ID},
@@ -537,7 +536,7 @@ func handleRateRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := svc.UpdateItem(context.TODO(), &dynamodb.UpdateItemInput{
+	_, err := svc.UpdateItem(r.Context(), &dynamodb.UpdateItemInput{
 		TableName: aws.String(tableName),
 		Key: map[string]types.AttributeValue{
 			"id": &types.AttributeValueMemberS{Value: payload.ID},

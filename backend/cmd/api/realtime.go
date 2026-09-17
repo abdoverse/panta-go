@@ -146,9 +146,9 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 		senderName := strings.TrimSpace(claims.DisplayName)
 		if senderName == "" {
 			if claims.Role == "helper" {
-				senderName = "Erik Helper"
+				senderName = "Helper"
 			} else {
-				senderName = "Anna Recycler"
+				senderName = "User"
 			}
 		}
 
@@ -204,10 +204,6 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 		// Push notification to creator device when helper sends a message
 		if claims.Role == "helper" && req.CreatorDeviceToken != "" {
 			notifTitle := fmt.Sprintf("Message from %s", senderName)
-			lowerText := strings.ToLower(payload.Text)
-			if strings.Contains(lowerText, "door") || strings.Contains(lowerText, "outside") || strings.Contains(lowerText, "arrived") {
-				notifTitle = "Ding-Dong! Helper is at your door 🛎️"
-			}
 			go sendPushNotification(req.CreatorDeviceToken, notifTitle, payload.Text)
 		} else if (claims.Role == "user" || claims.Role == "recycler") && req.HelperDeviceToken != "" {
 			notifTitle := fmt.Sprintf("Message from %s", senderName)

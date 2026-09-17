@@ -179,12 +179,12 @@ func handleListRequests(w http.ResponseWriter, r *http.Request) {
 
 func listRequestsForClaims(ctx context.Context, claims *Claims) ([]RecyclingRequest, error) {
 	if claims.isHelper() {
-		return listHelperAccessibleRequests(ctx, claims.helperID())
+		return listHelperAccessibleRequests(ctx, claims.helperID(), claims)
 	}
-	return listCreatorRequests(ctx, claims.requestOwnerID())
+	return listCreatorRequests(ctx, claims.requestOwnerID(), claims)
 }
 
-func listCreatorRequests(ctx context.Context, creatorID string) ([]RecyclingRequest, error) {
+func listCreatorRequests(ctx context.Context, creatorID string, claims *Claims) ([]RecyclingRequest, error) {
 	requests, err := queryRequests(ctx, &dynamodb.QueryInput{
 		TableName:              aws.String(tableName),
 		IndexName:              aws.String(requestsByCreatorIndexName),
@@ -197,32 +197,30 @@ func listCreatorRequests(ctx context.Context, creatorID string) ([]RecyclingRequ
 		return nil, err
 	}
 
-	annaEmailUUID := userUUID("anna.recycler@example.com")
-	annaNameUUID := userUUID("Anna Recycler")
-	aliasID := ""
-	if strings.EqualFold(creatorID, annaEmailUUID) {
-		aliasID = annaNameUUID
-	} else if strings.EqualFold(creatorID, annaNameUUID) {
-		aliasID = annaEmailUUID
-	}
-	if aliasID != "" {
-		aliasRequests, _ := queryRequests(ctx, &dynamodb.QueryInput{
-			TableName:              aws.String(tableName),
-			IndexName:              aws.String(requestsByCreatorIndexName),
-			KeyConditionExpression: aws.String("creatorId = :creatorId"),
-			ExpressionAttributeValues: map[string]types.AttributeValue{
-				":creatorId": &types.AttributeValueMemberS{Value: aliasID},
-			},
-		})
-		if len(aliasRequests) > 0 {
-			requests = mergeRequestsByID(requests, aliasRequests)
+	// Fetch for all known aliases if claims are provided and match the target user
+	if claims != nil && claims.matchesUser(creatorID) {
+		for _, aliasID := range claims.candidateIDs() {
+			if strings.EqualFold(aliasID, creatorID) {
+				continue
+			}
+			aliasRequests, _ := queryRequests(ctx, &dynamodb.QueryInput{
+				TableName:              aws.String(tableName),
+				IndexName:              aws.String(requestsByCreatorIndexName),
+				KeyConditionExpression: aws.String("creatorId = :creatorId"),
+				ExpressionAttributeValues: map[string]types.AttributeValue{
+					":creatorId": &types.AttributeValueMemberS{Value: aliasID},
+				},
+			})
+			if len(aliasRequests) > 0 {
+				requests = mergeRequestsByID(requests, aliasRequests)
+			}
 		}
 	}
 
 	return requests, nil
 }
 
-func listHelperAccessibleRequests(ctx context.Context, helperID string) ([]RecyclingRequest, error) {
+func listHelperAccessibleRequests(ctx context.Context, helperID string, claims *Claims) ([]RecyclingRequest, error) {
 	returnableRequests := make([]RecyclingRequest, 0)
 	for _, status := range helperPoolCandidateStatuses() {
 		requestsForStatus, err := queryRequests(ctx, &dynamodb.QueryInput{
@@ -254,25 +252,23 @@ func listHelperAccessibleRequests(ctx context.Context, helperID string) ([]Recyc
 		return nil, err
 	}
 
-	erikEmailUUID := userUUID("erik.helper@example.com")
-	erikNameUUID := userUUID("Erik Helper")
-	aliasID := ""
-	if strings.EqualFold(helperID, erikEmailUUID) {
-		aliasID = erikNameUUID
-	} else if strings.EqualFold(helperID, erikNameUUID) {
-		aliasID = erikEmailUUID
-	}
-	if aliasID != "" {
-		aliasRequests, _ := queryRequests(ctx, &dynamodb.QueryInput{
-			TableName:              aws.String(tableName),
-			IndexName:              aws.String(requestsByHelperIndexName),
-			KeyConditionExpression: aws.String("helperId = :helperId"),
-			ExpressionAttributeValues: map[string]types.AttributeValue{
-				":helperId": &types.AttributeValueMemberS{Value: aliasID},
-			},
-		})
-		if len(aliasRequests) > 0 {
-			assignedRequests = mergeRequestsByID(assignedRequests, aliasRequests)
+	// Fetch for all known aliases if claims are provided and match the target helper
+	if claims != nil && claims.matchesUser(helperID) {
+		for _, aliasID := range claims.candidateIDs() {
+			if strings.EqualFold(aliasID, helperID) {
+				continue
+			}
+			aliasRequests, _ := queryRequests(ctx, &dynamodb.QueryInput{
+				TableName:              aws.String(tableName),
+				IndexName:              aws.String(requestsByHelperIndexName),
+				KeyConditionExpression: aws.String("helperId = :helperId"),
+				ExpressionAttributeValues: map[string]types.AttributeValue{
+					":helperId": &types.AttributeValueMemberS{Value: aliasID},
+				},
+			})
+			if len(aliasRequests) > 0 {
+				assignedRequests = mergeRequestsByID(assignedRequests, aliasRequests)
+			}
 		}
 	}
 
@@ -491,7 +487,7 @@ func handleCreateRequest(w http.ResponseWriter, r *http.Request) {
 	}
 	marketConfig := getMarketConfig(market)
 
-	creatorRequests, err := listCreatorRequests(r.Context(), claims.requestOwnerID())
+	creatorRequests, err := listCreatorRequests(r.Context(), claims.requestOwnerID(), claims)
 	if err == nil {
 		activeCount := 0
 		for _, cr := range creatorRequests {
@@ -553,7 +549,7 @@ func handleCreateRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = svc.PutItem(context.TODO(), &dynamodb.PutItemInput{
+	_, err = svc.PutItem(r.Context(), &dynamodb.PutItemInput{
 		TableName: aws.String(tableName),
 		Item:      item,
 	})
@@ -737,7 +733,7 @@ func handleDemoSeed(w http.ResponseWriter, r *http.Request) {
 
 	for _, req := range sampleRequests {
 		// Preserve existing dynamic chat messages & status if item exists
-		existingOut, err := svc.GetItem(context.TODO(), &dynamodb.GetItemInput{
+		existingOut, err := svc.GetItem(r.Context(), &dynamodb.GetItemInput{
 			TableName: aws.String(tableName),
 			Key: map[string]types.AttributeValue{
 				"id": &types.AttributeValueMemberS{Value: req.ID},
@@ -768,7 +764,7 @@ func handleDemoSeed(w http.ResponseWriter, r *http.Request) {
 			log.Printf("Error marshalling demo request: %v", err)
 			continue
 		}
-		_, err = svc.PutItem(context.TODO(), &dynamodb.PutItemInput{
+		_, err = svc.PutItem(r.Context(), &dynamodb.PutItemInput{
 			TableName: aws.String(tableName),
 			Item:      item,
 		})
@@ -813,7 +809,7 @@ func handleRegisterDeviceToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Attach device token to any currently active requests created by this user
-	reqs, err := listCreatorRequests(r.Context(), claims.requestOwnerID())
+	reqs, err := listCreatorRequests(r.Context(), claims.requestOwnerID(), claims)
 	if err == nil {
 		for _, req := range reqs {
 			if req.Status == "pending" || req.Status == "accepted" {

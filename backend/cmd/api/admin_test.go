@@ -105,8 +105,12 @@ func TestAdminEndpoints(t *testing.T) {
 		}
 
 		logs, ok := res["logs"].([]interface{})
-		if !ok || len(logs) == 0 {
-			t.Errorf("Expected non-empty logs array, got %v", res["logs"])
+		if !ok {
+			t.Errorf("Expected logs array, got %v", res["logs"])
+		}
+		// The logs array should be empty initially since we removed hardcoded seed logs.
+		if len(logs) != 0 {
+			t.Errorf("Expected logs to be initially empty, got %d items", len(logs))
 		}
 	})
 

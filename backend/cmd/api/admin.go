@@ -59,79 +59,7 @@ var (
 	adminLogsMu sync.RWMutex
 )
 
-func init() {
-	initAdminLogs()
-}
 
-func initAdminLogs() {
-	adminLogsMu.Lock()
-	defer adminLogsMu.Unlock()
-
-	now := time.Now().UTC()
-	adminLogs = []AdminLogEntry{
-		{
-			ID:        "log-init-1",
-			Timestamp: now.Add(-45 * time.Minute).Format(time.RFC3339),
-			Level:     "INFO",
-			Category:  "MARKET_LIMIT",
-			Message:   "Anti-spam protection rules initialized: Personal Recycler cap 20, Helper cap 30",
-			City:      "Sweden (National)",
-			Details: map[string]interface{}{
-				"recyclerMax": 20,
-				"helperMax":   30,
-				"mode":        "personal_account_quota",
-			},
-		},
-		{
-			ID:        "log-init-2",
-			Timestamp: now.Add(-32 * time.Minute).Format(time.RFC3339),
-			Level:     "INFO",
-			Category:  "GEO_HEALTH",
-			Message:   "Node Stockholm operational: 4 active pickups, 5 verified helpers online",
-			City:      "Stockholm",
-			Details: map[string]interface{}{
-				"status":        "optimal",
-				"avgEtaMinutes": 11,
-			},
-		},
-		{
-			ID:        "log-init-3",
-			Timestamp: now.Add(-20 * time.Minute).Format(time.RFC3339),
-			Level:     "SUCCESS",
-			Category:  "PAYOUT",
-			Message:   "Bulk return verified: 185.00 SEK scanned. 129.50 SEK disbursed to Anna, 105.50 SEK to Erik",
-			City:      "Stockholm",
-			Details: map[string]interface{}{
-				"pantAmount": 185.0,
-				"split":      "70/30",
-			},
-		},
-		{
-			ID:        "log-init-4",
-			Timestamp: now.Add(-12 * time.Minute).Format(time.RFC3339),
-			Level:     "METRIC",
-			Category:  "ANTI_SPAM",
-			Message:   "Audit scan: 0 accounts exceeding active market thresholds. Spam score: 0.0%",
-			City:      "Sweden (National)",
-			Details: map[string]interface{}{
-				"checkedAccounts": 24,
-				"spamViolations":  0,
-			},
-		},
-		{
-			ID:        "log-init-5",
-			Timestamp: now.Add(-5 * time.Minute).Format(time.RFC3339),
-			Level:     "INFO",
-			Category:  "DISPATCH",
-			Message:   "Helper Erik accepted job in Götgatan (Stockholm Södermalm), live tracking enabled",
-			City:      "Stockholm",
-			Details: map[string]interface{}{
-				"jobId": "demo-accepted-1",
-				"eta":   12,
-			},
-		},
-	}
-}
 
 func registerAdminRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/v1/admin/overview", authMiddleware(handleAdminOverview))
@@ -171,9 +99,7 @@ func handleAdminOverview(w http.ResponseWriter, r *http.Request) {
 			_ = attributevalue.UnmarshalListOfMaps(scanOut.Items, &allRequests)
 		}
 	}
-	if len(allRequests) == 0 {
-		allRequests = defaultAdminRequests()
-	}
+
 
 	// Calculate summary metrics
 	summary := AdminSummary{
@@ -365,8 +291,8 @@ func handleAdminSimulateLog(w http.ResponseWriter, r *http.Request) {
 		city     string
 		format   string
 	}{
-		{"INFO", "ANTI_SPAM", "Stockholm", "Recycler quota audit: User Anna verified at %d/20 active pickups (anti-spam healthy)"},
-		{"INFO", "DISPATCH", "Stockholm", "Proximity match: Helper Erik assigned to pickup near Sveavägen (ETA %d mins)"},
+		{"INFO", "ANTI_SPAM", "Stockholm", "Recycler quota audit: User UID-79A verified at %d/20 active pickups (anti-spam healthy)"},
+		{"INFO", "DISPATCH", "Stockholm", "Proximity match: Helper UID-42B assigned to pickup near Sveavägen (ETA %d mins)"},
 		{"WARN", "GEO_HEALTH", "Malmö", "Elevated pickup demand detected in Malmö Möllevången: %d pending requests queued"},
 		{"SUCCESS", "PAYOUT", "Göteborg", "BankID verified receipt processed: %.2f SEK return pant released via Swish"},
 		{"METRIC", "MARKET_LIMIT", "Stockholm", "Helper pool capacity check: %d active jobs among 8 registered helpers (within 30 max limit)"},
@@ -418,17 +344,3 @@ func handleAdminSimulateLog(w http.ResponseWriter, r *http.Request) {
 		"message": "Simulated real-time log event generated",
 	})
 }
-
-func defaultAdminRequests() []RecyclingRequest {
-	p1, hp1 := 75.0, 25.0
-	p2, hp2 := 112.0, 48.0
-	return []RecyclingRequest{
-		{ID: "req-admin-demo-1", CreatorID: userUUID("anna.recycler@example.com"), CreatorName: "Anna Recycler", Status: "pending", Location: "Stockholm Södermalm", Currency: "SEK", CurrencySymbol: "kr", Market: "SE"},
-		{ID: "req-admin-demo-2", CreatorID: userUUID("anna.recycler@example.com"), CreatorName: "Anna Recycler", HelperID: userUUID("erik.helper@example.com"), HelperName: "Erik Helper", Status: "accepted", Location: "Stockholm Norrmalm", Currency: "SEK", CurrencySymbol: "kr", Market: "SE"},
-		{ID: "req-admin-demo-3", CreatorID: userUUID("johan.recycler@example.com"), CreatorName: "Johan Recycler", Status: "pending", Location: "Göteborg Centrum", Currency: "SEK", CurrencySymbol: "kr", Market: "SE"},
-		{ID: "req-admin-demo-4", CreatorID: userUUID("sara.recycler@example.com"), CreatorName: "Sara Recycler", Status: "pending", Location: "Malmö Västra Hamnen", Currency: "SEK", CurrencySymbol: "kr", Market: "SE"},
-		{ID: "req-admin-demo-5", CreatorID: userUUID("karin.recycler@example.com"), CreatorName: "Karin Recycler", HelperID: userUUID("erik.helper@example.com"), HelperName: "Erik Helper", Status: "pickedUp", Location: "Stockholm Vasastan", ReceiptAmount: 100.0, RecyclerPayout: &p1, HelperPayout: &hp1, Currency: "SEK", CurrencySymbol: "kr", Market: "SE"},
-		{ID: "req-admin-demo-6", CreatorID: userUUID("lars.recycler@example.com"), CreatorName: "Lars Recycler", HelperID: userUUID("oskar.helper@example.com"), HelperName: "Oskar Helper", Status: "pickedUp", Location: "Uppsala Centrum", ReceiptAmount: 160.0, RecyclerPayout: &p2, HelperPayout: &hp2, Currency: "SEK", CurrencySymbol: "kr", Market: "SE"},
-	}
-}
-
