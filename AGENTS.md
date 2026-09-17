@@ -49,10 +49,11 @@ Access points:
 
 ## Testing & Fast Feedback Loop
 Use the optimized test runner `./scripts/fast_test.sh`:
-- **Full Stack Fast Verification (~40s)**: `./scripts/fast_test.sh all`
+- **Full Stack Fast Verification (~36s)**: `./scripts/fast_test.sh all`
 - **Targeted Mobile Test (~8-12s)**: `./scripts/fast_test.sh mobile <pattern-or-file>` (e.g. `./scripts/fast_test.sh mobile market_notification`)
 - **Aggregated Mobile Suite (~35s)**: `./scripts/fast_test.sh mobile`
 - **Backend Tests (~1-2s)**: `./scripts/fast_test.sh backend` (or `cd backend && go test ./...`)
+- **Cache Retention**: Preserve `build/test_cache` (do not run `flutter clean` routinely) to keep compile times ~4s rather than ~32s. See skill [`.agents/skills/panta-fast-build/SKILL.md`](.agents/skills/panta-fast-build/SKILL.md).
 
 ---
 

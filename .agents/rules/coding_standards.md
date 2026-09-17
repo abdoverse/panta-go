@@ -24,3 +24,10 @@ trigger: always_on
 ## 3. Local Development & Demo Modes
 - Provide 1-click test personas for rapid browser evaluation (`http://localhost:3000`).
 - Ensure local HTTP polling fallback exists alongside WebSockets for restricted local network environments.
+
+## 4. Fast Build & Feedback Loop Protocol
+- **Targeted Testing First**: During development, run targeted tests (`./scripts/fast_test.sh mobile <pattern>` or `./scripts/fast_test.sh backend`) taking 8-12s / 1-2s, instead of the full suite.
+- **Preserve Compiler Caches**: Never run `flutter clean` routinely; cold kernel compilation takes ~32s on this dual-core CPU, while warm runs take ~4s. Preserve `build/test_cache`.
+- **Keep Telemetry Off**: Ensure Flutter and Dart analytics remain disabled to eliminate CLI network latency.
+- **Selective L10n Scans**: Only run `mobile/tool/check_l10n.sh` when UI strings or localization keys change, as AST parsing takes ~20s.
+- **Full Verification Before Commit**: Run `./scripts/fast_test.sh all` to verify the complete stack before staging and committing.
