@@ -21,6 +21,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   RemoteLogger.init();
+  debugPrint("====== PANTA FLUTTER WEB STARTING UP ======");
   
   for (final locale in AppLocalizations.supportedLocales) {
     final localeName = locale.languageCode == 'sv' ? 'sv_SE' : 'en_US';
