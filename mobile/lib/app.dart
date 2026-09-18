@@ -10,6 +10,7 @@ import 'features/dashboard/user_home_page.dart';
 import 'features/auth/login_page.dart';
 import 'features/chat/chat_notification_banner.dart';
 import 'features/shared/cookie_consent_banner.dart';
+import 'features/shared/global_debug_banner.dart';
 import 'features/shared/market_notification_banner.dart';
 import 'providers/panta_provider.dart';
 
@@ -89,6 +90,9 @@ class _PantaAppState extends State<PantaApp> {
                   Column(
                     children: [
                       MarketNotificationBanner(navigatorKey: rootNavigatorKey),
+                      const GlobalDebugBanner(
+                        latestChange: "Automated watcher removed, exceptions fixed, & dev loop fully managed by agent! (Safe port 3000)",
+                      ),
                       Expanded(
                         child: Builder(
                           builder: (innerCtx) {

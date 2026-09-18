@@ -109,33 +109,6 @@ class _DashboardView extends StatelessWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
         children: [
-          // DEBUG BANNER (To verify hot reloads)
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-            margin: const EdgeInsets.only(bottom: 24),
-            decoration: BoxDecoration(
-              color: Colors.redAccent.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.redAccent),
-            ),
-            child: const Row(
-              children: [
-                Icon(Icons.info_outline, color: Colors.redAccent, size: 20),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    "Latest Change: Automated watcher removed, exceptions fixed, & dev loop fully managed by agent! (Safe port 3000)",
-                    style: TextStyle(
-                      color: Colors.redAccent,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ).animate().fadeIn(),
-
           // Header Row: Greeting + Optional Streak Badge
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
