@@ -145,7 +145,7 @@ start_frontend() {
         fi
         echo "🔨 Building Flutter web bundle for the local backend..."
         cd "$FRONTEND_DIR"
-        flutter build web --release --no-wasm-dry-run --dart-define=API_BASE_URL="$API_BASE_URL"
+        flutter build web --release --no-wasm-dry-run --no-tree-shake-icons --dart-define=API_BASE_URL="$API_BASE_URL"
         if [ -n "$GOOGLE_MAPS_API_KEY" ]; then
             sed -i "s|__GOOGLE_MAPS_API_KEY__|$GOOGLE_MAPS_API_KEY|g" "$web_build_dir/index.html"
         fi
