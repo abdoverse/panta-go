@@ -168,7 +168,6 @@ class AdaptiveNavigationScaffold extends StatelessWidget {
             onDestinationSelected: onDestinationSelected,
             labelType: NavigationRailLabelType.all,
             backgroundColor: Colors.white,
-            elevation: 0,
             indicatorColor: AppTheme.accentLeaf,
             leading: Column(
               children: [
