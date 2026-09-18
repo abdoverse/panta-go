@@ -124,7 +124,7 @@ class _DashboardView extends StatelessWidget {
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    "Latest Change: Friendly Green Button Redesign",
+                    "Latest Change: Automated watcher removed, exceptions fixed, & dev loop fully managed by agent! (Safe port 3000)",
                     style: TextStyle(
                       color: Colors.redAccent,
                       fontWeight: FontWeight.bold,
