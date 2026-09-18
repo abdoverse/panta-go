@@ -5,8 +5,6 @@ import 'api_config.dart';
 
 class RemoteLogger {
   static void init() {
-    if (!kDebugMode) return;
-
     final originalDebugPrint = debugPrint;
     debugPrint = (String? message, {int? wrapWidth}) {
       originalDebugPrint(message, wrapWidth: wrapWidth);
