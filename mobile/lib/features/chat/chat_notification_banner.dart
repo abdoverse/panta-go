@@ -83,8 +83,8 @@ class _ChatNotificationListenerState extends State<ChatNotificationListener>
 
     _animController.forward(from: 0.0);
 
-    // Auto dismiss after 10 seconds for arrival alerts (vs 6 seconds for regular chats)
-    _dismissTimer = Timer(Duration(seconds: isArrival ? 10 : 6), () {
+    // Prolonged notification durations (20s for arrival, 15s for regular chat)
+    _dismissTimer = Timer(Duration(seconds: isArrival ? 20 : 15), () {
       _dismiss();
     });
   }

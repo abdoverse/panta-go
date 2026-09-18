@@ -407,17 +407,29 @@ class PantaProvider extends ChangeNotifier {
   void _processRealtimeChunk(String chunk) {
     try {
       final decoded = json.decode(chunk);
+      
+      // ALways let requestState try to handle it (e.g. for 'request-updated')
+      _requestState.handleRealtimeMessage(
+        chunk,
+        fromJson: RequestApiService.parseRecyclingRequest,
+        onRefreshRequested: () => fetchRequests(silent: true),
+      );
+
       if (decoded is! Map<String, dynamic>) {
-        _requestState.handleRealtimeMessage(
-          chunk,
-          fromJson: RequestApiService.parseRecyclingRequest,
-          onRefreshRequested: () => fetchRequests(silent: true),
-        );
         notifyListeners();
         return;
       }
 
       final type = decoded['type']?.toString();
+
+      if (type == 'request-updated') {
+        final requestPayload = decoded['request'];
+        if (requestPayload is Map<String, dynamic>) {
+           final req = RequestApiService.parseRecyclingRequest(requestPayload);
+           // BUG FIX: Sync the updated read receipts/messages to the chat cache
+           _chatByRequestId[req.id] = req.messages;
+        }
+      }
 
       if (type == 'chat-message') {
         final messageJson = decoded['message'];

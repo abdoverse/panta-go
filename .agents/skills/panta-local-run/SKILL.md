@@ -5,6 +5,10 @@ description: Orchestrates running the full Panta application stack locally (Go b
 
 # Panta Local Stack & Development Skill
 
+> [!WARNING]
+> **CRITICAL:** Before attempting to start the local stack or run Flutter, check if port 3000 is already in use (e.g., using `lsof -i :3000`). 
+> NEVER blindly run `flutter run` on a random port. If an application is already running on port 3000, **DO NOT stop it!** See if you can amend or hot deploy to it the flutter way (e.g., by issuing a hot reload command to the existing flutter process, or running `flutter build web` to overwrite the static files it is serving). Only run `scripts/run_dev.sh start` if nothing is running on 3000.
+
 This skill brings up and manages the **complete Panta application stack locally in the browser**, enabling immediate end-to-end interactive testing of both Recycler and Helper workflows without needing AWS Cognito credentials or external services.
 
 ## Quick Start: Run the Whole App Locally

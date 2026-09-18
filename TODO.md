@@ -45,9 +45,9 @@
 21. [x] Visual 5-Star Rating Display in Pickup History:
     - Display ratings in Pickup History with visual 5-star icons (e.g. 4 filled stars out of 5) similar to the rating moment, rather than just a single star icon and text
     - Enhance visual clarity of helper rating and feedback display on completed jobs
-
-## Production Readiness
-1. [ ] Replace local static AWS credentials with short-lived federated credentials or workload identity before sharing/deploying the development setup; rotate and audit `panta-local-dev`.
+ 
+ ## Production Readiness
+ 1. [ ] Replace local static AWS credentials with short-lived federated credentials or workload identity before sharing/deploying the development setup; rotate and audit `panta-local-dev`.
 1. [ ] Use real BankID certificates and keys
 2. [x] Set market limits
 3. [ ] Comprehensive GDPR Compliance:
@@ -68,3 +68,6 @@
     - **Initial Launch Phase (0% Fee)**: Free tier with zero platform commission or service charges for recyclers and helpers.
     - **Mature Market Monetization**: Dynamic business-rule-based take-rate / commission percentage applied to transactions once volume and liquidity milestones are reached.
     - **VAT & Tax Calculation**: Automated calculation and bookkeeping of Swedish MOMS (25% VAT on digital intermediary service fees) and relevant tax reporting (including EU DAC7 digital platform reporting compliance and invoice generation).
+
+## Developer Tools & Agent Interfaces
+1. [ ] Build a local `whisper` CLI tool (or a script using `arecord`/`sox` and Whisper API) to allow recording voice commands and piping the transcribed text directly into Antigravity CLI/agent as a prompt.
