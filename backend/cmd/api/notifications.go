@@ -52,6 +52,7 @@ func initFirebase() {
 		log.Printf("Firebase service account loaded from %s", credentialsPath)
 	} else {
 		log.Println("⚠️  Firebase service account not configured. Notifications will not work.")
+		return
 	}
 
 	app, err := firebase.NewApp(ctx, nil, opts...)
