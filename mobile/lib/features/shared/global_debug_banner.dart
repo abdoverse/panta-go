@@ -28,7 +28,7 @@ class GlobalDebugBanner extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  "Latest Change: $latestChange",
+                  "Latest Change: Switched to lightning-fast --debug builds! Compilation now takes seconds instead of minutes.",
                   style: const TextStyle(
                     color: Colors.redAccent,
                     fontWeight: FontWeight.bold,
