@@ -138,31 +138,15 @@ start_frontend() {
         return 0
     fi
 
-    local web_build_dir="$FRONTEND_DIR/build/web"
-    if [ ! -f "$web_build_dir/index.html" ] || [ "${FORCE_BUILD:-0}" = "1" ]; then
-        if [ -z "$GOOGLE_MAPS_API_KEY" ]; then
-            echo "⚠️ GOOGLE_MAPS_API_KEY is not configured; admin map will remain unavailable."
-        fi
-        echo "🔨 Building Flutter web bundle for the local backend..."
-        cd "$FRONTEND_DIR"
-        flutter build web --debug --no-wasm-dry-run --no-tree-shake-icons --dart-define=API_BASE_URL="$API_BASE_URL"
-        if [ -n "$GOOGLE_MAPS_API_KEY" ]; then
-            sed -i "s|__GOOGLE_MAPS_API_KEY__|$GOOGLE_MAPS_API_KEY|g" "$web_build_dir/index.html"
-        fi
-        cd "$PROJECT_ROOT"
-    else
-        echo "⚡ Using existing Flutter web bundle in $web_build_dir (set FORCE_BUILD=1 to rebuild)"
-    fi
-
-    echo "🚀 Starting fast Flutter web server on port $FRONTEND_PORT..."
-    setsid python3 -m http.server "$FRONTEND_PORT" \
-        --directory "$web_build_dir" \
-        --bind 0.0.0.0 \
+    echo "🚀 Starting live Flutter web server on port $FRONTEND_PORT..."
+    cd "$FRONTEND_DIR"
+    setsid flutter run -d web-server --web-port="$FRONTEND_PORT" --dart-define=API_BASE_URL="$API_BASE_URL" \
         > "$FRONTEND_LOG" 2>&1 &
     local f_pid=$!
     disown "$f_pid" 2>/dev/null || true
     echo "$f_pid" > "$FRONTEND_PID_FILE"
     echo "Flutter web started with PID $f_pid (logs: $FRONTEND_LOG)"
+    cd "$PROJECT_ROOT"
 }
 
 stop_all() {
