@@ -539,12 +539,15 @@ class HelperJobCard extends StatelessWidget {
                                                   color: Colors.green,
                                                 ),
                                                 const SizedBox(width: 4),
-                                                Text(
-                                                  l10n.atDoorTime(job.arrivedAtDoor!.hour.toString().padLeft(2, '0'), job.arrivedAtDoor!.minute.toString().padLeft(2, '0')),
-                                                  style: const TextStyle(
-                                                    fontSize: 12,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Colors.green,
+                                                Flexible(
+                                                  child: Text(
+                                                    l10n.atDoorTime(job.arrivedAtDoor!.hour.toString().padLeft(2, '0'), job.arrivedAtDoor!.minute.toString().padLeft(2, '0')),
+                                                    style: const TextStyle(
+                                                      fontSize: 12,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: Colors.green,
+                                                    ),
+                                                    overflow: TextOverflow.ellipsis,
                                                   ),
                                                 ),
                                               ],
