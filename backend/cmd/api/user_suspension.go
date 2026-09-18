@@ -547,14 +547,7 @@ func handleAdminListUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	knownUsers := []AdminUserInfo{
-		{UserID: userUUID("anna.recycler@example.com"), DisplayName: "Anna Recycler", Email: "anna.recycler@example.com", Role: "user"},
-		{UserID: userUUID("erik.helper@example.com"), DisplayName: "Erik Helper", Email: "erik.helper@example.com", Role: "helper"},
-		{UserID: userUUID("johan.recycler@example.com"), DisplayName: "Johan Recycler", Email: "johan.recycler@example.com", Role: "user"},
-		{UserID: userUUID("sara.recycler@example.com"), DisplayName: "Sara Recycler", Email: "sara.recycler@example.com", Role: "user"},
-		{UserID: userUUID("karin.recycler@example.com"), DisplayName: "Karin Recycler", Email: "karin.recycler@example.com", Role: "user"},
-		{UserID: userUUID("oskar.helper@example.com"), DisplayName: "Oskar Helper", Email: "oskar.helper@example.com", Role: "helper"},
-	}
+	knownUsers := []AdminUserInfo{}
 
 	for i := range knownUsers {
 		blocked, _ := isUserBlocked(knownUsers[i].UserID, knownUsers[i].Email)

@@ -520,15 +520,6 @@ func (c *Claims) candidateIDs() []string {
 	addCandidate(c.CognitoUsername)
 	addCandidate(c.DisplayName)
 
-	if c.DisplayName != "" && !strings.Contains(c.DisplayName, "@") {
-		derivedEmail := fmt.Sprintf("%s@example.com", strings.ToLower(strings.ReplaceAll(strings.TrimSpace(c.DisplayName), " ", ".")))
-		addCandidate(derivedEmail)
-	}
-	if c.CognitoUsername != "" && !strings.Contains(c.CognitoUsername, "@") {
-		derivedEmail := fmt.Sprintf("%s@example.com", strings.ToLower(strings.ReplaceAll(strings.TrimSpace(c.CognitoUsername), " ", ".")))
-		addCandidate(derivedEmail)
-	}
-
 	return candidates
 }
 

@@ -54,6 +54,11 @@ func registerAuthRoutes(mux *http.ServeMux) {
 }
 
 func handleLogin(w http.ResponseWriter, r *http.Request) {
+	if isProductionEnvironment() {
+		http.Error(w, "Mock login is disabled in production", http.StatusForbidden)
+		return
+	}
+
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return

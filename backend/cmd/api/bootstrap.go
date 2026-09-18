@@ -25,7 +25,7 @@ var (
 )
 
 func initializeApplication() error {
-	cfg, err := config.LoadDefaultConfig(context.TODO())
+	cfg, err := config.LoadDefaultConfig(context.Background())
 	if err != nil {
 		return fmt.Errorf("load AWS SDK config: %w", err)
 	}
