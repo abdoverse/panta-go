@@ -9,7 +9,9 @@ import '../../providers/panta_provider.dart';
 /// Floating banner displayed at the bottom of the screen when GDPR cookie consent
 /// has not yet been given, compliant with Swedish LEK 2022:482 & PTS requirements.
 class CookieConsentBanner extends StatelessWidget {
-  const CookieConsentBanner({super.key});
+  final GlobalKey<NavigatorState>? navigatorKey;
+
+  const CookieConsentBanner({super.key, this.navigatorKey});
 
   @override
   Widget build(BuildContext context) {
@@ -83,7 +85,12 @@ class CookieConsentBanner extends StatelessWidget {
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       TextButton(
-                        onPressed: () => showCookiePreferencesDialog(context),
+                        onPressed: () {
+                          final navContext = navigatorKey?.currentState?.context ??
+                              navigatorKey?.currentContext ??
+                              context;
+                          showCookiePreferencesDialog(navContext);
+                        },
                         child: Text(l10n.cookieCustomize),
                       ),
                       OutlinedButton(

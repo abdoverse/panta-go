@@ -109,7 +109,7 @@ class _PantaAppState extends State<PantaApp> {
                       ),
                     ],
                   ),
-                  const CookieConsentBanner(),
+                  CookieConsentBanner(navigatorKey: rootNavigatorKey),
                 ],
               ),
             ),
