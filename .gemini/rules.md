@@ -27,3 +27,4 @@ They are non-negotiable and must be followed at all times.
 - **Auto-Commit:** Always commit (and optionally push) your changes proactively the moment you finish a specific goal, fix, or task. Do not wait for the user to ask you to commit.
 - **Notify on Completion:** Whenever a long-running background task (like a build, deployment, or compilation) finishes, ALWAYS notify the user with a sound and a desktop notification. 
   - Command: `notify-send "Task Complete" "The build/deploy has finished!" -i dialog-information && ffplay -f lavfi -i "aevalsrc='sin(440*2*PI*t)*exp(-4*t)':d=0.5" -autoexit -nodisp -volume 40 >/dev/null 2>&1`
+- **Persistent Terminals:** When launching long-running processes (like dev servers, `flutter run`, or debuggers), ALWAYS use `RunPersistent: true` in the `run_command` tool to prevent the system framework from killing the background task after a timeout.
