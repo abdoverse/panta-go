@@ -18,44 +18,31 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   debugPrint("Handling a background message: ${message.messageId}");
 }
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  
-  for (final locale in AppLocalizations.supportedLocales) {
-    final localeName = locale.languageCode == 'sv' ? 'sv_SE' : 'en_US';
-    await initializeDateFormatting(localeName, null);
-  }
-
-  try {
-    // Pass the options here as well
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-
-    // Set background handler
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
-    // Set foreground presentation options (iOS mainly)
-    await FirebaseMessaging.instance
-        .setForegroundNotificationPresentationOptions(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
-  } catch (e) {
-    debugPrint("Firebase init failed (missing config?): $e");
-  }
-
-  RemoteLogger.runWithLogger(() {
-    // Keep this inside the runner to test if logs are caught
+void main() {
+  RemoteLogger.runWithLogger(() async {
+    WidgetsFlutterBinding.ensureInitialized();
     debugPrint("====== PANTA FLUTTER WEB STARTING UP (ZONED) ======");
     print("====== THIS IS A RAW PRINT STATEMENT ======");
     
-    // We cannot easily await inside runWithLogger unless we change it to async,
-    // but runZonedGuarded handles async microtasks perfectly fine.
-    // However, runApp is synchronous.
-    // The safest way is to do the async init *before* runWithLogger, 
-    // and then call runWithLogger just for runApp.
+    for (final locale in AppLocalizations.supportedLocales) {
+      final localeName = locale.languageCode == 'sv' ? 'sv_SE' : 'en_US';
+      await initializeDateFormatting(localeName, null);
+    }
+
+    try {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+
+      await FirebaseMessaging.instance.requestPermission();
+      final token = await FirebaseMessaging.instance.getToken();
+      debugPrint("FCM Token: $token");
+
+      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    } catch (e) {
+      debugPrint("Firebase init failed (missing config?): $e");
+    }
+
     runApp(
       MultiProvider(
         providers: [

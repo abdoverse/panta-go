@@ -1,6 +1,34 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <script>
+    // ANTIGRAVITY NATIVE JS LOGGER
+    (function() {
+      var originalError = console.error;
+      var originalWarn = console.warn;
+      
+      function sendLog(level, args) {
+        try {
+          var message = Array.from(args).map(function(a) {
+            try { return typeof a === 'object' ? JSON.stringify(a) : String(a); } catch(e) { return String(a); }
+          }).join(' ');
+          
+          var baseUrl = "http://" + window.location.hostname + ":8080";
+          fetch(baseUrl + '/api/v1/dev/logs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ level: level, message: message, time: new Date().toISOString() })
+          }).catch(function() {});
+        } catch(e) {}
+      }
+
+      console.error = function() { sendLog('JS_ERROR', arguments); originalError.apply(console, arguments); };
+      console.warn = function() { sendLog('JS_WARN', arguments); originalWarn.apply(console, arguments); };
+      
+      window.addEventListener('error', function(e) { sendLog('JS_FATAL', [e.message, e.filename, e.lineno]); });
+      window.addEventListener('unhandledrejection', function(e) { sendLog('JS_PROMISE', [e.reason]); });
+    })();
+  </script>
   <!--
     If you are serving your web app in a path other than the root, change the
     href value below to reflect the base path you are serving from.
