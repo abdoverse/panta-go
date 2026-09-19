@@ -735,28 +735,46 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               height: 300,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: GoogleMap(
-                  initialCameraPosition: const CameraPosition(
-                    target: LatLng(58.5, 15.0),
-                    zoom: 4.7,
-                  ),
-                  zoomControlsEnabled: true,
-                  mapToolbarEnabled: false,
-                  myLocationButtonEnabled: false,
-                  markers: {
-                    for (final city in _cities)
-                      Marker(
-                        markerId: MarkerId(city.cityName),
-                        position: LatLng(city.latitude, city.longitude),
-                        infoWindow: InfoWindow(
-                          title: city.cityName,
-                          snippet:
-                              '${city.activeRequests} active pickups • ${city.status}',
+                child: ApiConfig.baseUrl.contains("localhost") || ApiConfig.baseUrl.contains("192.168")
+                    ? Container(
+                        color: Colors.grey.shade200,
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.map_outlined, size: 48, color: Colors.grey.shade400),
+                              const SizedBox(height: 8),
+                              Text(
+                                "Live Map Disabled\n(Local Dev Mode: Missing API Key)",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
                         ),
-                        onTap: () => setState(() => _selectedCity = city),
+                      )
+                    : GoogleMap(
+                        initialCameraPosition: const CameraPosition(
+                          target: LatLng(58.5, 15.0),
+                          zoom: 4.7,
+                        ),
+                        zoomControlsEnabled: true,
+                        mapToolbarEnabled: false,
+                        myLocationButtonEnabled: false,
+                        markers: {
+                          for (final city in _cities)
+                            Marker(
+                              markerId: MarkerId(city.cityName),
+                              position: LatLng(city.latitude, city.longitude),
+                              infoWindow: InfoWindow(
+                                title: city.cityName,
+                                snippet:
+                                    '${city.activeRequests} active pickups • ${city.status}',
+                              ),
+                              onTap: () => setState(() => _selectedCity = city),
+                            ),
+                        },
                       ),
-                  },
-                ),
               ),
             ),
             const SizedBox(height: 12),
