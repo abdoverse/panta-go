@@ -59,18 +59,7 @@
 
   <title>panta</title>
   <link rel="manifest" href="manifest.json">
-  <script>
-    var mapsKey = "AIzaSyAn1WrZmsT3uDV4N8zDQZ3DIFziCcBzRZg";
-    if (mapsKey.indexOf("GOOGLE_MAPS") === -1) {
-      var s = document.createElement('script');
-      s.src = "https://maps.googleapis.com/maps/api/js?key=" + mapsKey;
-      document.head.appendChild(s);
-    } else {
-      console.warn("Skipping Google Maps SDK: API key is not configured.");
-      // Provide a dummy mock to prevent 'google is not defined' crashes in Flutter
-      window.google = window.google || { maps: { event: {} } };
-    }
-  </script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAn1WrZmsT3uDV4N8zDQZ3DIFziCcBzRZg"></script>
   <!-- Firebase Scripts -->
   <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js"></script>
