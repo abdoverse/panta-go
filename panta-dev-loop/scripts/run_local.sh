@@ -221,8 +221,6 @@ case "$1" in
         start_backend
         check_backend_health
         seed_demo_data
-        start_frontend
-        check_frontend_health
         show_instructions
         ;;
     dev)

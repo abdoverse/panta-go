@@ -1,10 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'api_config.dart';
 
 class RemoteLogger {
-  static void init() {
+  static void runWithLogger(void Function() appRunner) {
     final originalDebugPrint = debugPrint;
     debugPrint = (String? message, {int? wrapWidth}) {
       originalDebugPrint(message, wrapWidth: wrapWidth);
@@ -21,6 +22,23 @@ class RemoteLogger {
       _sendToBackend('FATAL', '$error\n$stack');
       return true;
     };
+
+    runZonedGuarded(
+      () {
+        runZoned(
+          appRunner,
+          zoneSpecification: ZoneSpecification(
+            print: (Zone self, ZoneDelegate parent, Zone zone, String line) {
+              parent.print(zone, line);
+              _sendToBackend('PRINT', line);
+            },
+          ),
+        );
+      },
+      (error, stack) {
+        _sendToBackend('ZONED_FATAL', '$error\n$stack');
+      },
+    );
   }
 
   static Future<void> _sendToBackend(String level, String message) async {

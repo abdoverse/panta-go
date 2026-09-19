@@ -20,8 +20,6 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  RemoteLogger.init();
-  debugPrint("====== PANTA FLUTTER WEB STARTING UP ======");
   
   for (final locale in AppLocalizations.supportedLocales) {
     final localeName = locale.languageCode == 'sv' ? 'sv_SE' : 'en_US';
@@ -48,12 +46,23 @@ void main() async {
     debugPrint("Firebase init failed (missing config?): $e");
   }
 
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => PantaProvider()),
-      ],
-      child: const PantaApp(),
-    ),
-  );
+  RemoteLogger.runWithLogger(() {
+    // Keep this inside the runner to test if logs are caught
+    debugPrint("====== PANTA FLUTTER WEB STARTING UP (ZONED) ======");
+    print("====== THIS IS A RAW PRINT STATEMENT ======");
+    
+    // We cannot easily await inside runWithLogger unless we change it to async,
+    // but runZonedGuarded handles async microtasks perfectly fine.
+    // However, runApp is synchronous.
+    // The safest way is to do the async init *before* runWithLogger, 
+    // and then call runWithLogger just for runApp.
+    runApp(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => PantaProvider()),
+        ],
+        child: const PantaApp(),
+      ),
+    );
+  });
 }
